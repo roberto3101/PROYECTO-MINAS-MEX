@@ -184,12 +184,43 @@ COMMENT ON TABLE gobierno.usuario IS 'Usuario operativo/administrativo por empre
 
 <section style="padding-top:0">
   <div class="wrap">
+    <p class="eyebrow">Seguridad</p>
+    <h2>Aislamiento multi-tenant en la base (RLS)</h2>
+    <p class="lead">El aislamiento <b>no depende del código de la aplicación</b>: la base lo garantiza por sí misma. El backend solo fija el tenant al abrir la transacción y consulta sin <span class="mono">WHERE id_empresa</span> — la base filtra, valida y bloquea.</p>
+
+    <table class="tabla-comp">
+      <thead><tr><th style="width:26%">Capa</th><th>Qué garantiza</th></tr></thead>
+      <tbody>
+        <tr><td><b>RLS</b> (Row-Level Security)</td><td class="why">Política <span class="mono">p_tenant</span> en toda tabla con <span class="mono">id_empresa</span>: solo se ven y se escriben filas del tenant de la sesión. <b>Fail-closed</b>: sin tenant fijado, la base devuelve 0 filas. Las vistas la respetan (<span class="mono">security_invoker</span>) y la materializada solo se expone vía una vista filtrada.</td></tr>
+        <tr><td><b>FK compuestas</b> <span class="mono">(id_empresa, id)</span></td><td class="why">Toda referencia de negocio viaja con el tenant: una fila <b>no puede</b> apuntar a datos de otra empresa, ni siquiera si el código (o un administrador) lo intenta. El cruce de tenants es imposible por integridad referencial.</td></tr>
+        <tr><td><b>Privilegios del rol</b> <span class="mono">aplicacion</span></td><td class="why">Sin <span class="mono">BYPASSRLS</span>. Sin <span class="mono">DELETE</span> (el borrado es lógico, vía <span class="mono">eliminado_en</span>). Los <b>eventos</b> no aceptan <span class="mono">UPDATE</span>: append-only por privilegio, no por convención.</td></tr>
+      </tbody>
+    </table>
+
+    <details class="code" open style="margin-top:18px">
+      <summary>patrón del backend (por transacción)</summary>
+      <pre class="sql">BEGIN;
+SELECT set_config('app.empresa_actual', $1, true);   -- uuid del tenant (del JWT); true = solo esta transacción
+SET LOCAL ROLE aplicacion;                            -- rol sujeto a RLS
+-- ... consultas normales, sin WHERE id_empresa ...
+COMMIT;                                               -- al cerrar, el tenant y el rol se limpian solos</pre>
+    </details>
+    <p class="nota"><b>Por qué así:</b> si el aislamiento viviera en el código, cada consulta sería un punto de fallo (el clásico <i>WHERE olvidado</i>). Con RLS + FK compuestas, un bug en la app <b>no puede</b> filtrar ni mezclar datos de otra empresa — y el backend queda liviano.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
     <p class="eyebrow">Preguntas frecuentes</p>
     <h2>Decisiones de diseño</h2>
 
     <details class="qa"><summary>¿Por qué gobierno es una capacidad aparte y no parte de catálogos?</summary><div class="resp">Porque sus responsabilidades son transversales: <b>empresa</b> y <b>usuario</b> son referenciados por <em>todas</em> las demás capacidades. Si vivieran en catálogos, ese módulo crearía una dependencia de infraestructura sobre el resto, en lugar de ser un maestro de dominio. Separar gobierno permite que catálogos, producción, planeación, etc. importen solo lo que necesitan sin acoplamientos de módulo.</div></details>
 
-    <details class="qa"><summary>¿Por qué todas las tablas llevan id_empresa y no solo las "raíces"?</summary><div class="resp">El aislamiento de datos multi-tenant debe ser absoluto: una consulta que se olvide de filtrar por empresa nunca debe poder ver datos del tenant equivocado. Tener <span class="mono">id_empresa</span> en <em>cada</em> tabla — no solo en la cabecera — permite aplicar el filtro directamente en la capa de datos, sin depender de que la lógica de aplicación encadene todos los joins correctamente.</div></details>
+    <details class="qa"><summary>¿Por qué todas las tablas llevan id_empresa y no solo las "raíces"?</summary><div class="resp">El aislamiento de datos multi-tenant debe ser absoluto: una consulta que se olvide de filtrar por empresa nunca debe poder ver datos del tenant equivocado. Tener <span class="mono">id_empresa</span> en <em>cada</em> tabla — no solo en la cabecera — es lo que permite que el aislamiento lo aplique la propia base: las políticas RLS y las FK compuestas <span class="mono">(id_empresa, id)</span> operan sobre esa columna, sin depender de la lógica de aplicación.</div></details>
+
+    <details class="qa"><summary>¿Qué pasa si el backend olvida fijar el tenant?</summary><div class="resp"><b>Nada se filtra</b>: las políticas son fail-closed. Sin <span class="mono">app.empresa_actual</span> fijado, toda consulta devuelve 0 filas y todo INSERT es rechazado. El error se nota de inmediato en desarrollo, en lugar de convertirse en una fuga silenciosa de datos en producción.</div></details>
+
+    <details class="qa"><summary>¿Y si un bug intenta guardar una fila que referencia datos de otra empresa?</summary><div class="resp">Lo bloquean <b>dos</b> capas independientes: el <span class="mono">WITH CHECK</span> de RLS (la fila no es del tenant de la sesión) y la <b>FK compuesta</b> (la referencia <span class="mono">(id_empresa, id)</span> no existe en el padre). La segunda funciona incluso para conexiones administrativas que esquivan RLS.</div></details>
 
     <details class="qa"><summary>¿Por qué la auditoría inline (creado/actualizado/eliminado_por_usuario_id) no usa FK a usuario?</summary><div class="resp">Por dos razones. Primera, una FK a <span class="mono">gobierno.usuario</span> desde <em>cada una</em> de las decenas de tablas del sistema crea un grafo de dependencias que complica las migraciones y los <span class="mono">DROP</span>. Segunda, la auditoría debe perdurar incluso si el usuario es dado de baja (<span class="mono">eliminado_en</span> != NULL) o si en el futuro se modela como evento independiente. Con UUID sin FK el historial queda intacto y la resolución del nombre se hace en la capa de lectura (query o vista).</div></details>
 

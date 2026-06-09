@@ -12,11 +12,12 @@
   <div class="wrap">
     <p class="eyebrow">Sistema de Planeación y Producción Minera</p>
     <h1>Modelo de datos · Lenguaje ubicuo &amp; DDD</h1>
-    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 47 tablas · 19 vistas (con 1 materializada) · 23 pruebas en verde.</p>
+    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 47 tablas · 19 vistas (con 1 materializada) · 29 pruebas en verde.</p>
     <div class="chips">
       <span class="chip">PostgreSQL 17</span>
       <span class="chip">9 capacidades</span>
       <span class="chip">UUID · multi-tenant · append-only</span>
+      <span class="chip">Aislamiento RLS en la BD</span>
       <span class="chip">Auditoría inline + borrado lógico</span>
     </div>
   </div>
@@ -48,8 +49,8 @@
         <span class="pgnum">1</span>
         <div class="pgcap">gobierno</div>
         <h3>Gobierno y Acceso</h3>
-        <p>Capacidad transversal de multi-tenant y auditoría: <b>empresa</b> (tenant) y <b>usuario</b>. Todas las demás capacidades la consumen por FK.</p>
-        <div class="pgmeta">2 tablas · multi-tenant + auditoría</div>
+        <p>Capacidad transversal de multi-tenant y auditoría: <b>empresa</b> (tenant) y <b>usuario</b>. El aislamiento se garantiza <b>en la base</b> (RLS + FK compuestas), no en el código.</p>
+        <div class="pgmeta">2 tablas · multi-tenant + RLS</div>
       </a>
 
       <a class="pgcard" href="02-catalogos.html">

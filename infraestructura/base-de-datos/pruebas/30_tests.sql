@@ -40,8 +40,9 @@ END $$;
 DO $$ BEGIN
   BEGIN
     INSERT INTO catalogos.equipo (id_empresa, id_mina, id_tipo_equipo, id_modulo_trabajo, codigo)
-    VALUES ((SELECT id FROM gobierno.empresa LIMIT 1), '00000000-0000-0000-0000-000000000000',
-            (SELECT id FROM catalogos.tipo_equipo LIMIT 1), (SELECT id FROM catalogos.modulo_trabajo LIMIT 1), 'EQ-FK');
+    VALUES ((SELECT id FROM gobierno.empresa WHERE codigo='MIN'), '00000000-0000-0000-0000-000000000000',
+            (SELECT te.id FROM catalogos.tipo_equipo te JOIN gobierno.empresa e ON e.id=te.id_empresa WHERE e.codigo='MIN' LIMIT 1),
+            (SELECT mt.id FROM catalogos.modulo_trabajo mt JOIN gobierno.empresa e ON e.id=mt.id_empresa WHERE e.codigo='MIN' LIMIT 1), 'EQ-FK');
     RAISE EXCEPTION 'T4 FALLO: FK a mina inexistente fue aceptada';
   EXCEPTION WHEN foreign_key_violation THEN RAISE NOTICE 'OK  T4: FK a mina inexistente rechazada';
   END;
@@ -50,7 +51,7 @@ END $$;
 DO $$ BEGIN
   BEGIN
     INSERT INTO catalogos.mina (id_empresa, nombre, area)
-    VALUES ((SELECT id FROM gobierno.empresa LIMIT 1), 'La Cienega', 'Cienega');
+    VALUES ((SELECT id FROM gobierno.empresa WHERE codigo='MIN'), 'La Cienega', 'Cienega');
     RAISE EXCEPTION 'T5 FALLO: nombre de mina duplicado fue aceptado';
   EXCEPTION WHEN unique_violation THEN RAISE NOTICE 'OK  T5: nombre de mina duplicado rechazado (indice unico parcial)';
   END;
@@ -176,7 +177,7 @@ DO $$ DECLARE v_n int; BEGIN
 END $$;
 
 DO $$ DECLARE v_emp uuid; v_id1 uuid; v_id2 uuid; BEGIN
-  SELECT id INTO v_emp FROM gobierno.empresa LIMIT 1;
+  SELECT id INTO v_emp FROM gobierno.empresa WHERE codigo='MIN';
   INSERT INTO catalogos.obra (id_empresa, id_mina, codigo) VALUES (v_emp,(SELECT id FROM catalogos.mina WHERE id_empresa=v_emp LIMIT 1),'TMP_REALTA') RETURNING id INTO v_id1;
   BEGIN
     INSERT INTO catalogos.obra (id_empresa, id_mina, codigo) VALUES (v_emp,(SELECT id_mina FROM catalogos.obra WHERE id=v_id1),'TMP_REALTA');
@@ -219,5 +220,117 @@ DO $$ DECLARE v_n int; BEGIN
   IF v_n <> 4 THEN RAISE EXCEPTION 'T23 FALLO: tipos de barreno ejecutados esperado 4, obtenido %', v_n; END IF;
   RAISE NOTICE 'OK  T23: barrenacion_ejecutado (lista fija multiple) = % secciones en Bl-5', v_n;
 END $$;
+
+-- ===== AISLAMIENTO MULTI-TENANT EN LA BD (RLS + FKs compuestas + privilegios) =====
+-- Los ids de ambos tenants se capturan como variables psql ANTES de bajar
+-- privilegios, y se publican como GUCs para usarlos dentro de los DO blocks.
+SELECT id AS emp_a FROM gobierno.empresa WHERE codigo='MIN' \gset
+SELECT id AS emp_b FROM gobierno.empresa WHERE codigo='MIN2' \gset
+SELECT id AS mina_b FROM catalogos.mina WHERE nombre='Mina Norte B' \gset
+SELECT set_config('app.t_emp_b',  :'emp_b',  false);
+SELECT set_config('app.t_mina_b', :'mina_b', false);
+
+-- T24: RLS aísla la lectura por tenant
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM catalogos.mina;
+  IF v <> 3 THEN RAISE EXCEPTION 'T24 FALLO: tenant A debe ver 3 minas, ve %', v; END IF;
+  SELECT count(*) INTO v FROM gobierno.empresa;
+  IF v <> 1 THEN RAISE EXCEPTION 'T24 FALLO: el tenant debe verse solo a si mismo, ve % empresas', v; END IF;
+END $$;
+RESET ROLE;
+SELECT set_config('app.empresa_actual', :'emp_b', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM catalogos.mina;
+  IF v <> 1 THEN RAISE EXCEPTION 'T24 FALLO: tenant B debe ver 1 mina, ve %', v; END IF;
+  SELECT count(*) INTO v FROM produccion.acarreo_viaje;
+  IF v <> 0 THEN RAISE EXCEPTION 'T24 FALLO: tenant B no tiene viajes, ve %', v; END IF;
+  RAISE NOTICE 'OK  T24: RLS aisla por tenant (A=3 minas y solo su empresa; B=1 mina y 0 viajes)';
+END $$;
+RESET ROLE;
+
+-- T25: fail-closed — sin tenant fijado, la BD no devuelve nada
+SELECT set_config('app.empresa_actual', '', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM catalogos.mina;
+  IF v <> 0 THEN RAISE EXCEPTION 'T25 FALLO: sin app.empresa_actual deben verse 0 filas, se ven %', v; END IF;
+  RAISE NOTICE 'OK  T25: fail-closed - sin tenant fijado la BD devuelve 0 filas';
+END $$;
+RESET ROLE;
+
+-- T26: WITH CHECK — la app (con tenant A) no puede escribir filas de B
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ BEGIN
+  BEGIN
+    INSERT INTO catalogos.obra (id_empresa, id_mina, codigo)
+    VALUES (current_setting('app.t_emp_b')::uuid, current_setting('app.t_mina_b')::uuid, 'OBRA-CRUZADA');
+    RAISE EXCEPTION 'T26 FALLO: INSERT hacia otro tenant fue aceptado';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'OK  T26: RLS (WITH CHECK) bloquea INSERT hacia otro tenant';
+  END;
+END $$;
+RESET ROLE;
+
+-- T27: FK compuesta — ni siquiera SIN RLS se puede referenciar el catálogo de otro tenant
+DO $$ DECLARE v_tipo uuid; v_mod uuid; BEGIN
+  SELECT te.id INTO v_tipo FROM catalogos.tipo_equipo te JOIN gobierno.empresa e ON e.id=te.id_empresa WHERE e.codigo='MIN' AND te.codigo='CAMION';
+  SELECT mt.id INTO v_mod  FROM catalogos.modulo_trabajo mt JOIN gobierno.empresa e ON e.id=mt.id_empresa WHERE e.codigo='MIN' AND mt.codigo='ACARREO';
+  BEGIN
+    INSERT INTO catalogos.equipo (id_empresa, id_mina, id_tipo_equipo, id_modulo_trabajo, codigo)
+    VALUES (current_setting('app.t_emp_b')::uuid, current_setting('app.t_mina_b')::uuid, v_tipo, v_mod, 'EQ-CRUZADO');
+    RAISE EXCEPTION 'T27 FALLO: la FK compuesta permitio referenciar el catalogo de otro tenant';
+  EXCEPTION WHEN foreign_key_violation THEN
+    RAISE NOTICE 'OK  T27: FK compuesta (id_empresa,id) hace imposible el cruce de tenants';
+  END;
+END $$;
+
+-- T28: privilegios — eventos sin UPDATE (append-only) y sin DELETE físico para la app
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ BEGIN
+  BEGIN
+    UPDATE produccion.acarreo_viaje SET toneladas = toneladas;
+    RAISE EXCEPTION 'T28 FALLO: UPDATE sobre evento append-only fue permitido';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    DELETE FROM catalogos.mina;
+    RAISE EXCEPTION 'T28 FALLO: DELETE fisico fue permitido a la app';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  RAISE NOTICE 'OK  T28: privilegios refuerzan append-only (eventos sin UPDATE) y borrado solo logico (sin DELETE)';
+END $$;
+RESET ROLE;
+
+-- T29: vistas y materializada respetan el tenant
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM reportes.v_produccion_acarreo;
+  IF v = 0 THEN RAISE EXCEPTION 'T29 FALLO: tenant A debe ver su produccion en la vista'; END IF;
+  SELECT count(*) INTO v FROM reportes.v_plan_vs_real_mensual;
+  IF v <> 1 THEN RAISE EXCEPTION 'T29 FALLO: tenant A debe ver 1 fila de plan vs real, ve %', v; END IF;
+  BEGIN
+    SELECT count(*) INTO v FROM reportes.mv_plan_vs_real_mensual;
+    RAISE EXCEPTION 'T29 FALLO: la materializada quedo expuesta directamente a la app';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END $$;
+RESET ROLE;
+SELECT set_config('app.empresa_actual', :'emp_b', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM reportes.v_produccion_acarreo;
+  IF v <> 0 THEN RAISE EXCEPTION 'T29 FALLO: tenant B no tiene produccion y ve % filas', v; END IF;
+  SELECT count(*) INTO v FROM reportes.v_plan_vs_real_mensual;
+  IF v <> 0 THEN RAISE EXCEPTION 'T29 FALLO: tenant B no tiene plan y ve % filas', v; END IF;
+  RAISE NOTICE 'OK  T29: vistas (security_invoker) y materializada (via vista filtrada) respetan el tenant';
+END $$;
+RESET ROLE;
+SELECT set_config('app.empresa_actual', '', false);
 
 DO $$ BEGIN RAISE NOTICE '========================================'; RAISE NOTICE 'TODOS LOS TESTS PASARON'; RAISE NOTICE '========================================'; END $$;

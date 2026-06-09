@@ -16,9 +16,9 @@ PROYECTO-MINAS-MEX/
 │   └── README.md                  cómo desplegar en Vercel
 └── infraestructura/
     └── base-de-datos/             Esquema PostgreSQL (fuente de verdad)
-        ├── esquema/               00..50 DDL por capacidad + índices + vistas
+        ├── esquema/               00..60 DDL por capacidad + índices + vistas + seguridad RLS
         ├── semilla/20_seed.sql    datos de ejemplo
-        ├── pruebas/30_tests.sql   23 tests de integración/lógica/gobernanza
+        ├── pruebas/30_tests.sql   29 tests: integración/lógica/gobernanza/aislamiento
         ├── pruebas/agentes/       baterías de auditoría senior
         ├── ejecutar.ps1           carga todo en orden
         └── README.md              detalle de la BD
@@ -30,7 +30,13 @@ PROYECTO-MINAS-MEX/
 ## Base de datos
 PostgreSQL 17. **47 tablas** en 9 capacidades (schemas: gobierno, catalogos, produccion,
 planeacion, reconciliacion, beneficio, estandares, costos, inversiones), **19 vistas**
-(+1 materializada) y **23 tests** que pasan en local.
+(+1 materializada) y **29 tests** que pasan en local.
+
+El **aislamiento multi-tenant vive en la base**, no en el código: RLS fail-closed por
+tenant, FKs compuestas `(id_empresa, id)` que hacen imposible referenciar datos de otra
+empresa, y un rol `aplicacion` sin `DELETE` (borrado lógico) ni `UPDATE` sobre eventos
+(append-only por privilegio). El backend solo fija el tenant por transacción:
+`set_config('app.empresa_actual', <uuid>, true)` + `SET LOCAL ROLE aplicacion`.
 
 Cargar en un PostgreSQL local:
 ```powershell
@@ -47,4 +53,5 @@ en Vercel, importa el repo y selecciona **Root Directory = `documentacion`** (ve
 ## Convenciones
 UUID como PK · `id_empresa` en toda tabla (multi-tenant) · auditoría
 `creado/actualizado/eliminado_en` + `_por_usuario_id` · borrado lógico (`eliminado_en IS NULL`
-= activo) · eventos append-only · índices únicos parciales · lenguaje ubicuo del dominio minero.
+= activo) · eventos append-only · índices únicos parciales · aislamiento por RLS + FK
+compuestas · lenguaje ubicuo del dominio minero.

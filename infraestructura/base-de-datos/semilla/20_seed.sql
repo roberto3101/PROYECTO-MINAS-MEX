@@ -5,6 +5,8 @@
 
 \set emp        '11111111-1111-1111-1111-111111111111'
 \set usr        '22222222-2222-2222-2222-222222222222'
+\set empB       '99999999-9999-9999-9999-999999999999'
+\set m_b        'aaaa0000-0000-0000-0000-0000000000b1'
 \set m_cien     'aaaa0000-0000-0000-0000-000000000001'
 \set m_esp      'aaaa0000-0000-0000-0000-000000000002'
 \set m_sat      'aaaa0000-0000-0000-0000-000000000003'
@@ -35,6 +37,10 @@
 -- ---- Gobierno ----
 INSERT INTO gobierno.empresa (id, codigo, razon_social) VALUES (:'emp','MIN','Minera Ejemplo SA');
 INSERT INTO gobierno.usuario (id, id_empresa, usuario, nombre) VALUES (:'usr', :'emp', 'seed', 'Carga Inicial');
+
+-- ---- Tenant B mínimo (verifica aislamiento RLS y FKs compuestas) ----
+INSERT INTO gobierno.empresa (id, codigo, razon_social) VALUES (:'empB','MIN2','Minera Dos SA');
+INSERT INTO catalogos.mina (id, id_empresa, nombre, area) VALUES (:'m_b', :'empB','Mina Norte B','Norte');
 
 -- ---- Lookups ----
 INSERT INTO catalogos.tipo_obra (id_empresa, codigo, descripcion) VALUES
