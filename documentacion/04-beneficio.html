@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 4 · Beneficio (planta)</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 4 de 7 · Modelo de datos</p>
+    <h1>Beneficio (planta)</h1>
+    <p class="sub">Planta de molienda y balance metalúrgico — leyes <b>cabeza / concentrado / cola</b> y recuperación por metal (Au · Ag · Pb · Zn). Base de la comparativa producción vs molienda y la variación de ley tumbe vs planta. Schema <span class="mono">beneficio</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-catalogos-produccion.html">1 · Catálogos y Producción</a>
+      <a href="02-planeacion.html">2 · Planeación</a>
+      <a href="03-reconciliacion.html">3 · Reconciliación</a>
+      <a href="04-beneficio.html" class="activo">4 · Beneficio</a>
+      <a href="05-estandares.html">5 · Estándares</a>
+      <a href="06-costos.html">6 · Costos</a>
+      <a href="07-inversiones.html">7 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidad y entidades</h2>
+    <p class="lead">La capacidad <b>beneficio</b> recibe el mineral acarreado desde mina, lo procesa en la planta de molienda y registra el balance metalúrgico lote a lote. Cada lote captura las leyes en los tres puntos del proceso (cabeza, concentrado, cola) y la recuperación porcentual por cada metal valioso.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">El dominio</div>
+        <div class="v">Planta de molienda · Balance metalúrgico · Comparativa producción vs molienda</div>
+      </div>
+      <span class="tag">Au · Ag · Pb · Zn</span>
+    </div>
+
+    <div class="caps" style="grid-template-columns:1fr;margin-top:18px">
+      <div class="cap">
+        <div class="capname">beneficio</div>
+        <div class="role">Procesa el mineral en planta y cierra el ciclo con el balance metalúrgico. Los registros de ley y recuperación son eventos inmutables que alimentan la comparativa producción vs molienda.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">lote_molienda</span></div></div>
+        <div class="grp"><span class="lbl">Evento (inmutable)</span>
+          <div class="ents"><span class="ent t-evento">ley_metalurgica</span><span class="ent t-evento">recuperacion</span></div></div>
+        <div class="grp"><span class="lbl">Consume por FK</span>
+          <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">mina · empresa</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Tipos DDD</p>
+    <h2>Clasificación de las tablas</h2>
+    <p class="lead">La raíz de agregado es el lote; las leyes y recuperaciones son eventos append-only que describen lo que ocurrió en el proceso metalúrgico.</p>
+    <div class="glos">
+      <div class="gcard g-raiz"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz de Agregado</span>
+        <p>Entidad principal y puerta de entrada al lote de molienda. Controla el estado (ABIERTO / CERRADO) y las reglas de consistencia del agregado.</p>
+        <p class="ej">Aquí: <b>lote_molienda</b></p></div>
+      <div class="gcard g-evento"><span class="badge t-evento"><span class="dot d-evento"></span>Evento inmutable</span>
+        <p>Hecho que ya ocurrió en el proceso metalúrgico. No se edita ni se borra (append-only): fuente de trazabilidad del balance y base para la comparativa.</p>
+        <p class="ej">Aquí: <b>ley_metalurgica</b>, <b>recuperacion</b></p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagrama</h2>
+    <p class="lead">Coloreado por tipo DDD. La caja gris punteada pertenece a otra capacidad (se consume por FK). Usa los controles para ampliar o ver en pantalla completa.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-evento"></span>Evento</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">beneficio</span><span class="cap">planta de molienda · balance metalúrgico</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef evento fill:#fdecc8,stroke:#b45309,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+mina["mina"]:::ext
+lote["lote_molienda"]:::raiz
+ley["ley_metalurgica"]:::evento
+rec["recuperacion"]:::evento
+mina -.->|FK| lote
+lote --> ley
+lote --> rec
+</pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-evento"></span>Evento</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">beneficio</span></div>
+        <h4>lote_molienda</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop">
+          <p class="h">Responsabilidad</p>
+          <p>Lote de mineral procesado en planta: mina, código de lote, fecha, toneladas molidas y estado (ABIERTO / CERRADO). Es la puerta de entrada al agregado metalúrgico.</p>
+          <p class="h">Por qué</p>
+          <p>Ancla todos los registros de ley y recuperación. El estado <span class="mono">CERRADO</span> congela el lote impidiendo nuevas mediciones; el <span class="mono">ABIERTO</span> permite actualizarlo a lo largo del turno o día.</p>
+        </div>
+      </article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">beneficio</span></div>
+        <h4>ley_metalurgica</h4><div class="from"><span class="nuevo">evento nuevo</span></div>
+        <div class="pop">
+          <p class="h">Responsabilidad</p>
+          <p>Ley (g/t o %) de cada metal por <b>punto del proceso</b>: <span class="mono">CABEZA</span> (entrada a planta), <span class="mono">CONCENTRADO</span> (salida valiosa) y <span class="mono">COLA</span> (desecho). Registra <span class="mono">ley_au</span>, <span class="mono">ley_ag</span>, <span class="mono">ley_pb</span> y <span class="mono">ley_zn</span> en un mismo registro.</p>
+          <p class="h">Por qué</p>
+          <p>Evento append-only porque la ley medida es un hecho histórico. El UNIQUE por <span class="mono">(id_empresa, id_lote_molienda, punto)</span> garantiza exactamente un registro por punto por lote; la comparativa CABEZA vs COLA cuantifica la eficiencia metalúrgica.</p>
+        </div>
+      </article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">beneficio</span></div>
+        <h4>recuperacion</h4><div class="from"><span class="nuevo">evento nuevo</span></div>
+        <div class="pop">
+          <p class="h">Responsabilidad</p>
+          <p>Recuperación metalúrgica porcentual por metal (<span class="mono">AU</span>, <span class="mono">AG</span>, <span class="mono">PB</span>, <span class="mono">ZN</span>): cuánto del metal en cabeza logró pasar al concentrado. Rango 0–100 % por constraint.</p>
+          <p class="h">Por qué</p>
+          <p>Evento separado de <span class="mono">ley_metalurgica</span> porque la recuperación es un indicador derivado del proceso, medido o calculado de forma independiente. El UNIQUE por <span class="mono">(id_empresa, id_lote_molienda, metal)</span> garantiza un valor por metal por lote.</p>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL reconciliado (PostgreSQL)</h2>
+    <p class="lead">Esquema real con <b>id</b> UUID, multi-tenant, auditoría inline y eventos append-only. Pasa el cursor sobre las columnas resaltadas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>beneficio / lote_molienda.sql  (Raíz de Agregado)</summary>
+      <pre class="sql">CREATE TABLE beneficio.lote_molienda (
+  <span class="c" data-tip="PK del lote procesado en planta (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Mina que origina el mineral procesado (FK a catalogos.mina).">id_mina</span> UUID NOT NULL,
+  <span class="c" data-tip="Código identificador del lote. Único por empresa+mina entre lotes activos.">codigo_lote</span> TEXT NOT NULL,
+  <span class="c" data-tip="Fecha de procesamiento del lote en planta.">fecha</span> DATE NOT NULL,
+  <span class="c" data-tip="Total de toneladas ingresadas a la planta de molienda en este lote.">toneladas_molidas</span> NUMERIC(14,3) NOT NULL DEFAULT 0,
+  <span class="c" data-tip="ABIERTO: acepta nuevas mediciones. CERRADO: lote congelado, no se admiten cambios.">estado</span> TEXT NOT NULL DEFAULT 'ABIERTO',
+  <span class="c" data-tip="Auditoría: momento de creación.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_lote_estado CHECK (estado IN ('ABIERTO','CERRADO')),
+  CONSTRAINT fk_lote_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_lote_mina FOREIGN KEY (id_mina) REFERENCES catalogos.mina(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_lote_mina_fecha ON beneficio.lote_molienda (id_empresa, id_mina, fecha);
+CREATE UNIQUE INDEX uq_lote_molienda ON beneficio.lote_molienda (id_empresa, id_mina, codigo_lote) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>beneficio / ley_metalurgica.sql  (Evento append-only — ley por punto del proceso)</summary>
+      <pre class="sql">CREATE TABLE beneficio.ley_metalurgica (
+  <span class="c" data-tip="PK del registro de ley (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Lote de molienda al que pertenece esta medición (FK a beneficio.lote_molienda).">id_lote_molienda</span> UUID NOT NULL,
+  <span class="c" data-tip="Punto del proceso metalúrgico: CABEZA (entrada), CONCENTRADO (producto valioso) o COLA (desecho).">punto</span> TEXT NOT NULL,
+  <span class="c" data-tip="Ley de oro (Au) en este punto, expresada en g/t o la unidad definida por mina.">ley_au</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley de plata (Ag) en este punto.">ley_ag</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley de plomo (Pb) en este punto, expresada en %.">ley_pb</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley de zinc (Zn) en este punto, expresada en %.">ley_zn</span> NUMERIC(10,4),
+  <span class="c" data-tip="Solo creación: evento append-only. No se actualiza ni elimina.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  CONSTRAINT ck_ley_punto CHECK (punto IN ('CABEZA','CONCENTRADO','COLA')),
+  CONSTRAINT uq_ley_metalurgica UNIQUE (id_empresa, id_lote_molienda, punto),
+  CONSTRAINT fk_ley_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_ley_lote FOREIGN KEY (id_lote_molienda) REFERENCES beneficio.lote_molienda(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_ley_lote ON beneficio.ley_metalurgica (id_lote_molienda);</pre>
+    </details>
+
+    <details class="code">
+      <summary>beneficio / recuperacion.sql  (Evento append-only — recuperación metalúrgica por metal)</summary>
+      <pre class="sql">CREATE TABLE beneficio.recuperacion (
+  <span class="c" data-tip="PK del registro de recuperación (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Lote de molienda al que pertenece esta recuperación (FK a beneficio.lote_molienda).">id_lote_molienda</span> UUID NOT NULL,
+  <span class="c" data-tip="Metal evaluado: AU (oro), AG (plata), PB (plomo) o ZN (zinc).">metal</span> TEXT NOT NULL,
+  <span class="c" data-tip="Porcentaje de recuperación metalúrgica: qué fracción del metal en cabeza pasó al concentrado. Rango permitido: 0–100.">recuperacion_pct</span> NUMERIC(6,2),
+  <span class="c" data-tip="Solo creación: evento append-only. No se actualiza ni elimina.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  CONSTRAINT ck_recuperacion_metal CHECK (metal IN ('AU','AG','PB','ZN')),
+  CONSTRAINT ck_recuperacion_pct CHECK (recuperacion_pct IS NULL OR (recuperacion_pct >= 0 AND recuperacion_pct <= 100)),
+  CONSTRAINT uq_recuperacion UNIQUE (id_empresa, id_lote_molienda, metal),
+  CONSTRAINT fk_recuperacion_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_recuperacion_lote FOREIGN KEY (id_lote_molienda) REFERENCES beneficio.lote_molienda(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_recuperacion_lote ON beneficio.recuperacion (id_lote_molienda);</pre>
+    </details>
+    <p class="nota"><b>gobierno.empresa</b> y <b>catalogos.mina</b> se consumen por FK desde esta capacidad. La ley se captura una vez por punto por lote; la recuperación, una vez por metal por lote.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+
+    <details class="qa"><summary>¿Por qué las leyes se registran por punto del proceso y no solo la de cabeza?</summary>
+      <div class="resp">Porque el balance metalúrgico necesita los tres: la <b>cabeza</b> es lo que entra a planta (debe coincidir con la ley declarada en mina), el <b>concentrado</b> es el producto que se vende o envía a fundición, y la <b>cola</b> es lo que se descarta. Sin las tres no es posible calcular el factor de enriquecimiento ni auditar pérdidas en el proceso. El constraint <span class="mono">CHECK (punto IN ('CABEZA','CONCENTRADO','COLA'))</span> cierra el catálogo de valores válidos.</div>
+    </details>
+
+    <details class="qa"><summary>¿Por qué <code>ley_metalurgica</code> y <code>recuperacion</code> son eventos append-only?</summary>
+      <div class="resp">Porque una vez que la planta midió y registró la ley o el porcentaje de recuperación, ese hecho ya ocurrió. Si el valor fuera incorrecto, el proceso correcto es registrar una entrada nueva (corrección explícita con trazabilidad), no sobreescribir el anterior. Esto también simplifica el sync: los eventos solo necesitan llegar al central, nunca se actualizan de vuelta al dispositivo.</div>
+    </details>
+
+    <details class="qa"><summary>¿Cómo alimenta esta capacidad la comparativa producción vs molienda?</summary>
+      <div class="resp">La producción registra las toneladas acarreadas por obra y turno (<span class="mono">acarreo_viaje.toneladas</span>). La planta registra las toneladas que realmente ingresaron a molienda (<span class="mono">lote_molienda.toneladas_molidas</span>) y la ley en cabeza (<span class="mono">ley_metalurgica</span> con <span class="mono">punto = 'CABEZA'</span>). La comparativa cruza ambas fuentes por mina y período: si las toneladas o leyes difieren, hay una merma, un error de muestreo o una dilución no contabilizada.</div>
+    </details>
+
+    <details class="qa"><summary>¿Por qué la recuperación está en tabla separada y no como columnas en <code>ley_metalurgica</code>?</summary>
+      <div class="resp">Porque la recuperación es un cálculo o medición independiente a las leyes: puede llegar en un momento distinto y puede existir solo para algunos metales. Separar en una tabla con discriminador <span class="mono">metal</span> permite registrar la recuperación de <b>Au</b> tan pronto se conoce, sin esperar las demás. El UNIQUE <span class="mono">(id_empresa, id_lote_molienda, metal)</span> garantiza un registro por metal por lote.</div>
+    </details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 4 de 7</b> · Schema beneficio · 3 tablas (lote_molienda, ley_metalurgica, recuperacion). <a href="index.html">Volver al índice</a> · Anterior: <a href="03-reconciliacion.html">← Reconciliación</a> · Siguiente: <a href="05-estandares.html">Estándares →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

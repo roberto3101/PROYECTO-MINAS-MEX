@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 5 · Estándares (tiempos operativos)</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 5 de 7 · Modelo de datos</p>
+    <h1>Estándares (tiempos operativos)</h1>
+    <p class="sub">Las metas contra las que se mide el desempeño real — <b>disponibilidad</b>, <b>utilización</b> y <b>demora</b> por tipo de equipo, y <b>productividad</b> por actividad. Schema <span class="mono">estandares</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-catalogos-produccion.html">1 · Catálogos y Producción</a>
+      <a href="02-planeacion.html">2 · Planeación</a>
+      <a href="03-reconciliacion.html">3 · Reconciliación</a>
+      <a href="04-beneficio.html">4 · Beneficio</a>
+      <a href="05-estandares.html" class="activo">5 · Estándares</a>
+      <a href="06-costos.html">6 · Costos</a>
+      <a href="07-inversiones.html">7 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidades y entidades</h2>
+    <p class="lead">Los estándares son las metas de referencia con vigencia definida que parametrizan el análisis de desempeño: cada indicador real (horómetros, demoras, toneladas) se compara contra la meta activa del periodo.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">Schema</div>
+        <div class="v">estandares</div>
+      </div>
+      <span class="tag">tiempos · productividad · vigencia</span>
+    </div>
+
+    <div class="caps" style="grid-template-columns:1fr">
+      <div class="cap">
+        <div class="capname">estandares</div>
+        <div class="role">Metas de referencia con vigencia. No capturan eventos reales: son el parámetro contra el que se mide todo lo demás. Se modifican en el central y se replican como solo-lectura al sitio.</div>
+        <div class="grp"><span class="lbl">Catálogo</span>
+          <div class="ents">
+            <span class="ent t-catalogo">estandar_tiempo</span>
+            <span class="ent t-catalogo">estandar_productividad</span>
+          </div>
+        </div>
+        <div class="grp"><span class="lbl">Consume por FK (catálogos externos)</span>
+          <div class="ents">
+            <span class="ent" style="color:#94a0b8;border-color:var(--line)">tipo_equipo · actividad</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagrama</h2>
+    <p class="lead">Coloreado por tipo DDD. Las cajas grises punteadas pertenecen a otra capacidad (se consumen por FK). Usa los controles para ampliar o ver en pantalla completa.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar">
+        <span class="ttl">estandares</span>
+        <span class="cap">metas de tiempos y productividad</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span>
+      </div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef catalogo fill:#d1fae5,stroke:#047857,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+tequ["tipo_equipo"]:::ext
+act["actividad"]:::ext
+et["estandar_tiempo"]:::catalogo
+ep["estandar_productividad"]:::catalogo
+tequ -->|id_tipo_equipo| et
+tequ -.->|id_tipo_equipo opcional| ep
+act -->|id_actividad| ep
+</pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+
+      <article class="card">
+        <div class="row1">
+          <span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span>
+          <span class="cap-tag">estandares</span>
+        </div>
+        <h4>estandar_tiempo</h4>
+        <div class="from"><span class="nuevo">tabla nueva</span></div>
+        <div class="pop">
+          <p class="h">Responsabilidad</p>
+          <p>Meta de tiempos operativos por tipo de equipo: <span class="mono">disponibilidad_meta_pct</span>, <span class="mono">utilizacion_meta_pct</span> y <span class="mono">demora_max_pct</span>. Con <span class="mono">vigente_desde</span> y estado VIGENTE/HISTORICO.</p>
+          <p class="h">Por qué</p>
+          <p>Las metas cambian con el tiempo (negociaciones, mejoras de flota). El campo <span class="mono">vigente_desde</span> junto con el índice único parcial garantiza que solo exista un estándar activo por tipo de equipo y empresa; los anteriores pasan a HISTORICO sin borrarse.</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="row1">
+          <span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span>
+          <span class="cap-tag">estandares</span>
+        </div>
+        <h4>estandar_productividad</h4>
+        <div class="from"><span class="nuevo">tabla nueva</span></div>
+        <div class="pop">
+          <p class="h">Responsabilidad</p>
+          <p>Meta de productividad por actividad (barrenación, rezagado, acarreo, anclaje, zarpeo, relleno) y opcionalmente por tipo de equipo. La unidad es uno de: <span class="mono">TON_HORA</span>, <span class="mono">METRO_HORA</span>, <span class="mono">TON_GUARDIA</span>, <span class="mono">METRO_GUARDIA</span>.</p>
+          <p class="h">Por qué</p>
+          <p>Diferentes actividades se miden en unidades distintas (toneladas por hora en acarreo, metros por guardia en barrenación). Separar la tabla de productividad de la de tiempos evita columnas nulas y hace que cada meta sea específica a su actividad con su propia vigencia.</p>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL real (PostgreSQL)</h2>
+    <p class="lead">Esquema del archivo <span class="mono">09_estandares.sql</span>. Pasa el cursor sobre las columnas resaltadas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>estandares / estandar_tiempo.sql  (catálogo — metas de tiempos por tipo de equipo)</summary>
+      <pre class="sql">CREATE TABLE estandares.estandar_tiempo (
+  <span class="c" data-tip="PK del registro (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Tipo de equipo al que aplica la meta (FK a catalogos.tipo_equipo).">id_tipo_equipo</span> UUID NOT NULL,
+  <span class="c" data-tip="Porcentaje de disponibilidad objetivo para este tipo de equipo.">disponibilidad_meta_pct</span> NUMERIC(6,2),
+  <span class="c" data-tip="Porcentaje de utilización objetivo (del tiempo disponible).">utilizacion_meta_pct</span> NUMERIC(6,2),
+  <span class="c" data-tip="Porcentaje máximo de demora tolerado.">demora_max_pct</span> NUMERIC(6,2),
+  <span class="c" data-tip="Fecha desde la que rige esta meta. El índice único parcial garantiza un solo VIGENTE por empresa + tipo_equipo.">vigente_desde</span> DATE NOT NULL,
+  <span class="c" data-tip="VIGENTE = meta activa. HISTORICO = versión anterior conservada para comparativas.">estado</span> TEXT NOT NULL DEFAULT 'VIGENTE',
+  <span class="c" data-tip="Auditoría.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  <span class="c" data-tip="Auditoría.">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="Borrado lógico (NULL = activo).">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_estandar_tiempo_estado CHECK (estado IN ('VIGENTE','HISTORICO')),
+  CONSTRAINT fk_estandar_tiempo_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_estandar_tiempo_tipo_equipo FOREIGN KEY (id_tipo_equipo) REFERENCES catalogos.tipo_equipo(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_estandar_tiempo ON estandares.estandar_tiempo (id_empresa, id_tipo_equipo, vigente_desde) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>estandares / estandar_productividad.sql  (catálogo — metas de productividad por actividad)</summary>
+      <pre class="sql">CREATE TABLE estandares.estandar_productividad (
+  <span class="c" data-tip="PK del registro (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Actividad a la que aplica la meta: barrenación, rezagado, acarreo, anclaje, zarpeo, relleno.">id_actividad</span> UUID NOT NULL,
+  <span class="c" data-tip="Tipo de equipo (opcional): permite metas diferenciadas por equipo dentro de la misma actividad.">id_tipo_equipo</span> UUID,
+  <span class="c" data-tip="Unidad de la meta: TON_HORA, METRO_HORA, TON_GUARDIA o METRO_GUARDIA.">unidad</span> TEXT NOT NULL,
+  <span class="c" data-tip="Valor numérico de la meta en la unidad indicada (ej. 45.0 TON_HORA).">valor_meta</span> NUMERIC(14,4) NOT NULL,
+  <span class="c" data-tip="Fecha desde la que rige esta meta.">vigente_desde</span> DATE NOT NULL,
+  <span class="c" data-tip="VIGENTE = meta activa. HISTORICO = versión anterior conservada para comparativas.">estado</span> TEXT NOT NULL DEFAULT 'VIGENTE',
+  <span class="c" data-tip="Auditoría.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  <span class="c" data-tip="Auditoría.">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="Borrado lógico (NULL = activo).">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_estandar_prod_unidad CHECK (unidad IN ('TON_HORA','METRO_HORA','TON_GUARDIA','METRO_GUARDIA')),
+  CONSTRAINT ck_estandar_prod_estado CHECK (estado IN ('VIGENTE','HISTORICO')),
+  CONSTRAINT fk_estandar_prod_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_estandar_prod_actividad FOREIGN KEY (id_actividad) REFERENCES catalogos.actividad(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_estandar_prod_tipo_equipo FOREIGN KEY (id_tipo_equipo) REFERENCES catalogos.tipo_equipo(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_estandar_prod ON estandares.estandar_productividad (id_empresa, id_actividad, vigente_desde) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <p class="nota"><b>Nota:</b> <span class="mono">id_tipo_equipo</span> es <b>opcional</b> en <span class="mono">estandar_productividad</span>: permite definir una meta general por actividad y otra más específica por tipo de equipo dentro de la misma actividad.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+
+    <details class="qa">
+      <summary>¿Por qué las metas son catálogos con <span class="mono">vigente_desde</span> y no un solo valor fijo?</summary>
+      <div class="resp">Las metas operativas cambian: una renovación de flota eleva la disponibilidad esperada, una renegociación sindical ajusta la productividad. Con <b>vigente_desde</b> cada cambio genera un nuevo registro (estado VIGENTE) y archiva el anterior (estado HISTORICO), conservando el historial completo para auditoría y comparativas de periodos pasados. Sin este mecanismo sería imposible responder "¿cuál era la meta en enero?" al revisar los indicadores de ese mes.</div>
+    </details>
+
+    <details class="qa">
+      <summary>¿Cómo se compara el real contra el estándar?</summary>
+      <div class="resp">A través de una vista o consulta analítica que une las tablas de producción con la meta vigente en la fecha del parte. Para tiempos: se calculan los minutos disponibles, utilizados y de demora desde <span class="mono">demora_equipo</span> y los horómetros del parte, y se expresan como porcentaje; luego se comparan contra <span class="mono">disponibilidad_meta_pct</span>, <span class="mono">utilizacion_meta_pct</span> y <span class="mono">demora_max_pct</span>. Para productividad: se suman toneladas o metros de los eventos de detalle y se dividen entre las horas del turno, comparando el resultado contra <span class="mono">valor_meta</span> en la <span class="mono">unidad</span> correspondiente.</div>
+    </details>
+
+    <details class="qa">
+      <summary>¿Qué diferencia hay entre disponibilidad y utilización?</summary>
+      <div class="resp"><b>Disponibilidad</b> mide cuánto tiempo el equipo estuvo en condiciones de operar (sin falla mecánica) respecto al tiempo total del turno. <b>Utilización</b> mide cuánto del tiempo disponible se usó efectivamente en trabajo productivo. Un equipo puede tener alta disponibilidad (pocas fallas) pero baja utilización (muchas demoras operativas). La <span class="mono">demora_max_pct</span> complementa la foto: limita el porcentaje de tiempo que se puede perder en demoras antes de considerarse fuera de estándar. Los tres indicadores juntos forman el OEE (Overall Equipment Effectiveness) simplificado para el dominio minero.</div>
+    </details>
+
+    <details class="qa">
+      <summary>¿Por qué <span class="mono">estandar_productividad</span> tiene <span class="mono">id_tipo_equipo</span> opcional?</summary>
+      <div class="resp">Porque algunas actividades tienen una meta única sin importar el equipo (por ejemplo, relleno = 20 m³/h independientemente de la máquina), mientras que otras pueden diferenciarse (rezagado con scooptram grande vs pequeño). La columna es <b>NULL</b> cuando la meta aplica a todos los equipos de la actividad; cuando no es NULL, la meta es específica para ese tipo de equipo. El índice único parcial <span class="mono">uq_estandar_prod</span> garantiza que no existan dos metas vigentes para la misma combinación empresa + actividad + fecha de inicio.</div>
+    </details>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 5 de 7</b> · Schema estandares · 2 tablas. <a href="index.html">Volver al índice</a> · Anterior: <a href="04-beneficio.html">← Beneficio</a> · Siguiente: <a href="06-costos.html">Costos →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

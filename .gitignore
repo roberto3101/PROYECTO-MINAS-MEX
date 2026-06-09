@@ -1,0 +1,19 @@
+# Cluster PostgreSQL local de pruebas (no versionar)
+.devdb/
+
+# Logs y temporales
+*.log
+*.tmp
+
+# Dependencias / build (cuando se agregue el backend Go / frontend)
+/bin/
+/vendor/
+node_modules/
+dist/
+
+# Vercel
+.vercel/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 2 · Planeación</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 2 de 7 · Modelo de datos</p>
+    <h1>Planeación</h1>
+    <p class="sub">El plan maestro (la otra columna vertebral): <b>rebajes</b> como estopes físicos, <b>bloques programados</b> con dimensiones, leyes diluidas y cut-off, y <b>metas por periodo</b> en los 6 horizontes (anual → diario). Schema <span class="mono">planeacion</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-catalogos-produccion.html">1 · Catálogos y Producción</a>
+      <a href="02-planeacion.html" class="activo">2 · Planeación</a>
+      <a href="03-reconciliacion.html">3 · Reconciliación</a>
+      <a href="04-beneficio.html">4 · Beneficio</a>
+      <a href="05-estandares.html">5 · Estándares</a>
+      <a href="06-costos.html">6 · Costos</a>
+      <a href="07-inversiones.html">7 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidades y entidades</h2>
+    <p class="lead">El schema <b>planeacion</b> modela la proyección técnica de la operación. El <b>rebaje</b> es el estope físico de la mina; el <b>plan</b> es el escenario de planeación (anual, budget, forecast…). Los <b>bloques programados</b> conectan ambos y cargan dimensiones, dilución y leyes diluidas (Au, Ag, Pb, Zn). Las <b>metas por periodo</b> normalizan los 6 horizontes temporales que en el ER original eran columnas PANUAL…PDIARIO.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">Schema</div>
+        <div class="v">planeacion</div>
+      </div>
+      <span class="tag">Au · Ag · Pb · Zn · cut-off · NSR · dilución</span>
+    </div>
+
+    <div class="caps" style="grid-template-columns:1fr">
+      <div class="cap">
+        <div class="capname">planeacion</div>
+        <div class="role">Plan maestro de producción minera. Contiene el escenario de plan, los estopes con sus bloques dimensionados y las metas por horizonte temporal. Se consume por la reconciliación y costos.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">rebaje</span><span class="ent t-raiz">plan</span></div></div>
+        <div class="grp"><span class="lbl">Entidad</span>
+          <div class="ents"><span class="ent t-entidad">bloque_programado</span><span class="ent t-entidad">meta_periodo</span></div></div>
+        <div class="grp"><span class="lbl">Consume por FK (otra capacidad)</span>
+          <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">mina · obra · tipo_obra · sistema_minado</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagrama</h2>
+    <p class="lead">Coloreado por tipo DDD. Las cajas grises punteadas pertenecen a otra capacidad (catálogos) y se consumen por FK. Usa los controles para ampliar o ver en pantalla completa.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">planeacion</span><span class="cap">plan maestro · rebajes · bloques · metas</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef entidad fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+mina["mina"]:::ext
+obra["obra"]:::ext
+plan["plan"]:::raiz
+rebaje["rebaje"]:::raiz
+bloque["bloque_programado"]:::entidad
+meta["meta_periodo"]:::entidad
+mina -.->|FK| rebaje
+mina -.->|FK| plan
+obra -.->|FK opcional| rebaje
+plan --> bloque
+rebaje --> bloque
+bloque --> meta
+</pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">planeacion</span></div>
+        <h4>rebaje</h4><div class="from"><span class="nuevo">estope físico</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Estope o bloque físico de la mina: código (p.ej. TASE2040E), descripción, tipo de obra, sistema de minado y estado (ACTIVO / INACTIVO / AGOTADO). Liga opcional a <span class="mono">catalogos.obra</span>.</p>
+        <p class="h">Por qué</p><p>El rebaje es la unidad geométrica del plan. Separarlo del bloque programado permite que un mismo estope aparezca en múltiples escenarios de plan sin duplicar su información física. La unicidad se garantiza con índice parcial sobre <span class="mono">(id_empresa, id_mina, codigo)</span>.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">planeacion</span></div>
+        <h4>plan</h4><div class="from"><span class="nuevo">escenario de plan</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Escenario de planeación con nombre, año, tipo de inversión (OPEX / CAPEX), enfoque (BASE / OPERATIVO / BUDGET / FORECAST) y estado (VIGENTE / CERRADO / BORRADOR).</p>
+        <p class="h">Por qué</p><p>Agrupar los bloques bajo un escenario permite comparar versiones (p.ej. BUDGET 2026 vs FORECAST Q3) sin mezclar datos. La unicidad parcial sobre <span class="mono">(id_empresa, id_mina, nombre, anio, enfoque)</span> evita duplicados activos.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">planeacion</span></div>
+        <h4>bloque_programado</h4><div class="from"><span class="nuevo">fila de la lámina maestra</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Una fila de la lámina maestra: dimensiones (largo, ancho veta, alto), fracción, waste, minado, factor de dilución, porcentaje de dilución, toneladas, toneladas diluidas, leyes diluidas (AUd/AGd/PBd/ZNd), NSR, clasificación H y cut-off (<span class="mono">corte_h</span>).</p>
+        <p class="h">Por qué</p><p>Concentra todos los parámetros técnico-económicos del bloque en un solo registro, referenciando <span class="mono">plan</span> y <span class="mono">rebaje</span>. Las metas temporales se separan en <span class="mono">meta_periodo</span> para no multiplicar columnas.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">planeacion</span></div>
+        <h4>meta_periodo</h4><div class="from"><span class="nuevo">antes PANUAL…PDIARIO</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Meta de toneladas para un bloque en un horizonte y etiqueta de periodo específicos. Los 6 horizontes posibles son: ANUAL / SEMESTRAL / TRIMESTRAL / MENSUAL / SEMANAL / DIARIO.</p>
+        <p class="h">Por qué</p><p>En el ER original los 6 horizontes eran columnas (PANUAL, PMENSUAL…). Normalizarlos en filas permite agregar periodos sin alterar el esquema, filtrar por horizonte y garantizar unicidad por <span class="mono">(id_bloque_programado, horizonte, periodo_etiqueta)</span>.</p></div></article>
+
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL reconciliado (PostgreSQL)</h2>
+    <p class="lead">Esquema real con <b>id</b> UUID, multi-tenant, auditoría inline e índices únicos parciales. Pasa el cursor sobre columnas resaltadas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>planeacion / bloque_programado.sql  (entidad — fila de lámina maestra)</summary>
+      <pre class="sql">CREATE TABLE planeacion.bloque_programado (
+  <span class="c" data-tip="PK del bloque (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Escenario de plan al que pertenece (FK planeacion.plan).">id_plan</span> UUID NOT NULL,
+  <span class="c" data-tip="Estope físico al que corresponde este bloque (FK planeacion.rebaje).">id_rebaje</span> UUID NOT NULL,
+  <span class="c" data-tip="Código del bloque dentro de la lámina, p.ej. 819.">codigo_bloque</span> TEXT NOT NULL,
+  fecha_inicio DATE,
+  largo NUMERIC(8,2),
+  ancho_veta NUMERIC(8,2),
+  alto NUMERIC(8,2),
+  fraccion NUMERIC(6,3),
+  waste NUMERIC(6,3),
+  minado NUMERIC(6,3),
+  <span class="c" data-tip="Factor de dilución aplicado (FacDilucion). Relaciona toneladas puras con toneladas diluidas.">factor_dilucion</span> NUMERIC(7,4),
+  dilucion_pct NUMERIC(6,2),
+  toneladas NUMERIC(14,3),
+  <span class="c" data-tip="Toneladas una vez aplicada la dilución (Ton Dil).">toneladas_diluidas</span> NUMERIC(14,3),
+  <span class="c" data-tip="Ley diluida de Oro (AUd) en g/t.">ley_au</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley diluida de Plata (AGd) en g/t.">ley_ag</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley diluida de Plomo (PBd) en %.">ley_pb</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley diluida de Zinc (ZNd) en %.">ley_zn</span> NUMERIC(10,4),
+  nsr NUMERIC(14,4),
+  clasif_h TEXT,
+  <span class="c" data-tip="Cut-off del bloque (CorteH). Valor umbral de NSR o ley que determina si el bloque es económico.">corte_h</span> NUMERIC(14,4),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT fk_bloque_prog_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bloque_prog_plan FOREIGN KEY (id_plan) REFERENCES planeacion.plan(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_bloque_prog_rebaje FOREIGN KEY (id_rebaje) REFERENCES planeacion.rebaje(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_bloque_prog_plan ON planeacion.bloque_programado (id_plan);
+CREATE INDEX ix_bloque_prog_rebaje ON planeacion.bloque_programado (id_rebaje);
+CREATE UNIQUE INDEX uq_bloque_prog ON planeacion.bloque_programado
+  (id_empresa, id_plan, id_rebaje, codigo_bloque) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>planeacion / meta_periodo.sql  (entidad — metas por horizonte temporal)</summary>
+      <pre class="sql">CREATE TABLE planeacion.meta_periodo (
+  <span class="c" data-tip="PK del registro de meta (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Bloque al que pertenece esta meta (FK planeacion.bloque_programado).">id_bloque_programado</span> UUID NOT NULL,
+  <span class="c" data-tip="Horizonte temporal: ANUAL / SEMESTRAL / TRIMESTRAL / MENSUAL / SEMANAL / DIARIO.">horizonte</span> TEXT NOT NULL,
+  <span class="c" data-tip="Etiqueta del periodo según el horizonte: 2026 / 2026-S1 / 2026-T3 / 2026-09 / 2026-W36 / 2026-09-15.">periodo_etiqueta</span> TEXT NOT NULL,
+  <span class="c" data-tip="Toneladas planificadas para este bloque en el periodo indicado.">toneladas_plan</span> NUMERIC(14,3),
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_meta_horizonte CHECK (horizonte IN ('ANUAL','SEMESTRAL','TRIMESTRAL','MENSUAL','SEMANAL','DIARIO')),
+  CONSTRAINT fk_meta_periodo_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_meta_periodo_bloque FOREIGN KEY (id_bloque_programado)
+    REFERENCES planeacion.bloque_programado(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_meta_periodo_bloque ON planeacion.meta_periodo (id_bloque_programado);
+CREATE UNIQUE INDEX uq_meta_periodo ON planeacion.meta_periodo
+  (id_empresa, id_bloque_programado, horizonte, periodo_etiqueta) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <p class="nota"><b>rebaje</b> y <b>plan</b> siguen el mismo patrón UUID + índice único parcial. <b>rebaje</b> liga opcionalmente a <span class="mono">catalogos.obra</span> mediante <span class="mono">id_obra</span> (nullable).</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+
+    <details class="qa"><summary>¿Por qué las metas de periodo están en tabla separada y no como columnas (PANUAL, PMENSUAL…)?</summary><div class="resp">En el ER original cada horizonte era una columna sobre el bloque. Con 6 horizontes (anual, semestral, trimestral, mensual, semanal, diario) el 90 % de los valores eran <b>NULL</b>. Normalizarlos en <span class="mono">meta_periodo</span> permite agregar o quitar horizontes sin alterar el esquema, indexar por horizonte para filtros de pantalla y aplicar la misma unicidad parcial que el resto del modelo.</div></details>
+
+    <details class="qa"><summary>¿Por qué bloque_programado es una tabla separada de rebaje?</summary><div class="resp">Un <b>rebaje</b> es un estope físico de la mina: existe independientemente de los escenarios de plan. Un <b>bloque_programado</b> es la proyección técnica del mismo estope dentro de un escenario específico (BUDGET 2026, FORECAST Q3…). Separar ambas tablas permite que el mismo rebaje aparezca en múltiples planes con dimensiones y leyes distintas sin duplicar la geometría ni la identidad física del estope.</div></details>
+
+    <details class="qa"><summary>¿Qué diferencia hay entre toneladas y toneladas_diluidas, y qué rol juega factor_dilucion?</summary><div class="resp"><span class="mono">toneladas</span> son las toneladas puras del bloque (ley en situ). Al extraer el estope se incorpora material estéril de las cajas; <span class="mono">factor_dilucion</span> captura esa proporción. <span class="mono">toneladas_diluidas</span> = <span class="mono">toneladas</span> × (1 + <span class="mono">factor_dilucion</span>), y las leyes (AUd, AGd, PBd, ZNd) ya expresan el valor <b>diluido</b> — son las que alimentan el NSR y el cut-off (<span class="mono">corte_h</span>).</div></details>
+
+    <details class="qa"><summary>¿Por qué rebaje tiene una liga opcional (nullable) a catalogos.obra?</summary><div class="resp">No todo rebaje corresponde necesariamente a una <b>obra</b> ya catalogada y en producción. Durante la fase de planeación es común definir estopes futuros que aún no tienen una labor activa registrada en catálogos. La FK es nullable (<span class="mono">id_obra UUID</span> sin NOT NULL) para no bloquear la carga del plan; cuando la obra se abre, la liga se actualiza.</div></details>
+
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 2 de 7</b> · Schema planeacion · 4 tablas. <a href="index.html">Volver al índice</a> · Anterior: <a href="01-catalogos-produccion.html">← Catálogos y Producción</a> · Siguiente: <a href="03-reconciliacion.html">Reconciliación →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

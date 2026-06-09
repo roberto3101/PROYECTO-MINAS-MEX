@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentación · Sistema de Planeación y Producción Minera</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Sistema de Planeación y Producción Minera</p>
+    <h1>Modelo de datos · Lenguaje ubicuo &amp; DDD</h1>
+    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Cada página documenta una capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 45 tablas · 18 vistas + 1 materializada · 21 pruebas en verde.</p>
+    <div class="chips">
+      <span class="chip">PostgreSQL 17</span>
+      <span class="chip">9 capacidades</span>
+      <span class="chip">UUID · multi-tenant · append-only</span>
+      <span class="chip">Auditoría inline + borrado lógico</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Dominio</h2>
+    <div class="dominio">
+      <div>
+        <div class="k">El dominio</div>
+        <div class="v">Planeación y Producción de Mina Subterránea Polimetálica</div>
+      </div>
+      <span class="tag">Au · Ag · Pb · Zn · tepetate</span>
+    </div>
+    <p class="lead" style="margin-top:18px">Todo gira en torno a dos columnas vertebrales: el <b>Plan</b> (lo que se va a minar) y el <b>Real</b> (lo que se minó, capturado turno a turno). Los miles de entregables del sistema son <b>vistas derivadas</b> de esas dos. Explora cada capacidad:</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Páginas</p>
+    <h2>Las capacidades del modelo</h2>
+    <p class="lead">Una página por capacidad para mantener cada documento enfocado y legible.</p>
+    <div class="paginas">
+
+      <a class="pgcard" href="01-catalogos-produccion.html">
+        <span class="pgnum">1</span>
+        <div class="pgcap">gobierno · catalogos · produccion</div>
+        <h3>Catálogos y Producción</h3>
+        <p>Maestros (mina, equipo, empleado, mineral), la <b>obra</b> como entidad central, y la captura del Real: acarreo, rezagado y barrenación turno a turno.</p>
+        <div class="pgmeta">27 tablas · captura offline-first</div>
+      </a>
+
+      <a class="pgcard" href="02-planeacion.html">
+        <span class="pgnum">2</span>
+        <div class="pgcap">planeacion</div>
+        <h3>Planeación</h3>
+        <p>El plan maestro: rebajes, bloques programados con leyes diluidas y cut-off, y metas por periodo en los 6 horizontes (anual→diario).</p>
+        <div class="pgmeta">4 tablas · la otra columna vertebral</div>
+      </a>
+
+      <a class="pgcard" href="03-reconciliacion.html">
+        <span class="pgnum">3</span>
+        <div class="pgcap">reconciliacion</div>
+        <h3>Reconciliación</h3>
+        <p>Trazabilidad por segmentos de 10×2 m con identificador único: Reserva → Tumbe → Estimación → Planta.</p>
+        <div class="pgmeta">2 tablas · medición por fuente</div>
+      </a>
+
+      <a class="pgcard" href="04-beneficio.html">
+        <span class="pgnum">4</span>
+        <div class="pgcap">beneficio</div>
+        <h3>Beneficio (planta)</h3>
+        <p>Molienda y balance metalúrgico: leyes cabeza/concentrado/cola y recuperación por metal. Base de la comparativa producción vs molienda.</p>
+        <div class="pgmeta">3 tablas · balance metalúrgico</div>
+      </a>
+
+      <a class="pgcard" href="05-estandares.html">
+        <span class="pgnum">5</span>
+        <div class="pgcap">estandares</div>
+        <h3>Estándares (tiempos)</h3>
+        <p>Metas de disponibilidad, utilización y demora por tipo de equipo, y productividad por actividad. El patrón contra el que se mide lo real.</p>
+        <div class="pgmeta">2 tablas · tiempos operativos</div>
+      </a>
+
+      <a class="pgcard" href="06-costos.html">
+        <span class="pgnum">6</span>
+        <div class="pgcap">costos</div>
+        <h3>Costos</h3>
+        <p>Estimaciones a contratistas con su detalle, presupuesto, costo unitario (USD/ton, USD/m) y cut-off variable por rebaje/zona.</p>
+        <div class="pgmeta">6 tablas · presupuesto vs real</div>
+      </a>
+
+      <a class="pgcard" href="07-inversiones.html">
+        <span class="pgnum">7</span>
+        <div class="pgcap">inversiones</div>
+        <h3>Inversiones</h3>
+        <p>Inversión por obra y periodo, activos capitalizables y consumo de acero (split set, malla).</p>
+        <div class="pgmeta">3 tablas · control de inversiones</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Fuentes:</b> «Proceso de Planeación» (visión del sistema) y «Sistema_Mina_DiagramaERv2» (modelo de datos inicial). <b>Convenciones:</b> DDD ligero — arquitectura hexagonal por capacidad, lenguaje ubicuo y cuatro tipos (raíz de agregado, entidad, evento, catálogo). <b>Motor:</b> PostgreSQL · <b>Backend:</b> Go. Documento de trabajo del proyecto.</p>
+  </div>
+</footer>
+
+</body>
+</html>

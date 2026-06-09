@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 6 · Costos</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 6 de 7 · Modelo de datos</p>
+    <h1>Costos</h1>
+    <p class="sub">Estimaciones a contratistas con su detalle por concepto, presupuesto anual/mensual, costo unitario (USD/ton, USD/m, USD/m³, USD/onza eq.) y <b>cut-off variable</b> por rebaje/zona. Schema <span class="mono">costos</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-catalogos-produccion.html">1 · Catálogos y Producción</a>
+      <a href="02-planeacion.html">2 · Planeación</a>
+      <a href="03-reconciliacion.html">3 · Reconciliación</a>
+      <a href="04-beneficio.html">4 · Beneficio</a>
+      <a href="05-estandares.html">5 · Estándares</a>
+      <a href="06-costos.html" class="activo">6 · Costos</a>
+      <a href="07-inversiones.html">7 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidades y entidades</h2>
+    <p class="lead">La capacidad <b>costos</b> modela el ciclo económico de la operación: las estimaciones pagadas a contratistas, el presupuesto que las controla, el costo unitario que permite comparar periodos y el cut-off variable que decide qué mineral es rentable extraer.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">Schema</div>
+        <div class="v">costos</div>
+      </div>
+      <span class="tag">6 tablas · 1 catálogo · 1 raíz · 3 entidades · 1 detalle</span>
+    </div>
+
+    <div class="caps" style="grid-template-columns:1fr">
+      <div class="cap">
+        <div class="capname">costos</div>
+        <div class="role">Registra lo que se gasta: estimaciones (cobros de contratistas) con su desglose por concepto, el presupuesto que las encuadra, el costo unitario calculado período a período y la ley de corte que varía según el precio del metal y los costos reales.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">estimacion</span></div></div>
+        <div class="grp"><span class="lbl">Entidad</span>
+          <div class="ents"><span class="ent t-entidad">presupuesto</span><span class="ent t-entidad">costo_unitario</span><span class="ent t-entidad">cutoff_variable</span><span class="ent t-entidad">estimacion_concepto</span></div></div>
+        <div class="grp"><span class="lbl">Catálogo</span>
+          <div class="ents"><span class="ent t-catalogo">contratista</span></div></div>
+        <div class="grp"><span class="lbl">Consume por FK</span>
+          <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">mina (catalogos) · rebaje (planeacion)</span></div></div>
+      </div>
+    </div>
+    <p class="nota"><b>Detalle mutable:</b> <span class="mono">estimacion_concepto</span> puede editarse mientras la estimación está en estado <span class="mono">BORRADOR</span> — por eso conserva <span class="mono">actualizado_en</span> y <span class="mono">eliminado_en</span>. Se clasifica como <b>Entidad</b> (no evento append-only) conforme a las columnas de auditoría presentes en el SQL.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Tipos DDD</p>
+    <h2>¿Qué significa cada tipo?</h2>
+    <p class="lead">Cuatro clasificaciones que definen el comportamiento de cada tabla en esta capacidad.</p>
+    <div class="glos">
+      <div class="gcard g-raiz"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz de Agregado</span>
+        <p>Entidad principal y puerta de entrada al agregado. Protege las reglas de consistencia del conjunto.</p>
+        <p class="ej">En costos: <b>estimacion</b></p></div>
+      <div class="gcard g-entidad"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span>
+        <p>Objeto con identidad propia (UUID) que persiste aunque cambien sus atributos. Tiene ciclo de vida completo: creación, edición y baja lógica.</p>
+        <p class="ej">En costos: <b>presupuesto</b>, <b>costo_unitario</b>, <b>cutoff_variable</b>, <b>estimacion_concepto</b></p></div>
+      <div class="gcard g-catalogo"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span>
+        <p>Lista de referencia casi estática que tipifica a otras entidades. Se edita raramente; controlada por el área de administración.</p>
+        <p class="ej">En costos: <b>contratista</b></p></div>
+      <div class="gcard g-evento"><span class="badge t-evento"><span class="dot d-evento"></span>Evento inmutable</span>
+        <p>Hecho que ya ocurrió — solo tiene columnas <span class="mono">creado_*</span>, nunca <span class="mono">actualizado_*</span> ni <span class="mono">eliminado_*</span>. Esta capacidad no tiene eventos append-only; el detalle (<span class="mono">estimacion_concepto</span>) es editable y se clasifica como Entidad.</p>
+        <p class="ej">No aplica en costos</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagrama</h2>
+    <p class="lead">Coloreado por tipo DDD. Las cajas grises pertenecen a otra capacidad (se consumen por FK). Usa los controles para ampliar.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">costos</span><span class="cap">estimaciones · presupuesto · costo unitario · cut-off</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef entidad fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#181b27;
+classDef catalogo fill:#d1fae5,stroke:#047857,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+contratista["contratista"]:::catalogo
+estimacion["estimacion"]:::raiz
+ec["estimacion_concepto"]:::entidad
+presupuesto["presupuesto"]:::entidad
+cu["costo_unitario"]:::entidad
+cv["cutoff_variable"]:::entidad
+mina["mina\n(catalogos)"]:::ext
+rebaje["rebaje\n(planeacion)"]:::ext
+contratista --> estimacion
+estimacion --> ec
+mina -.->|FK| estimacion
+mina -.->|FK| presupuesto
+mina -.->|FK| cu
+mina -.->|FK| cv
+rebaje -.->|FK| cv
+</pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">costos</span></div>
+        <h4>contratista</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Lista las empresas contratistas que realizan trabajos en la mina: código, nombre y estado <span class="mono">ACTIVO/INACTIVO</span>.</p>
+        <p class="h">Por qué</p><p>El contratista era texto suelto en los cobros. Elevarlo a catálogo permite controlar la lista válida, calcular totales por proveedor y auditar su historial.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">costos</span></div>
+        <h4>estimacion</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Cabecera del cobro de un contratista: número, tipo (<span class="mono">DESARROLLO / ACARREO / OTRO</span>), período <span class="mono">YYYY-MM</span>, fecha, monto total y estado (<span class="mono">BORRADOR → APROBADA → PAGADA</span>).</p>
+        <p class="h">Por qué</p><p>Es la raíz del agregado: agrupa los conceptos, controla el ciclo de vida (borrador → aprobada → pagada) y es el objeto que se aprueba y se contabiliza. Su <span class="mono">monto_total</span> resume los importes de sus conceptos.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">costos</span></div>
+        <h4>estimacion_concepto</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Línea de detalle de una estimación: concepto, rubro, actividad, centro de costo, departamento, cantidad, precio unitario e importe calculado.</p>
+        <p class="h">Por qué</p><p>Detalle mutable: editable mientras la estimación es <span class="mono">BORRADOR</span>. Tiene <span class="mono">actualizado_en</span> y <span class="mono">eliminado_en</span>, por lo que se clasifica como Entidad (no evento). Al aprobarse la estimación, el detalle queda fijo.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">costos</span></div>
+        <h4>presupuesto</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Monto presupuestado por mina, año, período (anual o mensual), rubro, departamento y actividad. Base de la comparación plan vs real económico.</p>
+        <p class="h">Por qué</p><p>Sin presupuesto no hay desviación medible. El período <span class="mono">NULL</span> representa la cifra anual; un <span class="mono">YYYY-MM</span> la distribuye mes a mes. La moneda admite <span class="mono">USD</span> o <span class="mono">MXN</span>.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">costos</span></div>
+        <h4>costo_unitario</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>KPI económico por actividad/área/período: el costo en USD por tonelada, metro, m³ u onza equivalente. Se calcula al cierre de cada período.</p>
+        <p class="h">Por qué</p><p>Permite comparar la eficiencia económica entre períodos, áreas y actividades. La unidad (<span class="mono">USD_TON / USD_METRO / USD_M3 / USD_ONZA_EQ</span>) varía según el tipo de trabajo y la métrica de producción relevante.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">costos</span></div>
+        <h4>cutoff_variable</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Ley de corte dinámica por rebaje/zona/período: el valor mínimo en <span class="mono">USD_TON</span> que hace rentable la extracción. Referencia al <span class="mono">rebaje</span> de planeación.</p>
+        <p class="h">Por qué</p><p>La ley de corte fija subestima o sobreestima la rentabilidad cuando los costos o el precio del metal cambian. El cut-off variable se recalcula período a período con los costos reales (estimaciones cerradas) y el precio de mercado.</p></div></article>
+
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL reconciliado (PostgreSQL)</h2>
+    <p class="lead">Esquema real con <b>id</b> UUID, multi-tenant, auditoría inline e índices únicos parciales. Pasa el cursor sobre columnas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>costos / estimacion.sql  (Raíz de Agregado)</summary>
+      <pre class="sql">CREATE TABLE costos.estimacion (
+  <span class="c" data-tip="PK del registro (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Mina a la que corresponde la estimación.">id_mina</span> UUID NOT NULL,
+  <span class="c" data-tip="Contratista que emite el cobro (NULL = interno).">id_contratista</span> UUID,
+  <span class="c" data-tip="Número de estimación (único por empresa/mina entre activos).">numero</span> TEXT NOT NULL,
+  <span class="c" data-tip="Tipo de trabajo: DESARROLLO / ACARREO / OTRO.">tipo</span> TEXT NOT NULL DEFAULT 'DESARROLLO',
+  <span class="c" data-tip="Mes al que corresponde el cobro (formato YYYY-MM).">periodo</span> TEXT NOT NULL,
+  <span class="c" data-tip="Fecha de emisión de la estimación.">fecha</span> DATE NOT NULL,
+  <span class="c" data-tip="Suma de los importes de todos sus conceptos.">monto_total</span> NUMERIC(16,2) NOT NULL DEFAULT 0,
+  <span class="c" data-tip="Estado del ciclo de vida: BORRADOR → APROBADA → PAGADA.">estado</span> TEXT NOT NULL DEFAULT 'BORRADOR',
+  <span class="c" data-tip="Auditoría de creación.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  <span class="c" data-tip="Auditoría de última modificación.">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="Borrado lógico (NULL = activa).">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_estimacion_tipo CHECK (tipo IN ('DESARROLLO','ACARREO','OTRO')),
+  CONSTRAINT ck_estimacion_estado CHECK (estado IN ('BORRADOR','APROBADA','PAGADA')),
+  CONSTRAINT fk_estimacion_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_estimacion_mina FOREIGN KEY (id_mina) REFERENCES catalogos.mina(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_estimacion_contratista FOREIGN KEY (id_contratista) REFERENCES costos.contratista(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_estimacion_mina_periodo ON costos.estimacion (id_empresa, id_mina, periodo);
+CREATE UNIQUE INDEX uq_estimacion ON costos.estimacion (id_empresa, id_mina, numero) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>costos / estimacion_concepto.sql  (detalle — Entidad mutable)</summary>
+      <pre class="sql">CREATE TABLE costos.estimacion_concepto (
+  <span class="c" data-tip="PK del concepto (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Estimación a la que pertenece este concepto.">id_estimacion</span> UUID NOT NULL,
+  <span class="c" data-tip="Descripción del trabajo o partida cobrada.">concepto</span> TEXT NOT NULL,
+  <span class="c" data-tip="Agrupación contable (Mano de obra, Explosivos, Rentas…).">rubro</span> TEXT,
+  <span class="c" data-tip="Actividad operativa relacionada (barrenación, rezagado…).">actividad</span> TEXT,
+  <span class="c" data-tip="Centro de costo contable al que se carga el importe.">centro_costo</span> TEXT,
+  <span class="c" data-tip="Departamento que genera el gasto.">departamento</span> TEXT,
+  <span class="c" data-tip="Volumen o metros medidos (base del cálculo).">cantidad</span> NUMERIC(14,3) NOT NULL DEFAULT 0,
+  <span class="c" data-tip="Precio pactado por unidad (USD o MXN).">precio_unitario</span> NUMERIC(16,4) NOT NULL DEFAULT 0,
+  <span class="c" data-tip="Importe = cantidad × precio_unitario. Debe ser ≥ 0.">importe</span> NUMERIC(16,2) NOT NULL DEFAULT 0,
+  <span class="c" data-tip="Auditoría de creación.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  <span class="c" data-tip="Auditoría de última modificación (editable mientras BORRADOR).">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="Borrado lógico (NULL = activo).">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_concepto_importe CHECK (importe >= 0),
+  CONSTRAINT fk_concepto_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_concepto_estimacion FOREIGN KEY (id_estimacion) REFERENCES costos.estimacion(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_concepto_estimacion ON costos.estimacion_concepto (id_estimacion);</pre>
+    </details>
+
+    <details class="code">
+      <summary>costos / costo_unitario.sql  (KPI económico — Entidad)</summary>
+      <pre class="sql">CREATE TABLE costos.costo_unitario (
+  <span class="c" data-tip="PK del registro (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Mina del indicador.">id_mina</span> UUID NOT NULL,
+  <span class="c" data-tip="Mes de cálculo (formato YYYY-MM).">periodo</span> TEXT NOT NULL,
+  <span class="c" data-tip="Actividad operativa (barrenación, acarreo, rezagado…). NULL = total mina.">actividad</span> TEXT,
+  <span class="c" data-tip="Área o nivel de la mina. NULL = global.">area</span> TEXT,
+  <span class="c" data-tip="Unidad del indicador: USD_TON / USD_METRO / USD_M3 / USD_ONZA_EQ.">unidad</span> TEXT NOT NULL,
+  <span class="c" data-tip="Valor calculado del costo unitario en la moneda indicada.">valor</span> NUMERIC(16,4) NOT NULL DEFAULT 0,
+  <span class="c" data-tip="Moneda del valor: USD o MXN.">moneda</span> TEXT NOT NULL DEFAULT 'USD',
+  <span class="c" data-tip="Auditoría de creación.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  <span class="c" data-tip="Auditoría de última modificación.">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="Borrado lógico (NULL = activo).">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_costo_unitario_unidad CHECK (unidad IN ('USD_TON','USD_METRO','USD_M3','USD_ONZA_EQ')),
+  CONSTRAINT ck_costo_unitario_moneda CHECK (moneda IN ('USD','MXN')),
+  CONSTRAINT fk_costo_unitario_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_costo_unitario_mina FOREIGN KEY (id_mina) REFERENCES catalogos.mina(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_costo_unitario_mina_periodo ON costos.costo_unitario (id_empresa, id_mina, periodo);</pre>
+    </details>
+
+    <p class="nota"><b>presupuesto</b> sigue la misma plantilla con <span class="mono">anio SMALLINT</span> y <span class="mono">periodo TEXT</span> (NULL = anual; YYYY-MM = mensual). <b>cutoff_variable</b> añade la FK a <span class="mono">planeacion.rebaje</span> y almacena <span class="mono">cutoff_valor</span> con su unidad base.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+
+    <details class="qa"><summary>¿Cuál es la diferencia entre presupuesto y lo real (estimaciones)?</summary><div class="resp"><b>presupuesto</b> es el plan económico aprobado para un año (o mes): cuánto se autoriza gastar por rubro, departamento y actividad. Las <b>estimaciones</b> (con sus conceptos) son los cobros reales emitidos por los contratistas. La comparación plan vs real se obtiene cruzando <span class="mono">presupuesto.monto_presupuestado</span> contra la suma de <span class="mono">estimacion_concepto.importe</span> filtrada por los mismos atributos de clasificación (<span class="mono">rubro</span>, <span class="mono">departamento</span>, <span class="mono">actividad</span>).</div></details>
+
+    <details class="qa"><summary>¿Qué es el cut-off variable y por qué cambia período a período?</summary><div class="resp">La <b>ley de corte</b> (<i>cut-off grade</i>) es la ley mínima de mineral que hace rentable la extracción. Cuando se fija como constante, pierde validez en cuanto cambia el precio del metal o los costos de operación. <b>cutoff_variable</b> recalcula ese umbral cada mes (<span class="mono">periodo</span>) usando los costos reales del período (estimaciones aprobadas) y el precio de mercado, diferenciándolo por <span class="mono">rebaje</span> y <span class="mono">zona</span> para reflejar las condiciones geológicas de cada área.</div></details>
+
+    <details class="qa"><summary>¿Por qué costo_unitario se desglosa por actividad y área?</summary><div class="resp">El costo total de la mina mezcla actividades con productividades muy distintas: una tonelada de acarreo no cuesta igual que un metro de barrenación. Al registrar el <b>costo unitario</b> por separado en <span class="mono">actividad</span> y <span class="mono">area</span>, es posible detectar cuál actividad o qué nivel de la mina está fuera de estándar, comparar períodos homogéneos y proyectar costos de nuevas obras. La unidad variable (<span class="mono">USD_TON / USD_METRO / USD_M3 / USD_ONZA_EQ</span>) garantiza que la comparación siempre use el denominador correcto para cada tipo de trabajo.</div></details>
+
+    <details class="qa"><summary>¿Por qué estimacion_concepto es Entidad y no Evento inmutable?</summary><div class="resp">Un <b>evento</b> append-only solo tiene columnas <span class="mono">creado_*</span> (lo que ya ocurrió no se edita). <span class="mono">estimacion_concepto</span> en cambio tiene <span class="mono">actualizado_en</span> y <span class="mono">eliminado_en</span> porque el detalle de una estimación puede corregirse mientras está en estado <span class="mono">BORRADOR</span> — se cambia una cantidad, se ajusta un precio unitario, se elimina una línea. Solo cuando la estimación pasa a <span class="mono">APROBADA</span> el detalle queda fijo en la práctica (por regla de negocio, no por restricción de base de datos).</div></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 6 de 7</b> · Schema costos · 6 tablas. <a href="index.html">Volver al índice</a> · Anterior: <a href="05-estandares.html">← Estándares</a> · Siguiente: <a href="07-inversiones.html">Inversiones →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

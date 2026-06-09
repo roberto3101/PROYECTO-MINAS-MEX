@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 1 · Catálogos y Producción</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 1 de 7 · Modelo de datos</p>
+    <h1>Catálogos y Producción</h1>
+    <p class="sub">Los datos maestros de la operación (incluida la <b>obra</b> como entidad central) y la captura del <b>Real</b> turno a turno — lo único que opera offline. Schemas <span class="mono">gobierno</span>, <span class="mono">catalogos</span> y <span class="mono">produccion</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-catalogos-produccion.html" class="activo">1 · Catálogos y Producción</a>
+      <a href="02-planeacion.html">2 · Planeación</a>
+      <a href="03-reconciliacion.html">3 · Reconciliación</a>
+      <a href="04-beneficio.html">4 · Beneficio</a>
+      <a href="05-estandares.html">5 · Estándares</a>
+      <a href="06-costos.html">6 · Costos</a>
+      <a href="07-inversiones.html">7 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidades y entidades</h2>
+    <p class="lead">Los catálogos son los maestros que clasifican todo lo demás; la producción captura el Real. La <b>obra</b> (labor minera) dejó de ser texto suelto y ahora es una entidad de primera clase referenciada por todos los partes.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">El dominio</div>
+        <div class="v">Planeación y Producción de Mina Subterránea Polimetálica</div>
+      </div>
+      <span class="tag">Au · Ag · Pb · Zn · tepetate</span>
+    </div>
+
+    <div class="caps">
+      <div class="cap">
+        <div class="capname">catalogos</div>
+        <div class="role">Maestros de la operación: minas, equipos, personal, minerales, la obra, y las tipificaciones que clasifican todo. Editables en el central, de solo-lectura en el sitio.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">mina</span><span class="ent t-raiz">equipo</span><span class="ent t-raiz">empleado</span></div></div>
+        <div class="grp"><span class="lbl">Entidad</span>
+          <div class="ents"><span class="ent t-entidad">obra</span><span class="ent t-entidad">mineral</span></div></div>
+        <div class="grp"><span class="lbl">Catálogo</span>
+          <div class="ents"><span class="ent t-catalogo">tipo_obra</span><span class="ent t-catalogo">sistema_minado</span><span class="ent t-catalogo">tipo_equipo</span><span class="ent t-catalogo">modulo_trabajo</span><span class="ent t-catalogo">tipo_mineral</span><span class="ent t-catalogo">tipo_demora</span><span class="ent t-catalogo">tipo_explosivo</span><span class="ent t-catalogo">tipo_barreno</span><span class="ent t-catalogo">departamento</span><span class="ent t-catalogo">puesto</span><span class="ent t-catalogo">actividad</span></div></div>
+      </div>
+      <div class="cap">
+        <div class="capname">produccion</div>
+        <div class="role">La captura del Real. Cada registro se parte en <b>cabecera</b> (el parte de turno) y <b>detalle</b> (movimientos, append-only). Es lo único que necesita operar offline.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">parte_acarreo</span><span class="ent t-raiz">parte_rezagado</span><span class="ent t-raiz">parte_barrenacion</span></div></div>
+        <div class="grp"><span class="lbl">Evento (inmutable)</span>
+          <div class="ents"><span class="ent t-evento">acarreo_viaje</span><span class="ent t-evento">rezagado_ciclo</span><span class="ent t-evento">barrenacion_avance</span><span class="ent t-evento">barrenacion_ejecutado</span><span class="ent t-evento">demora_equipo</span><span class="ent t-evento">consumo_explosivo</span></div></div>
+        <div class="grp"><span class="lbl">Consume por FK</span>
+          <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">mina · obra · equipo · empleado</span></div></div>
+      </div>
+    </div>
+    <p class="nota"><b>gobierno</b> (capacidad transversal): <span class="mono">empresa</span> (multi-tenant) y <span class="mono">usuario</span> (auditoría). Toda tabla las referencia por FK.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Tipos DDD</p>
+    <h2>¿Qué significa cada tipo?</h2>
+    <p class="lead">Cuatro clasificaciones que definen el comportamiento de cada tabla. DDD ligero: lo organizacional, no la ceremonia táctica completa.</p>
+    <div class="glos">
+      <div class="gcard g-raiz"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz de Agregado</span>
+        <p>Entidad principal y puerta de entrada a un grupo que se modifica junto. Protege las reglas de consistencia.</p>
+        <p class="ej">Ej.: <b>mina</b>, <b>equipo</b>, <b>parte_barrenacion</b></p></div>
+      <div class="gcard g-entidad"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span>
+        <p>Objeto con identidad propia (UUID) que persiste aunque cambien sus atributos.</p>
+        <p class="ej">Ej.: <b>obra</b>, <b>mineral</b></p></div>
+      <div class="gcard g-evento"><span class="badge t-evento"><span class="dot d-evento"></span>Evento inmutable</span>
+        <p>Hecho que ya ocurrió. No se edita ni se borra (append-only): fuente de trazabilidad y clave del sync.</p>
+        <p class="ej">Ej.: <b>acarreo_viaje</b>, <b>barrenacion_avance</b></p></div>
+      <div class="gcard g-catalogo"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span>
+        <p>Lista de referencia casi estática que tipifica a otras entidades. Antes vivían como texto suelto.</p>
+        <p class="ej">Ej.: <b>tipo_obra</b>, <b>tipo_equipo</b></p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagramas</h2>
+    <p class="lead">Coloreados por tipo DDD. Las cajas grises punteadas pertenecen a otra capacidad (se consumen por FK). Usa los controles para ampliar o ver en pantalla completa.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot d-evento"></span>Evento</span>
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">catalogos</span><span class="cap">datos maestros</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef entidad fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#181b27;
+classDef catalogo fill:#d1fae5,stroke:#047857,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+emp["empresa · usuario"]:::ext
+mina["mina"]:::raiz
+equipo["equipo"]:::raiz
+empleado["empleado"]:::raiz
+obra["obra"]:::entidad
+mineral["mineral"]:::entidad
+tequ["tipo_equipo"]:::catalogo
+tobra["tipo_obra"]:::catalogo
+tmin["tipo_mineral"]:::catalogo
+emp -.-> mina
+mina --> equipo
+mina --> empleado
+mina --> obra
+mina --> mineral
+tequ --> equipo
+tobra --> obra
+tmin --> mineral
+</pre></div></div>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">produccion</span><span class="cap">captura del Real · cabecera (Raíz) + detalle (Evento)</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef evento fill:#fdecc8,stroke:#b45309,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+pa["parte_acarreo"]:::raiz
+pr["parte_rezagado"]:::raiz
+pb["parte_barrenacion"]:::raiz
+av["acarreo_viaje"]:::evento
+rc["rezagado_ciclo"]:::evento
+ba["barrenacion_avance"]:::evento
+de["demora_equipo"]:::evento
+ce["consumo_explosivo"]:::evento
+cat["mina · obra · equipo · empleado"]:::ext
+cat -.->|FK| pa
+cat -.->|FK| pr
+cat -.->|FK| pb
+pa --> av
+pr --> rc
+pb --> ba
+pb --> ce
+</pre></div></div>
+    </div>
+    <p class="lead" style="margin-top:14px;font-size:13px">La <b>barrenación</b> unifica las 4 tablas gemelas del ER original (Lineal, Máq. Pierna, Anclador, Larga) en una sola raíz con discriminador <span class="mono">tipo_barrenacion</span>; y sus 3 sub-tablas (Barrenación, Re-Barrenación, Escareo) en un evento con discriminador <span class="mono">actividad</span>.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot d-evento"></span>Evento</span>
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">catalogos</span></div>
+        <h4>mina</h4><div class="from">antes <span class="mono">MINAS</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Unidad minera: nombre, área, niveles, densidad y secciones tipo. Ancla geográfica de toda la operación.</p>
+        <p class="h">Por qué</p><p><b>NombreMina</b> (PK natural del ER) pasa a <b>id</b> UUID + <b>nombre</b> UNIQUE parcial. El área deja de copiarse a todos lados.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">catalogos</span></div>
+        <h4>equipo</h4><div class="from">antes <span class="mono">EQUIPOS_SUBMINA</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Vehículo o máquina bajo tierra: fabricante, modelo, serie, año, estado operativo.</p>
+        <p class="h">Por qué</p><p>El <b>Tipo</b> texto libre pasa a FK <span class="mono">tipo_equipo</span>; el módulo, a FK <span class="mono">modulo_trabajo</span>.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">catalogos</span></div>
+        <h4>empleado</h4><div class="from">antes <span class="mono">EMPLEADOS</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Personal: nómina, nombre, departamento, puesto. Participa en los partes como operador, supervisor, capitán o ayudante.</p>
+        <p class="h">Por qué</p><p><b>id</b> UUID + <b>numero_nomina</b> UNIQUE. Departamento/puesto/actividad pasan a catálogos.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">catalogos</span></div>
+        <h4>obra</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>La labor minera (RPA, LAT, REB…): código, ubicación y bandera <span class="mono">es_prioritaria</span>. Término central del dominio.</p>
+        <p class="h">Por qué</p><p>En el ER la obra era texto suelto repetido en cada parte. Ahora es entidad; los partes la referencian por <span class="mono">id_obra</span>, habilitando seguimiento y obras prioritarias.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">catalogos</span></div>
+        <h4>mineral</h4><div class="from">antes <span class="mono">MINERALES</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Mineral por mina (plata, oro, plomo, zinc) o estéril (tepetate): unidad y ley.</p>
+        <p class="h">Por qué</p><p><b>TipoMineral</b> pasa a FK <span class="mono">tipo_mineral</span> (con bandera <span class="mono">es_mineral</span> para el balance de cargas).</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">produccion</span></div>
+        <h4>parte_acarreo</h4><div class="from">antes <span class="mono">ACARREO</span> (cabecera)</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>El parte de un turno de acarreo: mina, obra, equipo, operador, supervisor, fecha, turno y horómetros.</p>
+        <p class="h">Por qué</p><p>Cabecera del agregado, separada del detalle (los viajes). Los nombres copiados se eliminan: solo viven los FK.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
+        <h4>acarreo_viaje</h4><div class="from">antes sub-tabla de <span class="mono">ACARREO</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Cada viaje del camión: desde, hasta, tipo de material y toneladas.</p>
+        <p class="h">Por qué</p><p>Evento append-only. El <b>NoObra</b> autoincremental (que colisiona en sync) pasa a <b>id</b> UUID.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">produccion</span></div>
+        <h4>parte_barrenacion</h4><div class="from">antes 4 tablas gemelas</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Parte de un turno de barrenación: jumbo, capitán, operador, ayudante y los tres horómetros (diésel, eléctrico, percusión).</p>
+        <p class="h">Por qué</p><p>Unifica Lineal/Máq.Pierna/Anclador/Larga en una raíz con discriminador <span class="mono">tipo_barrenacion</span>.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
+        <h4>barrenacion_avance</h4><div class="from">antes 3 sub-tablas</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Cada avance barrenado: lugar, secciones, longitud y barrenos. Distingue barrenación, re-barrenación y escareo.</p>
+        <p class="h">Por qué</p><p>Unifica las sub-tablas en un evento con discriminador <span class="mono">actividad</span>, en vez de columnas <span class="mono">ReB_*</span>/<span class="mono">Esc_*</span> casi siempre nulas.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
+        <h4>demora_equipo</h4><div class="from"><span class="nuevo">tiempos operativos</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Demoras del equipo por turno (minutos, tipo). Base de disponibilidad y utilización.</p>
+        <p class="h">Por qué</p><p>Evento append-only. Junto a los horómetros permite calcular tiempos operativos vs estándar.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">gobierno</span></div>
+        <h4>empresa</h4><div class="from">tenant</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Empresa / grupo minero dueño de los datos. Raíz de la multi-tenencia.</p>
+        <p class="h">Por qué</p><p>Toda tabla la referencia por <span class="mono">id_empresa</span> para aislar los datos por tenant.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">gobierno</span></div>
+        <h4>usuario</h4><div class="from">auditoría</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Usuario operativo/administrativo por empresa.</p>
+        <p class="h">Por qué</p><p>Actor de la auditoría inline (<span class="mono">creado/actualizado/eliminado_por_usuario_id</span>).</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">produccion</span></div>
+        <h4>parte_rezagado</h4><div class="from">antes <span class="mono">REZAGADO</span> (cabecera)</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Parte de un turno de rezagado con scooptram: mina, obra, equipo, operador, horómetros.</p>
+        <p class="h">Por qué</p><p>Mismo patrón cabecera/detalle que acarreo; módulo propio con estándares distintos.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
+        <h4>rezagado_ciclo</h4><div class="from">antes sub-tabla de <span class="mono">REZAGADO</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Cada ciclo de carga del scooptram: desde, hasta, tipo de material y toneladas.</p>
+        <p class="h">Por qué</p><p>Evento append-only con <span class="mono">id</span> UUID, espejo de acarreo_viaje.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
+        <h4>barrenacion_ejecutado</h4><div class="from">el "Ejecutado" del ER</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Qué secciones de barreno se ejecutaron en un avance (relación N:M con <span class="mono">tipo_barreno</span>).</p>
+        <p class="h">Por qué</p><p>Modela el campo "Ejecutado" (lista fija múltiple): cuele, destroza, contorno, zapatera… Append-only.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
+        <h4>consumo_explosivo</h4><div class="from">control de explosivo</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Explosivo consumido por obra y destino (desarrollo/tumbe), por tipo (anfo, fulminante…).</p>
+        <p class="h">Por qué</p><p>Evento append-only que alimenta los informes de explosivo en desarrollo y tumbe.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>tipo_obra</h4><div class="from">antes lista en <span class="mono">MINAS</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Tipifica la obra de desarrollo: RPA, LAT, ACG, CRO, REB, STOCK, STILL.</p>
+        <p class="h">Por qué</p><p>Era una lista fija embebida como texto; pasa a catálogo con integridad real.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>sistema_minado</h4><div class="from">antes <span class="mono">Tumbe</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Método de minado / tumbe: BL, CR, TSC.</p>
+        <p class="h">Por qué</p><p>El campo "Tumbe" del ER es el sistema de minado; se nombra por su intención.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>tipo_equipo</h4><div class="from">antes <span class="mono">Tipo</span> (texto libre)</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Clasifica el equipo: camión, scooptram, jumbo, anclador…</p>
+        <p class="h">Por qué</p><p>Era texto libre (riesgo de variantes); catálogo cerrado para reportes confiables.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>modulo_trabajo</h4><div class="from">antes texto</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Área operativa del equipo: acarreo, rezagado, barrenación, anclaje, relleno.</p>
+        <p class="h">Por qué</p><p>Permite agrupar equipos por proceso de forma confiable.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>tipo_mineral</h4><div class="from">antes <span class="mono">TipoMineral</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Clasifica el material: mineral, no mineral, tepetate (con bandera <span class="mono">es_mineral</span>).</p>
+        <p class="h">Por qué</p><p>Regla clave del balance de cargas (mineral vs estéril) como dato, no como texto.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>tipo_barreno</h4><div class="from"><span class="nuevo">para "Ejecutado"</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Secciones de barreno de la voladura de frente: cuele, contracuele, destroza, contorno, zapatera, corona, auxiliar.</p>
+        <p class="h">Por qué</p><p>La "lista fija" del campo Ejecutado; se relaciona N:M con cada avance.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>tipo_demora</h4><div class="from">tiempos operativos</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Clasifica las demoras de equipo: mecánica, eléctrica, operativa, programada.</p>
+        <p class="h">Por qué</p><p>Base para separar demora programada de no programada en disponibilidad.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>tipo_explosivo</h4><div class="from">control de explosivo</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Familia de explosivo: agente, iniciador, cordón, conector (con unidad de medida).</p>
+        <p class="h">Por qué</p><p>Tipifica el consumo de explosivo para sus informes.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
+        <h4>departamento · puesto · actividad</h4><div class="from">RH (antes texto)</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Tipificaciones del personal y de la labor: departamento, puesto y actividad del empleado/parte.</p>
+        <p class="h">Por qué</p><p>Eran texto en EMPLEADOS; pasan a catálogos para agrupar y validar.</p></div></article>
+
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Reforma estructural</p>
+    <h2>Comparativa Antes → Después</h2>
+    <p class="lead">Se conserva el dominio (qué se captura, las reglas, el lenguaje) y se reestructura el esquema (cómo se modela).</p>
+    <table class="tabla-comp">
+      <thead><tr><th style="width:34%">Antes (ER inicial)</th><th style="width:30%">Después (ubicuo · DDD)</th><th>Por qué</th></tr></thead>
+      <tbody>
+        <tr><td><span class="mono old">MINAS / EQUIPOS_SUBMINA / EMPLEADOS / MINERALES</span></td><td><span class="mono new">mina · equipo · empleado · mineral</span></td><td class="why">Singular: la tabla es la entidad.</td></tr>
+        <tr><td>obra como <span class="old">texto repetido</span> en cada parte</td><td><span class="mono new">obra</span> (entidad) + <span class="mono new">id_obra</span></td><td class="why">Asciende a entidad: habilita seguimiento, obras prioritarias y FK.</td></tr>
+        <tr><td><span class="mono old">ACARREO</span> (cabecera + sub-tabla)</td><td><span class="mono new">parte_acarreo</span> + <span class="mono new">acarreo_viaje</span></td><td class="why">Cabecera vs detalle (evento append-only).</td></tr>
+        <tr><td><span class="mono old">REZAGADO</span></td><td><span class="mono new">parte_rezagado</span> + <span class="mono new">rezagado_ciclo</span></td><td class="why">Mismo patrón; módulo propio.</td></tr>
+        <tr><td><span class="mono old">4× BARRENACION_*</span></td><td><span class="mono new">parte_barrenacion</span> (discr. <span class="mono">tipo_barrenacion</span>)</td><td class="why">4 tablas idénticas → 1.</td></tr>
+        <tr><td>sub-tablas <span class="mono old">Barrenación/Re-Barr/Escareo</span></td><td><span class="mono new">barrenacion_avance</span> (discr. <span class="mono">actividad</span>)</td><td class="why">3 sub-tablas → 1 evento.</td></tr>
+        <tr><td><span class="mono old">NombreMina/Nomina/NoObra</span> (PK naturales)</td><td><span class="mono new">id</span> UUID + clave natural UNIQUE parcial</td><td class="why">UUID nace único en el sitio → sync sin colisiones.</td></tr>
+        <tr><td><span class="mono old">Operador/Equipo/Area</span> copiados ("hereda")</td><td><span class="mono new">id_*</span> (solo FK)</td><td class="why">El nombre se resuelve por join; evita datos rancios.</td></tr>
+        <tr><td><span class="mono old">VARCHAR2 / NUMBER / CHAR</span></td><td><span class="mono new">TEXT / NUMERIC / TEXT+CHECK</span></td><td class="why">Tipos idiomáticos de PostgreSQL.</td></tr>
+        <tr><td><span class="old">sin auditoría / sin tenant</span></td><td><span class="mono new">id_empresa</span> + auditoría inline</td><td class="why">Multi-tenant + trazabilidad (creado/actualizado/eliminado).</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL reconciliado (PostgreSQL)</h2>
+    <p class="lead">Esquema real con <b>id</b> UUID, multi-tenant, auditoría inline, eventos append-only e índices únicos parciales. Pasa el cursor sobre columnas o líneas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>catalogos / obra.sql  (entidad central)</summary>
+      <pre class="sql">CREATE TABLE catalogos.obra (
+  <span class="c" data-tip="PK del registro (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Mina a la que pertenece la obra.">id_mina</span> UUID NOT NULL,
+  <span class="c" data-tip="Tipificación: RPA, LAT, ACG, CRO, REB, STOCK, STILL.">id_tipo_obra</span> UUID,
+  <span class="c" data-tip="Código de la obra (p.ej. REB-2400W). Único por mina entre activos.">codigo</span> TEXT NOT NULL,
+  <span class="c" data-tip="Nombre legible de la obra.">nombre</span> TEXT,
+  <span class="c" data-tip="Nivel / zona dentro de la mina.">ubicacion</span> TEXT,
+  <span class="c" data-tip="Bandera para el seguimiento de obras prioritarias.">es_prioritaria</span> BOOLEAN NOT NULL DEFAULT false,
+  <span class="c" data-tip="ACTIVA / SUSPENDIDA / CONCLUIDA.">estado</span> TEXT NOT NULL DEFAULT 'ACTIVA',
+  <span class="c" data-tip="Auditoría.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  <span class="c" data-tip="Auditoría.">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="Borrado lógico (NULL = activa).">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_obra_estado CHECK (estado IN ('ACTIVA','SUSPENDIDA','CONCLUIDA')),
+  CONSTRAINT fk_obra_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_obra_mina FOREIGN KEY (id_mina) REFERENCES catalogos.mina(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_obra_tipo_obra FOREIGN KEY (id_tipo_obra) REFERENCES catalogos.tipo_obra(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_obra ON catalogos.obra (id_empresa, id_mina, codigo) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>produccion / parte_acarreo.sql  (cabecera — Raíz)</summary>
+      <pre class="sql">CREATE TABLE produccion.parte_acarreo (
+  <span class="c" data-tip="PK del parte de turno (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Mina del turno.">id_mina</span> UUID NOT NULL,
+  <span class="c" data-tip="Obra trabajada (FK a catalogos.obra).">id_obra</span> UUID NOT NULL,
+  <span class="c" data-tip="Camión o locomotora.">id_equipo</span> UUID NOT NULL,
+  <span class="c" data-tip="Operador del turno.">id_operador</span> UUID NOT NULL,
+  <span class="c" data-tip="Supervisor (opcional).">id_supervisor</span> UUID,
+  <span class="c" data-tip="Fecha del turno (negocio).">fecha</span> DATE NOT NULL,
+  <span class="c" data-tip="M=Mañana, V=Vespertino, N=Nocturno.">turno</span> TEXT NOT NULL,
+  <span class="c" data-tip="Horómetro al inicio del turno.">horometro_inicial</span> NUMERIC(10,2) NOT NULL,
+  <span class="c" data-tip="Horómetro al fin (>= inicial).">horometro_final</span> NUMERIC(10,2) NOT NULL,
+  <span class="c" data-tip="Auditoría.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_parte_acarreo_turno CHECK (turno IN ('M','V','N')),
+  CONSTRAINT ck_parte_acarreo_horometro CHECK (horometro_final >= horometro_inicial),
+  CONSTRAINT fk_parte_acarreo_obra FOREIGN KEY (id_obra) REFERENCES catalogos.obra(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_parte_acarreo_equipo FOREIGN KEY (id_equipo) REFERENCES catalogos.equipo(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_parte_acarreo_mina_fecha ON produccion.parte_acarreo (id_empresa, id_mina, fecha);</pre>
+    </details>
+
+    <details class="code">
+      <summary>produccion / acarreo_viaje.sql  (detalle — Evento append-only)</summary>
+      <pre class="sql">CREATE TABLE produccion.acarreo_viaje (
+  <span class="c" data-tip="PK del viaje (UUID). Reemplaza a NoObra autoincremental.">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Parte de turno al que pertenece.">id_parte_acarreo</span> UUID NOT NULL,
+  <span class="c" data-tip="Origen del viaje.">desde</span> TEXT NOT NULL,
+  <span class="c" data-tip="Destino (patio, silo, quebradora).">hasta</span> TEXT NOT NULL,
+  <span class="c" data-tip="Mineral vs tepetate.">id_tipo_mineral</span> UUID NOT NULL,
+  <span class="c" data-tip="Carga del viaje.">toneladas</span> NUMERIC(12,3),
+  <span class="c" data-tip="Solo creación: evento append-only.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  CONSTRAINT fk_acarreo_viaje_parte FOREIGN KEY (id_parte_acarreo) REFERENCES produccion.parte_acarreo(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_acarreo_viaje_tipo_mineral FOREIGN KEY (id_tipo_mineral) REFERENCES catalogos.tipo_mineral(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_acarreo_viaje_parte ON produccion.acarreo_viaje (id_parte_acarreo);</pre>
+    </details>
+    <p class="nota"><b>rezagado</b> (<span class="mono">parte_rezagado</span> + <span class="mono">rezagado_ciclo</span>) sigue la misma plantilla con scooptram. <b>barrenación</b> añade el discriminador <span class="mono">tipo_barrenacion</span> y tres pares de horómetros.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+    <details class="qa"><summary>¿Por qué la obra pasó de texto a entidad?</summary><div class="resp">Porque el seguimiento (plan vs real, obras prioritarias, costo por obra) necesita identidad estable. Como texto repetido era imposible agrupar de forma confiable; como <b>entidad</b> con <span class="mono">id_obra</span>, todo lo referencia y se puede medir.</div></details>
+    <details class="qa"><summary>¿Por qué separar cabecera (parte) y detalle (viaje)?</summary><div class="resp">Un turno tiene <b>muchos</b> viajes o barrenos. Separar normaliza, refleja el parte de turno real y permite que el detalle sea <b>evento append-only</b> — clave para el sync offline.</div></details>
+    <details class="qa"><summary>¿Por qué UUID y no autoincremental?</summary><div class="resp">La captura es offline: dos dispositivos sin internet generarían el mismo número y colisionarían al sincronizar. El UUID nace único en el sitio sin coordinar con el central.</div></details>
+    <details class="qa"><summary>¿Qué es el índice único parcial?</summary><div class="resp">Un <span class="mono">UNIQUE … WHERE eliminado_en IS NULL</span>: garantiza unicidad solo entre registros <b>activos</b>, permitiendo volver a dar de alta un código tras una baja lógica.</div></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 1 de 7</b> · Schemas gobierno, catalogos, produccion · 27 tablas. <a href="index.html">Volver al índice</a> · Siguiente: <a href="02-planeacion.html">Planeación →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 3 · Reconciliación</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 3 de 7 · Modelo de datos</p>
+    <h1>Reconciliación</h1>
+    <p class="sub">Trazabilidad por <b>segmentos de 10×2 m</b> con identificador único, que se persigue por toda la cadena <b>Reserva → Tumbe → Estimación → Planta</b>. Schema <span class="mono">reconciliacion</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-catalogos-produccion.html">1 · Catálogos y Producción</a>
+      <a href="02-planeacion.html">2 · Planeación</a>
+      <a href="03-reconciliacion.html" class="activo">3 · Reconciliación</a>
+      <a href="04-beneficio.html">4 · Beneficio</a>
+      <a href="05-estandares.html">5 · Estándares</a>
+      <a href="06-costos.html">6 · Costos</a>
+      <a href="07-inversiones.html">7 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidades y entidades</h2>
+    <p class="lead">La reconciliación cierra el ciclo: cada <b>segmento</b> de 10×2 m recibe una medición por cada fase (Reserva, Tumbe, Estimación, Planta), lo que permite comparar toneladas y leyes a lo largo de toda la cadena.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">El dominio</div>
+        <div class="v">Planeación y Producción de Mina Subterránea Polimetálica</div>
+      </div>
+      <span class="tag">Au · Ag · Pb · Zn · tepetate</span>
+    </div>
+
+    <div class="caps" style="grid-template-columns:1fr">
+      <div class="cap">
+        <div class="capname">reconciliacion</div>
+        <div class="role">Trazabilidad por segmentos físicos. Cada segmento tiene un <b>código único</b> que persiste por toda la cadena. Las mediciones son eventos inmutables: una fila por fuente, nunca se actualizan.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">segmento</span></div></div>
+        <div class="grp"><span class="lbl">Evento (inmutable)</span>
+          <div class="ents"><span class="ent t-evento">medicion</span></div></div>
+        <div class="grp"><span class="lbl">Consume por FK</span>
+          <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">mina · rebaje</span></div></div>
+      </div>
+    </div>
+    <p class="nota"><b>gobierno</b> (capacidad transversal): <span class="mono">empresa</span> (multi-tenant) y <span class="mono">usuario</span> (auditoría). Toda tabla las referencia por FK.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Tipos DDD</p>
+    <h2>Clasificación de las tablas</h2>
+    <p class="lead">Dos tipos cubren toda la capacidad de reconciliación.</p>
+    <div class="glos">
+      <div class="gcard g-raiz"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz de Agregado</span>
+        <p>Entidad principal y puerta de entrada. Protege las reglas de consistencia del grupo.</p>
+        <p class="ej">Aquí: <b>segmento</b></p></div>
+      <div class="gcard g-evento"><span class="badge t-evento"><span class="dot d-evento"></span>Evento inmutable</span>
+        <p>Hecho que ya ocurrió. No se edita ni se borra (append-only): fuente de trazabilidad y clave del sync.</p>
+        <p class="ej">Aquí: <b>medicion</b></p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagrama</h2>
+    <p class="lead">Coloreado por tipo DDD. Las cajas grises punteadas pertenecen a otra capacidad (se consumen por FK). Usa los controles para ampliar o ver en pantalla completa.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-evento"></span>Evento</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">reconciliacion</span><span class="cap">segmento (Raíz) + medicion (Evento append-only)</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef evento fill:#fdecc8,stroke:#b45309,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+mina["mina"]:::ext
+rebaje["rebaje"]:::ext
+seg["segmento"]:::raiz
+med["medicion"]:::evento
+mina -.->|FK| seg
+rebaje -.->|FK| seg
+seg --> med
+</pre></div></div>
+    </div>
+    <p class="lead" style="margin-top:14px;font-size:13px">El <b>segmento</b> es la unidad mínima de trazabilidad: 10 m de largo × 2 m de ancho dentro de un rebaje. La <b>medicion</b> es append-only con restricción <span class="mono">UNIQUE (id_empresa, id_segmento, fuente)</span>: garantiza que exista exactamente una fila por fase de la cadena.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-evento"></span>Evento</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">reconciliacion</span></div>
+        <h4>segmento</h4><div class="from"><span class="nuevo">entidad nueva</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Unidad física de trazabilidad: 10 m de largo × 2 m de ancho dentro de un rebaje. Cada segmento tiene un <span class="mono">codigo</span> único por empresa que lo identifica en toda la cadena productiva.</p>
+        <p class="h">Por qué</p><p>Sin el segmento como entidad no hay ancla estable para comparar Reserva vs Tumbe vs Estimación vs Planta. El <span class="mono">codigo</span> es el hilo conductor: <span class="mono">UNIQUE (id_empresa, codigo) WHERE eliminado_en IS NULL</span>.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">reconciliacion</span></div>
+        <h4>medicion</h4><div class="from"><span class="nuevo">evento nuevo</span></div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Registra toneladas y leyes (Au, Ag, Pb, Zn) de un segmento para una fuente específica: <span class="mono">RESERVA</span>, <span class="mono">TUMBE</span>, <span class="mono">ESTIMACION</span> o <span class="mono">PLANTA</span>. Una fila por fuente, nunca se edita.</p>
+        <p class="h">Por qué</p><p>Evento append-only con restricción <span class="mono">UNIQUE (id_empresa, id_segmento, fuente)</span>. Garantiza que la comparación siempre sea entre exactamente una lectura por fase, sin riesgo de duplicados o sobreescrituras.</p></div></article>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL real (PostgreSQL)</h2>
+    <p class="lead">Esquema real con <b>id</b> UUID, multi-tenant, auditoría inline, evento append-only e índices únicos parciales. Pasa el cursor sobre columnas resaltadas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>reconciliacion / segmento.sql  (Raíz de Agregado)</summary>
+      <pre class="sql">CREATE TABLE reconciliacion.segmento (
+  <span class="c" data-tip="PK del segmento (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Mina a la que pertenece el segmento.">id_mina</span> UUID NOT NULL,
+  id_rebaje UUID,
+  <span class="c" data-tip="Identificador único del segmento (p.ej. REB-2400W-S01). Único por empresa entre activos.">codigo</span> TEXT NOT NULL,
+  <span class="c" data-tip="Largo del segmento en metros (por defecto 10.0 m).">largo_m</span> NUMERIC(6,2) NOT NULL DEFAULT 10.0,
+  <span class="c" data-tip="Ancho del segmento en metros (por defecto 2.0 m).">ancho_m</span> NUMERIC(6,2) NOT NULL DEFAULT 2.0,
+  descripcion TEXT,
+  estado TEXT NOT NULL DEFAULT 'ACTIVO',
+  <span class="c" data-tip="Auditoría.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT ck_segmento_estado CHECK (estado IN ('ACTIVO','INACTIVO')),
+  CONSTRAINT fk_segmento_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_segmento_mina FOREIGN KEY (id_mina) REFERENCES catalogos.mina(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_segmento_rebaje FOREIGN KEY (id_rebaje) REFERENCES planeacion.rebaje(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_segmento_mina ON reconciliacion.segmento (id_empresa, id_mina);
+CREATE UNIQUE INDEX uq_segmento ON reconciliacion.segmento (id_empresa, codigo) WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>reconciliacion / medicion.sql  (Evento append-only)</summary>
+      <pre class="sql">CREATE TABLE reconciliacion.medicion (
+  <span class="c" data-tip="PK de la medición (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Segmento al que pertenece esta medición.">id_segmento</span> UUID NOT NULL,
+  <span class="c" data-tip="Fase de la cadena: RESERVA, TUMBE, ESTIMACION o PLANTA. Una sola fila por fuente por segmento.">fuente</span> TEXT NOT NULL,
+  fecha DATE NOT NULL,
+  <span class="c" data-tip="Toneladas medidas en esta fase para el segmento.">toneladas</span> NUMERIC(14,3),
+  <span class="c" data-tip="Ley de oro (Au) en g/t.">ley_au</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley de plata (Ag) en g/t.">ley_ag</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley de plomo (Pb) en %.">ley_pb</span> NUMERIC(10,4),
+  <span class="c" data-tip="Ley de zinc (Zn) en %.">ley_zn</span> NUMERIC(10,4),
+  <span class="c" data-tip="Solo creación: evento append-only. No existe actualizado_en.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  CONSTRAINT ck_medicion_fuente CHECK (fuente IN ('RESERVA','TUMBE','ESTIMACION','PLANTA')),
+  CONSTRAINT uq_medicion UNIQUE (id_empresa, id_segmento, fuente),
+  CONSTRAINT fk_medicion_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_medicion_segmento FOREIGN KEY (id_segmento) REFERENCES reconciliacion.segmento(id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_medicion_segmento ON reconciliacion.medicion (id_segmento);</pre>
+    </details>
+    <p class="nota"><b>Nota:</b> <span class="mono">medicion</span> no tiene <span class="mono">actualizado_en</span> ni <span class="mono">eliminado_en</span>: es un evento puro. Si hay un error, se anula con una medición correctora de la misma fuente (requiere borrar y reinsertar vía proceso controlado).</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+
+    <details class="qa"><summary>¿Por qué segmentos de exactamente 10×2 m?</summary><div class="resp">Porque esa es la unidad de avance estándar de la operación: un frente de ataque de 2 m de ancho barrenado en una secuencia de 10 m. Discretizar en segmentos de esa dimensión permite comparar directamente lo planeado en reservas con lo tumbado y lo entregado a planta, sin conversiones ad-hoc. Los valores <span class="mono">largo_m</span> y <span class="mono">ancho_m</span> tienen <b>DEFAULT</b> en el DDL para ese estándar, pero son editables si la geometría real difiere.</div></details>
+
+    <details class="qa"><summary>¿Por qué <span class="mono">medicion</span> es append-only con una sola fila por fuente?</summary><div class="resp">La restricción <span class="mono">UNIQUE (id_empresa, id_segmento, fuente)</span> garantiza que para cada segmento exista <b>exactamente un dato</b> por fase. Así la diferencia Tumbe − Reserva siempre es un cálculo determinista: no hay ambigüedad sobre qué fila usar. El append-only preserva el historial: si un valor fue capturado, queda registrado. Cualquier corrección debe pasar por un proceso controlado (borrado + nueva inserción), lo que crea una traza de auditoría explícita.</div></details>
+
+    <details class="qa"><summary>¿Cómo se calcula la diferencia Tumbe vs Reserva?</summary><div class="resp">Con un <span class="mono">JOIN</span> entre dos filas de <span class="mono">medicion</span> del mismo segmento, filtrando por <span class="mono">fuente</span>:<br><br><code>SELECT s.codigo,<br>&nbsp;&nbsp;m_r.toneladas AS ton_reserva, m_t.toneladas AS ton_tumbe,<br>&nbsp;&nbsp;(m_t.toneladas - m_r.toneladas) AS diferencia<br>FROM reconciliacion.segmento s<br>JOIN reconciliacion.medicion m_r ON m_r.id_segmento = s.id AND m_r.fuente = 'RESERVA'<br>JOIN reconciliacion.medicion m_t ON m_t.id_segmento = s.id AND m_t.fuente = 'TUMBE'<br>WHERE s.id_empresa = $1;</code><br><br>La misma lógica aplica para Tumbe vs Estimación o Estimación vs Planta. Si falta alguna fila (la medición de esa fuente aún no existe), el <span class="mono">JOIN</span> interior excluye el segmento naturalmente; un <span class="mono">LEFT JOIN</span> lo muestra con <span class="mono">NULL</span> en la diferencia.</div></details>
+
+    <details class="qa"><summary>¿Por qué el <span class="mono">codigo</span> del segmento tiene índice único parcial?</summary><div class="resp">Un <span class="mono">UNIQUE … WHERE eliminado_en IS NULL</span> garantiza unicidad solo entre segmentos <b>activos</b>: si un segmento se da de baja (borrado lógico) y luego se necesita reutilizar su código, es posible sin violar la restricción. Esto mantiene la integridad referencial en activos sin bloquear reasignaciones históricas.</div></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 3 de 7</b> · Schema reconciliacion · 2 tablas. <a href="index.html">Volver al índice</a> · Anterior: <a href="02-planeacion.html">← Planeación</a> · Siguiente: <a href="04-beneficio.html">Beneficio →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>
