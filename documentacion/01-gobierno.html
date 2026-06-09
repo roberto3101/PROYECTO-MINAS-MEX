@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página 1 · Gobierno y Acceso</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Página 1 de 9 · Modelo de datos</p>
+    <h1>Gobierno y Acceso</h1>
+    <p class="sub">Capacidad transversal que fundamenta la <b>multi-tenencia</b> y la <b>auditoría</b> de todo el sistema. Define <span class="mono">empresa</span> (raíz del tenant) y <span class="mono">usuario</span> (actor de la trazabilidad). Todas las demás capacidades la consumen por FK — ninguna tabla existe fuera de un <span class="mono">id_empresa</span>.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="01-gobierno.html" class="activo">1 · Gobierno</a>
+      <a href="02-catalogos.html">2 · Catálogos</a>
+      <a href="03-produccion.html">3 · Producción</a>
+      <a href="04-planeacion.html">4 · Planeación</a>
+      <a href="05-reconciliacion.html">5 · Reconciliación</a>
+      <a href="06-beneficio.html">6 · Beneficio</a>
+      <a href="07-estandares.html">7 · Estándares</a>
+      <a href="08-costos.html">8 · Costos</a>
+      <a href="09-inversiones.html">9 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">El territorio</p>
+    <h2>Capacidades y entidades</h2>
+    <p class="lead">El gobierno es la capa cero del sistema: define <b>quién</b> es dueño de los datos (empresa) y <b>quién</b> los opera (usuario). Sin esta capacidad no hay tenant, no hay auditoría y no hay datos.</p>
+
+    <div class="dominio">
+      <div>
+        <div class="k">El dominio</div>
+        <div class="v">Planeación y Producción de Mina Subterránea Polimetálica</div>
+      </div>
+      <span class="tag">Au · Ag · Pb · Zn · tepetate</span>
+    </div>
+
+    <div class="caps">
+      <div class="cap">
+        <div class="capname">gobierno</div>
+        <div class="role">Capacidad transversal de <b>multi-tenant</b> y <b>auditoría</b>. Toda tabla del sistema lleva <span class="mono">id_empresa</span> (aislamiento de datos) y las columnas <span class="mono">creado/actualizado/eliminado_por_usuario_id</span> (trazabilidad). Esta capacidad es la que define las raíces de esos FK.</div>
+        <div class="grp"><span class="lbl">Raíz de Agregado</span>
+          <div class="ents"><span class="ent t-raiz">empresa</span></div></div>
+        <div class="grp"><span class="lbl">Entidad</span>
+          <div class="ents"><span class="ent t-entidad">usuario</span></div></div>
+        <div class="grp"><span class="lbl">Consumen por FK (todas las capacidades)</span>
+          <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">catalogos · produccion · planeacion · reconciliacion · beneficio · estandares · costos · inversiones</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Tipos DDD</p>
+    <h2>¿Qué significa cada tipo?</h2>
+    <p class="lead">Dos de los cuatro tipos DDD aparecen en esta capacidad. El gobierno es deliberadamente mínimo: solo lo imprescindible para que el resto del sistema funcione.</p>
+    <div class="glos">
+      <div class="gcard g-raiz"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz de Agregado</span>
+        <p>Entidad principal y puerta de entrada a un grupo que se modifica junto. Protege las reglas de consistencia.</p>
+        <p class="ej">En gobierno: <b>empresa</b> — raíz de la multi-tenencia. Todo lo demás cuelga de ella.</p></div>
+      <div class="gcard g-entidad"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span>
+        <p>Objeto con identidad propia (UUID) que persiste aunque cambien sus atributos.</p>
+        <p class="ej">En gobierno: <b>usuario</b> — actor de la auditoría inline de cada tabla.</p></div>
+      <div class="gcard g-evento"><span class="badge t-evento"><span class="dot d-evento"></span>Evento inmutable</span>
+        <p>Hecho que ya ocurrió. Append-only: fuente de trazabilidad y clave del sync offline.</p>
+        <p class="ej">No aplica en esta capacidad — la auditoría se implementa inline, no como eventos separados.</p></div>
+      <div class="gcard g-catalogo"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span>
+        <p>Lista de referencia casi estática que tipifica a otras entidades.</p>
+        <p class="ej">No aplica en esta capacidad — los roles y permisos se modelarán en una extensión futura.</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de datos</p>
+    <h2>Diagrama</h2>
+    <p class="lead">Coloreado por tipo DDD. Las cajas grises punteadas representan todas las demás capacidades que consumen <span class="mono">empresa</span> y <span class="mono">usuario</span> por FK. Usa los controles para ampliar o ver en pantalla completa.</p>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">gobierno</span><span class="cap">multi-tenant · auditoría</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
+graph LR
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef entidad fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#181b27;
+classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+emp["empresa"]:::raiz
+usr["usuario"]:::entidad
+caps["catalogos · produccion · planeacion\nreconciliacion · beneficio · estandares\ncostos · inversiones"]:::ext
+emp --> usr
+emp -.->|id_empresa| caps
+usr -.->|creado/actualizado/eliminado_por_usuario_id| caps
+</pre></div></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Matriz de responsabilidades</p>
+    <h2>¿Qué rol cumple cada tabla?</h2>
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="hint">Pasa el cursor para ver <b>responsabilidad</b> y <b>porqué</b>.</span>
+    </div>
+    <div class="matriz">
+      <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">gobierno</span></div>
+        <h4>empresa</h4><div class="from">tenant</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Empresa o grupo minero dueño de los datos. Define el límite de la multi-tenencia: todos los registros del sistema pertenecen a exactamente una empresa.</p>
+        <p class="h">Por qué</p><p>Sin <span class="mono">id_empresa</span> como FK obligatorio en cada tabla, los datos de distintos clientes se mezclarían. La raíz <b>empresa</b> es el ancla que impide esa mezcla a nivel de base de datos.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">gobierno</span></div>
+        <h4>usuario</h4><div class="from">auditoría</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Usuario operativo o administrativo por empresa: login, nombre completo, correo y estado. Es el actor que firma la auditoría inline de cada tabla del sistema.</p>
+        <p class="h">Por qué</p><p>Cada tabla lleva <span class="mono">creado_por_usuario_id</span>, <span class="mono">actualizado_por_usuario_id</span> y <span class="mono">eliminado_por_usuario_id</span>. Esas columnas apuntan aquí — pero sin FK declarada, para evitar dependencias circulares y mantener la tabla liviana.</p></div></article>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Código SQL</p>
+    <h2>DDL de gobierno (PostgreSQL)</h2>
+    <p class="lead">Esquema real con <b>id</b> UUID, índices únicos parciales (solo activos), auditoría inline y la FK que vincula usuario a empresa. Pasa el cursor sobre las columnas para ver su explicación.</p>
+
+    <details class="code" open>
+      <summary>gobierno / empresa.sql  (Raíz de Agregado — tenant)</summary>
+      <pre class="sql">CREATE TABLE gobierno.empresa (
+  <span class="c" data-tip="PK del tenant (UUID).">id</span>                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Código corto de la empresa. Único entre activas (índice parcial).">codigo</span>                      TEXT NOT NULL,
+  <span class="c" data-tip="Razón social oficial de la empresa.">razon_social</span>                TEXT NOT NULL,
+  <span class="c" data-tip="ACTIVA / INACTIVA. Controla si el tenant puede operar.">estado</span>                      TEXT NOT NULL DEFAULT 'ACTIVA',
+  <span class="c" data-tip="Auditoría: cuándo se creó el registro.">creado_en</span>                   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  <span class="c" data-tip="Auditoría: qué usuario lo creó (sin FK para evitar dependencia circular).">creado_por_usuario_id</span>       UUID,
+  <span class="c" data-tip="Auditoría: cuándo se modificó por última vez.">actualizado_en</span>              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  <span class="c" data-tip="Auditoría: qué usuario lo modificó.">actualizado_por_usuario_id</span>  UUID,
+  <span class="c" data-tip="Borrado lógico: NULL = activa, valor = fecha de baja.">eliminado_en</span>                TIMESTAMPTZ,
+  <span class="c" data-tip="Auditoría: qué usuario ejecutó la baja lógica.">eliminado_por_usuario_id</span>    UUID,
+  CONSTRAINT ck_empresa_estado CHECK (estado IN ('ACTIVA','INACTIVA'))
+);
+CREATE UNIQUE INDEX uq_empresa_codigo ON gobierno.empresa (codigo) WHERE eliminado_en IS NULL;
+COMMENT ON TABLE gobierno.empresa IS 'Tenant: empresa/grupo minero dueño de los datos. Raiz de la multi-tenencia.';</pre>
+    </details>
+
+    <details class="code" open>
+      <summary>gobierno / usuario.sql  (Entidad — actor de la auditoría)</summary>
+      <pre class="sql">CREATE TABLE gobierno.usuario (
+  <span class="c" data-tip="PK del usuario (UUID).">id</span>                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa a la que pertenece el usuario (multi-tenant).">id_empresa</span>                  UUID NOT NULL,
+  <span class="c" data-tip="Login / nombre de acceso. Único por empresa entre activos.">usuario</span>                     TEXT NOT NULL,
+  <span class="c" data-tip="Nombre completo del usuario.">nombre</span>                      TEXT NOT NULL,
+  <span class="c" data-tip="Correo electrónico (opcional).">correo</span>                      TEXT,
+  <span class="c" data-tip="ACTIVO / INACTIVO. Controla si puede autenticarse.">estado</span>                      TEXT NOT NULL DEFAULT 'ACTIVO',
+  <span class="c" data-tip="Auditoría: cuándo se creó el registro.">creado_en</span>                   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  <span class="c" data-tip="Auditoría: qué usuario lo creó.">creado_por_usuario_id</span>       UUID,
+  <span class="c" data-tip="Auditoría: cuándo se modificó por última vez.">actualizado_en</span>              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  <span class="c" data-tip="Auditoría: qué usuario lo modificó.">actualizado_por_usuario_id</span>  UUID,
+  <span class="c" data-tip="Borrado lógico: NULL = activo.">eliminado_en</span>                TIMESTAMPTZ,
+  <span class="c" data-tip="Auditoría: qué usuario ejecutó la baja lógica.">eliminado_por_usuario_id</span>    UUID,
+  CONSTRAINT ck_usuario_estado CHECK (estado IN ('ACTIVO','INACTIVO'))
+);
+ALTER TABLE gobierno.usuario
+  ADD CONSTRAINT fk_usuario_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT;
+CREATE UNIQUE INDEX uq_usuario ON gobierno.usuario (id_empresa, usuario) WHERE eliminado_en IS NULL;
+COMMENT ON TABLE gobierno.usuario IS 'Usuario operativo/administrativo por empresa. Actor de la auditoria inline.';</pre>
+    </details>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Preguntas frecuentes</p>
+    <h2>Decisiones de diseño</h2>
+
+    <details class="qa"><summary>¿Por qué gobierno es una capacidad aparte y no parte de catálogos?</summary><div class="resp">Porque sus responsabilidades son transversales: <b>empresa</b> y <b>usuario</b> son referenciados por <em>todas</em> las demás capacidades. Si vivieran en catálogos, ese módulo crearía una dependencia de infraestructura sobre el resto, en lugar de ser un maestro de dominio. Separar gobierno permite que catálogos, producción, planeación, etc. importen solo lo que necesitan sin acoplamientos de módulo.</div></details>
+
+    <details class="qa"><summary>¿Por qué todas las tablas llevan id_empresa y no solo las "raíces"?</summary><div class="resp">El aislamiento de datos multi-tenant debe ser absoluto: una consulta que se olvide de filtrar por empresa nunca debe poder ver datos del tenant equivocado. Tener <span class="mono">id_empresa</span> en <em>cada</em> tabla — no solo en la cabecera — permite aplicar el filtro directamente en la capa de datos, sin depender de que la lógica de aplicación encadene todos los joins correctamente.</div></details>
+
+    <details class="qa"><summary>¿Por qué la auditoría inline (creado/actualizado/eliminado_por_usuario_id) no usa FK a usuario?</summary><div class="resp">Por dos razones. Primera, una FK a <span class="mono">gobierno.usuario</span> desde <em>cada una</em> de las decenas de tablas del sistema crea un grafo de dependencias que complica las migraciones y los <span class="mono">DROP</span>. Segunda, la auditoría debe perdurar incluso si el usuario es dado de baja (<span class="mono">eliminado_en</span> != NULL) o si en el futuro se modela como evento independiente. Con UUID sin FK el historial queda intacto y la resolución del nombre se hace en la capa de lectura (query o vista).</div></details>
+
+    <details class="qa"><summary>¿Cómo funciona la multi-tenencia con el índice único parcial?</summary><div class="resp">Cada tabla de negocio declara su unicidad sobre <span class="mono">(id_empresa, clave_natural) WHERE eliminado_en IS NULL</span>. Esto garantiza que dos empresas distintas puedan tener el mismo código (ej. <span class="mono">EMP-001</span>) sin conflicto, y que dentro de una misma empresa un código pueda reutilizarse tras una baja lógica. Es el mismo patrón que en <span class="mono">uq_empresa_codigo</span> y <span class="mono">uq_usuario</span> de esta misma capacidad.</div></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Página 1 de 9</b> · Schema gobierno · 2 tablas. <a href="index.html">Volver al índice</a> · Siguiente: <a href="02-catalogos.html">Catálogos →</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'14px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:42,rankSpacing:60}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

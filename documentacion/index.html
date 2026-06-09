@@ -12,7 +12,7 @@
   <div class="wrap">
     <p class="eyebrow">Sistema de Planeación y Producción Minera</p>
     <h1>Modelo de datos · Lenguaje ubicuo &amp; DDD</h1>
-    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Cada página documenta una capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 45 tablas · 18 vistas + 1 materializada · 21 pruebas en verde.</p>
+    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 47 tablas · 19 vistas (con 1 materializada) · 23 pruebas en verde.</p>
     <div class="chips">
       <span class="chip">PostgreSQL 17</span>
       <span class="chip">9 capacidades</span>
@@ -33,67 +33,83 @@
       </div>
       <span class="tag">Au · Ag · Pb · Zn · tepetate</span>
     </div>
-    <p class="lead" style="margin-top:18px">Todo gira en torno a dos columnas vertebrales: el <b>Plan</b> (lo que se va a minar) y el <b>Real</b> (lo que se minó, capturado turno a turno). Los miles de entregables del sistema son <b>vistas derivadas</b> de esas dos. Explora cada capacidad:</p>
+    <p class="lead" style="margin-top:18px">Todo gira en torno a dos columnas vertebrales: el <b>Plan</b> (lo que se va a minar) y el <b>Real</b> (lo que se minó, capturado turno a turno). Los miles de entregables del sistema son <b>vistas derivadas</b> de esas dos. Cada capacidad tiene su propia página:</p>
   </div>
 </section>
 
 <section style="padding-top:0">
   <div class="wrap">
-    <p class="eyebrow">Páginas</p>
-    <h2>Las capacidades del modelo</h2>
-    <p class="lead">Una página por capacidad para mantener cada documento enfocado y legible.</p>
+    <p class="eyebrow">Capacidades</p>
+    <h2>Las 9 capacidades del modelo</h2>
+    <p class="lead">Una página por capacidad para mantener cada documento enfocado y con su propio diagrama.</p>
     <div class="paginas">
 
-      <a class="pgcard" href="01-catalogos-produccion.html">
+      <a class="pgcard" href="01-gobierno.html">
         <span class="pgnum">1</span>
-        <div class="pgcap">gobierno · catalogos · produccion</div>
-        <h3>Catálogos y Producción</h3>
-        <p>Maestros (mina, equipo, empleado, mineral), la <b>obra</b> como entidad central, y la captura del Real: acarreo, rezagado y barrenación turno a turno.</p>
-        <div class="pgmeta">27 tablas · captura offline-first</div>
+        <div class="pgcap">gobierno</div>
+        <h3>Gobierno y Acceso</h3>
+        <p>Capacidad transversal de multi-tenant y auditoría: <b>empresa</b> (tenant) y <b>usuario</b>. Todas las demás capacidades la consumen por FK.</p>
+        <div class="pgmeta">2 tablas · multi-tenant + auditoría</div>
       </a>
 
-      <a class="pgcard" href="02-planeacion.html">
+      <a class="pgcard" href="02-catalogos.html">
         <span class="pgnum">2</span>
+        <div class="pgcap">catalogos</div>
+        <h3>Catálogos</h3>
+        <p>Maestros (mina, equipo, empleado, mineral), la <b>obra</b> como entidad central, y las 11 tipificaciones que clasifican todo el dominio.</p>
+        <div class="pgmeta">16 tablas · datos maestros</div>
+      </a>
+
+      <a class="pgcard" href="03-produccion.html">
+        <span class="pgnum">3</span>
+        <div class="pgcap">produccion</div>
+        <h3>Producción</h3>
+        <p>La captura del Real turno a turno: acarreo, rezagado y barrenación, con cabecera (parte) y detalle (evento append-only). Lo único offline-first.</p>
+        <div class="pgmeta">9 tablas · captura del Real</div>
+      </a>
+
+      <a class="pgcard" href="04-planeacion.html">
+        <span class="pgnum">4</span>
         <div class="pgcap">planeacion</div>
         <h3>Planeación</h3>
         <p>El plan maestro: rebajes, bloques programados con leyes diluidas y cut-off, y metas por periodo en los 6 horizontes (anual→diario).</p>
         <div class="pgmeta">4 tablas · la otra columna vertebral</div>
       </a>
 
-      <a class="pgcard" href="03-reconciliacion.html">
-        <span class="pgnum">3</span>
+      <a class="pgcard" href="05-reconciliacion.html">
+        <span class="pgnum">5</span>
         <div class="pgcap">reconciliacion</div>
         <h3>Reconciliación</h3>
         <p>Trazabilidad por segmentos de 10×2 m con identificador único: Reserva → Tumbe → Estimación → Planta.</p>
         <div class="pgmeta">2 tablas · medición por fuente</div>
       </a>
 
-      <a class="pgcard" href="04-beneficio.html">
-        <span class="pgnum">4</span>
+      <a class="pgcard" href="06-beneficio.html">
+        <span class="pgnum">6</span>
         <div class="pgcap">beneficio</div>
         <h3>Beneficio (planta)</h3>
         <p>Molienda y balance metalúrgico: leyes cabeza/concentrado/cola y recuperación por metal. Base de la comparativa producción vs molienda.</p>
         <div class="pgmeta">3 tablas · balance metalúrgico</div>
       </a>
 
-      <a class="pgcard" href="05-estandares.html">
-        <span class="pgnum">5</span>
+      <a class="pgcard" href="07-estandares.html">
+        <span class="pgnum">7</span>
         <div class="pgcap">estandares</div>
         <h3>Estándares (tiempos)</h3>
         <p>Metas de disponibilidad, utilización y demora por tipo de equipo, y productividad por actividad. El patrón contra el que se mide lo real.</p>
         <div class="pgmeta">2 tablas · tiempos operativos</div>
       </a>
 
-      <a class="pgcard" href="06-costos.html">
-        <span class="pgnum">6</span>
+      <a class="pgcard" href="08-costos.html">
+        <span class="pgnum">8</span>
         <div class="pgcap">costos</div>
         <h3>Costos</h3>
         <p>Estimaciones a contratistas con su detalle, presupuesto, costo unitario (USD/ton, USD/m) y cut-off variable por rebaje/zona.</p>
         <div class="pgmeta">6 tablas · presupuesto vs real</div>
       </a>
 
-      <a class="pgcard" href="07-inversiones.html">
-        <span class="pgnum">7</span>
+      <a class="pgcard" href="09-inversiones.html">
+        <span class="pgnum">9</span>
         <div class="pgcap">inversiones</div>
         <h3>Inversiones</h3>
         <p>Inversión por obra y periodo, activos capitalizables y consumo de acero (split set, malla).</p>
