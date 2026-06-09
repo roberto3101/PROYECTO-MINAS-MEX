@@ -4,7 +4,7 @@ Esquema **PostgreSQL 17**, organizado por **capacidades** (schemas), con DDD lig
 UUID, multi-tenant, auditoría inline, eventos append-only, índices únicos parciales y
 vistas de reportes. El **aislamiento multi-tenant vive en la base** (RLS + FK compuestas
 + privilegios), no en el código de la aplicación. Todo el pipeline (esquema → vistas →
-seed → tests) se ejecuta y **pasa en local** (29 pruebas, auditada además por subagentes senior).
+seed → tests) se ejecuta y **pasa en local** (32 pruebas, auditada además por subagentes senior).
 
 ## Cómo ejecutar
 
@@ -25,11 +25,11 @@ cd C:\Users\user\Desktop\MinasSali\infraestructura\base-de-datos
 ```
 Imprime `TODOS LOS TESTS PASARON` al final si todo está correcto.
 
-## Páginas (capacidades) — 47 tablas
+## Páginas (capacidades) — 50 tablas
 ```
 infraestructura/base-de-datos/esquema/
 ├── 00_reset_y_esquemas.sql   schemas por capacidad (idempotente)
-├── 01_gobierno.sql           (2)  empresa, usuario
+├── 01_gobierno.sql           (5)  empresa, usuario, rol, usuario_rol, superadmin (RBAC)
 ├── 02_catalogos.sql          (16) mina, equipo, empleado, mineral, obra + 11 tipificaciones
 ├── 03_produccion.sql         (9)  parte_acarreo+acarreo_viaje, parte_rezagado+rezagado_ciclo,
 │                                   parte_barrenacion+barrenacion_avance+barrenacion_ejecutado,
@@ -47,7 +47,7 @@ infraestructura/base-de-datos/esquema/
 ├── 50_vistas.sql             19 vistas + 1 materializada (capa reportes)
 └── 60_seguridad_rls.sql      rol `aplicacion`, RLS fail-closed, security_invoker, privilegios
 semilla/20_seed.sql           datos de ejemplo (Excel real + tenant B mínimo para aislamiento)
-pruebas/30_tests.sql          29 tests: integración, lógica, gobernanza y aislamiento multi-tenant
+pruebas/30_tests.sql          32 tests: integración, lógica, gobernanza, aislamiento multi-tenant y RBAC
 pruebas/agentes/              baterías de auditoría senior (smoke · integridad · lógica · rendimiento · trazabilidad · dominio)
 ejecutar.ps1 · README.md
 ```
@@ -87,6 +87,10 @@ El backend **no** escribe `WHERE id_empresa` en ninguna consulta. Tres capas lo 
    otra empresa — ni siquiera conexiones administrativas que esquivan RLS.
 3. **Privilegios del rol `aplicacion`** (test T28): sin `BYPASSRLS`, sin `DELETE` (borrado
    lógico por `UPDATE eliminado_en`), y los eventos sin `UPDATE` (append-only por privilegio).
+4. **Rol `plataforma`** (panel superadmin, tests T30-T32): crea empresas, su primer admin y
+   los roles semilla. `gobierno.superadmin` es invisible para `aplicacion`. El RBAC
+   (`rol` + `usuario_rol`, con alcance opcional por mina) usa FKs compuestas: imposible
+   asignar roles de otra empresa. La revocación es baja lógica (queda quién y cuándo).
 
 Patrón del backend (por transacción):
 ```sql

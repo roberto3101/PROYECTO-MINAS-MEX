@@ -98,6 +98,28 @@ INSERT INTO catalogos.empleado (id, id_empresa, id_mina, numero_nomina, nombre_c
  (:'e_maria',:'emp', :'m_sat', 'EMP004','MARIA LOPEZ RUIZ',      (SELECT id FROM catalogos.departamento WHERE id_empresa=:'emp' AND codigo='MINA'),     (SELECT id FROM catalogos.puesto WHERE id_empresa=:'emp' AND codigo='OP_CAMION'),'007-0004'),
  (:'e_rey',  :'emp', :'m_cien','EMP005','REYNALDO JIMENEZ',      (SELECT id FROM catalogos.departamento WHERE id_empresa=:'emp' AND codigo='GERENCIA'), (SELECT id FROM catalogos.puesto WHERE id_empresa=:'emp' AND codigo='GERENTE'),'001-0001');
 
+-- ---- RBAC: roles de sistema (semilla por CADA empresa), admin de empresa y superadmin ----
+INSERT INTO gobierno.rol (id_empresa, codigo, descripcion, es_sistema)
+SELECT e.id, r.codigo, r.descripcion, true
+FROM gobierno.empresa e
+CROSS JOIN (VALUES
+  ('ADMIN_EMPRESA','Administra usuarios, roles y catalogos de su empresa'),
+  ('JEFE_TURNO','Supervisa la operacion del turno y valida partes'),
+  ('CAPITAN_MINA','Captura y valida partes de su mina'),
+  ('OPERADOR','Captura sus propios partes de operacion'),
+  ('PLANEACION','Gestiona plan de bloques, metas y reportes'),
+  ('LECTURA','Solo consulta tableros y reportes')
+) AS r(codigo, descripcion);
+
+\set usr_admin '22222222-2222-2222-2222-222222222223'
+INSERT INTO gobierno.usuario (id, id_empresa, id_empleado, usuario, nombre) VALUES
+ (:'usr_admin', :'emp', :'e_rey', 'admin.mina', 'REYNALDO JIMENEZ');
+INSERT INTO gobierno.usuario_rol (id_empresa, id_usuario, id_rol)        -- alcance NULL = toda la empresa
+SELECT :'emp', :'usr_admin', r.id FROM gobierno.rol r
+WHERE r.id_empresa = :'emp' AND r.codigo = 'ADMIN_EMPRESA';
+
+INSERT INTO gobierno.superadmin (usuario, nombre) VALUES ('plataforma', 'Superadmin Plataforma');
+
 -- ---- Minerales ----
 INSERT INTO catalogos.mineral (id_empresa, id_mina, id_tipo_mineral, nombre, unidad_medida, ley) VALUES
  (:'emp', :'m_cien', (SELECT id FROM catalogos.tipo_mineral WHERE id_empresa=:'emp' AND codigo='MINERAL'),  'Plata','g/t',350.5),

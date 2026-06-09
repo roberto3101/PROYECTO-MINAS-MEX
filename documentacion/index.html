@@ -12,7 +12,7 @@
   <div class="wrap">
     <p class="eyebrow">Sistema de Planeación y Producción Minera</p>
     <h1>Modelo de datos · Lenguaje ubicuo &amp; DDD</h1>
-    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 47 tablas · 19 vistas (con 1 materializada) · 29 pruebas en verde.</p>
+    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 50 tablas · 19 vistas (con 1 materializada) · 32 pruebas en verde.</p>
     <div class="chips">
       <span class="chip">PostgreSQL 17</span>
       <span class="chip">9 capacidades</span>
@@ -45,12 +45,20 @@
     <p class="lead">Una página por capacidad para mantener cada documento enfocado y con su propio diagrama.</p>
     <div class="paginas">
 
+      <a class="pgcard" href="diagrama-general.html" style="border-color:#cdb892;background:linear-gradient(135deg,#fffdf8,#fff)">
+        <span class="pgnum">◈</span>
+        <div class="pgcap">mapa completo</div>
+        <h3>Diagrama general interactivo</h3>
+        <p>Las <b>50 tablas</b> y sus relaciones en un solo mapa, agrupadas por capacidad y coloreadas por tipo DDD. Haz clic en cualquier tabla para ir a su página.</p>
+        <div class="pgmeta">50 tablas · 9 capacidades · clic para navegar</div>
+      </a>
+
       <a class="pgcard" href="01-gobierno.html">
         <span class="pgnum">1</span>
         <div class="pgcap">gobierno</div>
         <h3>Gobierno y Acceso</h3>
-        <p>Capacidad transversal de multi-tenant y auditoría: <b>empresa</b> (tenant) y <b>usuario</b>. El aislamiento se garantiza <b>en la base</b> (RLS + FK compuestas), no en el código.</p>
-        <div class="pgmeta">2 tablas · multi-tenant + RLS</div>
+        <p>Multi-tenant, <b>roles (RBAC)</b> y auditoría: la plataforma (superadmin) crea las empresas; cada empresa administra sus usuarios y roles. Aislamiento garantizado <b>en la base</b> (RLS + FK compuestas).</p>
+        <div class="pgmeta">5 tablas · superadmin + RBAC + RLS</div>
       </a>
 
       <a class="pgcard" href="02-catalogos.html">

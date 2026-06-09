@@ -331,6 +331,57 @@ DO $$ DECLARE v int; BEGIN
   RAISE NOTICE 'OK  T29: vistas (security_invoker) y materializada (via vista filtrada) respetan el tenant';
 END $$;
 RESET ROLE;
+
+-- T30: RBAC aislado por tenant — cada empresa ve SOLO sus roles y asignaciones
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM gobierno.rol;
+  IF v <> 6 THEN RAISE EXCEPTION 'T30 FALLO: tenant A debe ver 6 roles de sistema, ve %', v; END IF;
+  SELECT count(*) INTO v FROM gobierno.usuario_rol ur
+    JOIN gobierno.usuario u ON u.id = ur.id_usuario
+    WHERE u.usuario = 'admin.mina' AND ur.eliminado_en IS NULL;
+  IF v <> 1 THEN RAISE EXCEPTION 'T30 FALLO: admin.mina debe tener 1 rol vigente, tiene %', v; END IF;
+  RAISE NOTICE 'OK  T30: RBAC por tenant (6 roles sistema; admin.mina con ADMIN_EMPRESA vigente)';
+END $$;
+RESET ROLE;
+
+-- T31: superadmin invisible para la app; el rol plataforma administra TODOS los tenants
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  BEGIN
+    SELECT count(*) INTO v FROM gobierno.superadmin;
+    RAISE EXCEPTION 'T31 FALLO: superadmin quedo visible para aplicacion';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END $$;
+RESET ROLE;
+SET ROLE plataforma;
+DO $$ DECLARE v_emp int; v_sa int; BEGIN
+  SELECT count(*) INTO v_emp FROM gobierno.empresa;
+  IF v_emp < 2 THEN RAISE EXCEPTION 'T31 FALLO: plataforma debe ver todas las empresas, ve %', v_emp; END IF;
+  SELECT count(*) INTO v_sa FROM gobierno.superadmin;
+  IF v_sa <> 1 THEN RAISE EXCEPTION 'T31 FALLO: plataforma debe ver 1 superadmin, ve %', v_sa; END IF;
+  RAISE NOTICE 'OK  T31: superadmin oculto a la app; plataforma ve % empresas y gestiona superadmins', v_emp;
+END $$;
+RESET ROLE;
+
+-- T32: FK compuesta en RBAC — imposible asignar a un usuario un rol de OTRA empresa
+DO $$ DECLARE v_rol_b uuid; BEGIN
+  SELECT r.id INTO v_rol_b FROM gobierno.rol r
+    JOIN gobierno.empresa e ON e.id = r.id_empresa
+    WHERE e.codigo = 'MIN2' AND r.codigo = 'ADMIN_EMPRESA';
+  BEGIN
+    INSERT INTO gobierno.usuario_rol (id_empresa, id_usuario, id_rol)
+    VALUES ((SELECT id FROM gobierno.empresa WHERE codigo='MIN'),
+            (SELECT id FROM gobierno.usuario WHERE usuario='admin.mina'),
+            v_rol_b);
+    RAISE EXCEPTION 'T32 FALLO: se asigno un rol de otra empresa';
+  EXCEPTION WHEN foreign_key_violation THEN
+    RAISE NOTICE 'OK  T32: FK compuesta impide asignar roles de otra empresa';
+  END;
+END $$;
+
 SELECT set_config('app.empresa_actual', '', false);
 
 DO $$ BEGIN RAISE NOTICE '========================================'; RAISE NOTICE 'TODOS LOS TESTS PASARON'; RAISE NOTICE '========================================'; END $$;

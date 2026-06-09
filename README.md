@@ -9,8 +9,9 @@ multi-tenant, eventos append-only, auditoría inline y borrado lógico.
 ```
 PROYECTO-MINAS-MEX/
 ├── documentacion/                 Sitio HTML del modelo de datos (se despliega en Vercel)
-│   ├── index.html                 portada (7 capacidades)
-│   ├── 01..07-*.html              una página por capacidad
+│   ├── index.html                 portada (9 capacidades)
+│   ├── diagrama-general.html      mapa interactivo de las 50 tablas (clic → capacidad)
+│   ├── 01..09-*.html              una página por capacidad
 │   ├── estilos.css · scripts.js   compartidos
 │   ├── vercel.json                config de despliegue
 │   └── README.md                  cómo desplegar en Vercel
@@ -18,7 +19,7 @@ PROYECTO-MINAS-MEX/
     └── base-de-datos/             Esquema PostgreSQL (fuente de verdad)
         ├── esquema/               00..60 DDL por capacidad + índices + vistas + seguridad RLS
         ├── semilla/20_seed.sql    datos de ejemplo
-        ├── pruebas/30_tests.sql   29 tests: integración/lógica/gobernanza/aislamiento
+        ├── pruebas/30_tests.sql   32 tests: integración/lógica/gobernanza/aislamiento/RBAC
         ├── pruebas/agentes/       baterías de auditoría senior
         ├── ejecutar.ps1           carga todo en orden
         └── README.md              detalle de la BD
@@ -28,9 +29,14 @@ PROYECTO-MINAS-MEX/
 > poder desplegarla sola en Vercel sin exponer el esquema ni el backend.
 
 ## Base de datos
-PostgreSQL 17. **47 tablas** en 9 capacidades (schemas: gobierno, catalogos, produccion,
+PostgreSQL 17. **50 tablas** en 9 capacidades (schemas: gobierno, catalogos, produccion,
 planeacion, reconciliacion, beneficio, estandares, costos, inversiones), **19 vistas**
-(+1 materializada) y **29 tests** que pasan en local.
+(+1 materializada) y **32 tests** que pasan en local.
+
+**Modelo de administración** (estándar B2B enterprise): la **plataforma** (superadmin)
+crea las empresas; el **ADMIN_EMPRESA** de cada una da de alta/baja a sus usuarios y les
+asigna roles (6 de sistema sembrados + propios), con alcance opcional por mina. Sin
+auto-registro: una empresa nunca crea otras empresas.
 
 El **aislamiento multi-tenant vive en la base**, no en el código: RLS fail-closed por
 tenant, FKs compuestas `(id_empresa, id)` que hacen imposible referenciar datos de otra

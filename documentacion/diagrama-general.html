@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagrama general · Sistema de Planeación y Producción Minera</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">Mapa completo del modelo de datos</p>
+    <h1>Diagrama general interactivo</h1>
+    <p class="sub">Las <b>50 tablas</b> del sistema en un solo mapa, agrupadas por <b>capacidad</b> y coloreadas por su tipo DDD. <b>Haz clic en cualquier tabla</b> para ir a la página de su capacidad. Usa los controles para ampliar, reducir o ver en pantalla completa.</p>
+    <nav class="nav">
+      <a href="index.html">Índice</a>
+      <a href="diagrama-general.html" class="activo">Diagrama</a>
+      <a href="01-gobierno.html">1 · Gobierno</a>
+      <a href="02-catalogos.html">2 · Catálogos</a>
+      <a href="03-produccion.html">3 · Producción</a>
+      <a href="04-planeacion.html">4 · Planeación</a>
+      <a href="05-reconciliacion.html">5 · Reconciliación</a>
+      <a href="06-beneficio.html">6 · Beneficio</a>
+      <a href="07-estandares.html">7 · Estándares</a>
+      <a href="08-costos.html">8 · Costos</a>
+      <a href="09-inversiones.html">9 · Inversiones</a>
+    </nav>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Cómo leerlo</p>
+    <h2>Un sistema, nueve capacidades, dos columnas vertebrales</h2>
+    <p class="lead">El <b>Plan</b> (planeación) y el <b>Real</b> (producción) son las dos columnas vertebrales; todo lo demás las clasifica (catálogos), las compara (reconciliación, beneficio, estándares) o las valora (costos, inversiones). Para mantener el mapa legible se omiten las flechas de <span class="mono">id_empresa</span> (toda tabla pertenece a una empresa) y las de auditoría (toda tabla registra quién y cuándo).</p>
+
+    <div class="legend">
+      <span class="item"><span class="dot d-raiz"></span>Raíz de Agregado</span>
+      <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot d-evento"></span>Evento (append-only)</span>
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
+      <span class="hint">Clic en una tabla → <b>abre la página de su capacidad</b></span>
+    </div>
+
+    <div class="dgrm">
+      <div class="dgrm-bar"><span class="ttl">sistema completo</span><span class="cap">50 tablas · 9 capacidades · clic para navegar</span>
+        <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
+      <div class="dgrm-view" style="max-height:78vh"><div class="dgrm-scale"><pre class="mermaid">
+flowchart TB
+classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
+classDef entidad fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#181b27;
+classDef evento fill:#fdecc8,stroke:#b45309,stroke-width:2px,color:#181b27;
+classDef catalogo fill:#d1fae5,stroke:#047857,stroke-width:2px,color:#181b27;
+classDef vistas fill:#eef0f4,stroke:#9aa3b8,stroke-width:1.5px,color:#5b6478,stroke-dasharray:5 3;
+
+subgraph G1["1 · gobierno — tenant, acceso y auditoría"]
+direction LR
+  g_sa["superadmin"]:::entidad
+  g_emp["empresa"]:::raiz
+  g_usr["usuario"]:::entidad
+  g_rol["rol"]:::catalogo
+  g_ur["usuario_rol"]:::entidad
+end
+
+subgraph G2["2 · catalogos — maestros y tipificaciones"]
+direction LR
+  c_mina["mina"]:::raiz
+  c_obra["obra"]:::entidad
+  c_equipo["equipo"]:::raiz
+  c_empleado["empleado"]:::raiz
+  c_mineral["mineral"]:::entidad
+  c_tobra["tipo_obra"]:::catalogo
+  c_smin["sistema_minado"]:::catalogo
+  c_tequipo["tipo_equipo"]:::catalogo
+  c_modulo["modulo_trabajo"]:::catalogo
+  c_tmineral["tipo_mineral"]:::catalogo
+  c_depto["departamento"]:::catalogo
+  c_puesto["puesto"]:::catalogo
+  c_activ["actividad"]:::catalogo
+  c_tdemora["tipo_demora"]:::catalogo
+  c_texplo["tipo_explosivo"]:::catalogo
+  c_tbarreno["tipo_barreno"]:::catalogo
+end
+
+subgraph G3["3 · produccion — captura del REAL (offline-first)"]
+direction LR
+  p_pa["parte_acarreo"]:::raiz
+  p_av["acarreo_viaje"]:::evento
+  p_pr["parte_rezagado"]:::raiz
+  p_rc["rezagado_ciclo"]:::evento
+  p_pb["parte_barrenacion"]:::raiz
+  p_ba["barrenacion_avance"]:::evento
+  p_be["barrenacion_ejecutado"]:::evento
+  p_de["demora_equipo"]:::evento
+  p_ce["consumo_explosivo"]:::evento
+end
+
+subgraph G4["4 · planeacion — el PLAN"]
+direction LR
+  pl_plan["plan"]:::raiz
+  pl_rebaje["rebaje"]:::entidad
+  pl_bloque["bloque_programado"]:::entidad
+  pl_meta["meta_periodo"]:::entidad
+end
+
+subgraph G5["5 · reconciliacion — segmentos 10×2"]
+direction LR
+  r_seg["segmento"]:::entidad
+  r_med["medicion"]:::evento
+end
+
+subgraph G6["6 · beneficio — planta"]
+direction LR
+  b_lote["lote_molienda"]:::raiz
+  b_ley["ley_metalurgica"]:::evento
+  b_rec["recuperacion"]:::evento
+end
+
+subgraph G7["7 · estandares — metas"]
+direction LR
+  e_t["estandar_tiempo"]:::entidad
+  e_p["estandar_productividad"]:::entidad
+end
+
+subgraph G8["8 · costos"]
+direction LR
+  co_contra["contratista"]:::catalogo
+  co_est["estimacion"]:::raiz
+  co_con["estimacion_concepto"]:::entidad
+  co_pre["presupuesto"]:::entidad
+  co_cu["costo_unitario"]:::entidad
+  co_cut["cutoff_variable"]:::entidad
+end
+
+subgraph G9["9 · inversiones"]
+direction LR
+  i_act["activo"]:::entidad
+  i_inv["inversion"]:::entidad
+  i_ace["consumo_acero"]:::evento
+end
+
+rep["capa reportes · 19 vistas + 1 materializada\n(plan vs real · balance de cargas · tiempos vs estándar · reconciliación ...)"]:::vistas
+
+g_sa -.->|crea tenants| g_emp
+g_emp --> g_usr
+g_emp --> g_rol
+g_usr --> g_ur
+g_rol --> g_ur
+g_ur -.->|alcance| c_mina
+
+c_mina --> c_obra
+c_mina --> c_equipo
+c_mina --> c_empleado
+c_mina --> c_mineral
+c_tobra -.-> c_obra
+c_tequipo -.-> c_equipo
+c_tmineral -.-> c_mineral
+
+c_obra --> p_pa
+c_obra --> p_pr
+c_obra --> p_pb
+c_equipo -.-> p_de
+p_pa --> p_av
+p_pr --> p_rc
+p_pb --> p_ba
+p_ba --> p_be
+c_tbarreno -.-> p_be
+p_pb --> p_ce
+c_texplo -.-> p_ce
+
+c_obra -.-> pl_rebaje
+pl_plan --> pl_bloque
+pl_rebaje --> pl_bloque
+pl_bloque --> pl_meta
+
+pl_rebaje -.-> r_seg
+r_seg --> r_med
+
+c_mina -.-> b_lote
+b_lote --> b_ley
+b_lote --> b_rec
+
+c_tequipo -.-> e_t
+c_activ -.-> e_p
+
+co_contra --> co_est
+co_est --> co_con
+pl_rebaje -.-> co_cut
+
+c_obra -.-> i_inv
+c_obra -.-> i_ace
+
+p_av -.->|REAL| rep
+pl_meta -.->|PLAN| rep
+b_lote -.-> rep
+
+click g_sa "01-gobierno.html" "Gobierno"
+click g_emp "01-gobierno.html" "Gobierno"
+click g_usr "01-gobierno.html" "Gobierno"
+click g_rol "01-gobierno.html" "Gobierno"
+click g_ur "01-gobierno.html" "Gobierno"
+click c_mina "02-catalogos.html" "Catálogos"
+click c_obra "02-catalogos.html" "Catálogos"
+click c_equipo "02-catalogos.html" "Catálogos"
+click c_empleado "02-catalogos.html" "Catálogos"
+click c_mineral "02-catalogos.html" "Catálogos"
+click c_tobra "02-catalogos.html" "Catálogos"
+click c_smin "02-catalogos.html" "Catálogos"
+click c_tequipo "02-catalogos.html" "Catálogos"
+click c_modulo "02-catalogos.html" "Catálogos"
+click c_tmineral "02-catalogos.html" "Catálogos"
+click c_depto "02-catalogos.html" "Catálogos"
+click c_puesto "02-catalogos.html" "Catálogos"
+click c_activ "02-catalogos.html" "Catálogos"
+click c_tdemora "02-catalogos.html" "Catálogos"
+click c_texplo "02-catalogos.html" "Catálogos"
+click c_tbarreno "02-catalogos.html" "Catálogos"
+click p_pa "03-produccion.html" "Producción"
+click p_av "03-produccion.html" "Producción"
+click p_pr "03-produccion.html" "Producción"
+click p_rc "03-produccion.html" "Producción"
+click p_pb "03-produccion.html" "Producción"
+click p_ba "03-produccion.html" "Producción"
+click p_be "03-produccion.html" "Producción"
+click p_de "03-produccion.html" "Producción"
+click p_ce "03-produccion.html" "Producción"
+click pl_plan "04-planeacion.html" "Planeación"
+click pl_rebaje "04-planeacion.html" "Planeación"
+click pl_bloque "04-planeacion.html" "Planeación"
+click pl_meta "04-planeacion.html" "Planeación"
+click r_seg "05-reconciliacion.html" "Reconciliación"
+click r_med "05-reconciliacion.html" "Reconciliación"
+click b_lote "06-beneficio.html" "Beneficio"
+click b_ley "06-beneficio.html" "Beneficio"
+click b_rec "06-beneficio.html" "Beneficio"
+click e_t "07-estandares.html" "Estándares"
+click e_p "07-estandares.html" "Estándares"
+click co_contra "08-costos.html" "Costos"
+click co_est "08-costos.html" "Costos"
+click co_con "08-costos.html" "Costos"
+click co_pre "08-costos.html" "Costos"
+click co_cu "08-costos.html" "Costos"
+click co_cut "08-costos.html" "Costos"
+click i_act "09-inversiones.html" "Inversiones"
+click i_inv "09-inversiones.html" "Inversiones"
+click i_ace "09-inversiones.html" "Inversiones"
+</pre></div></div>
+    </div>
+
+    <p class="nota"><b>Convenciones que aplican a TODAS las tablas</b> (omitidas del mapa por legibilidad): <span class="mono">id</span> UUID · <span class="mono">id_empresa</span> con <b>RLS</b> y <b>FKs compuestas</b> (aislamiento por tenant garantizado en la base) · auditoría <span class="mono">creado/actualizado/eliminado_en + _por_usuario_id</span> · borrado lógico con índices únicos parciales · los <b>eventos</b> (naranja) son append-only: sin UPDATE ni DELETE, también por privilegios.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>Diagrama general</b> · 50 tablas · 9 capacidades · PostgreSQL 17. <a href="index.html">Volver al índice</a></p>
+  </div>
+</footer>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({startOnLoad:true,securityLevel:'loose',theme:'base',themeVariables:{fontFamily:'Segoe UI, sans-serif',fontSize:'13px',lineColor:'#8b93a7',primaryColor:'#ffffff',primaryBorderColor:'#cdd2e8',primaryTextColor:'#181b27'},flowchart:{htmlLabels:true,curve:'basis',nodeSpacing:34,rankSpacing:46}});
+</script>
+<script src="scripts.js"></script>
+</body>
+</html>

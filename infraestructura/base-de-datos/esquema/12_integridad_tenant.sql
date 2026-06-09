@@ -71,6 +71,15 @@ BEGIN
   RAISE NOTICE 'Blindaje tenant: % UNIQUE(id_empresa,id) creados, % FKs convertidas a compuestas', v_uq, v_fk;
 END $$;
 
+-- FKs compuestas explícitas de gobierno hacia catálogos (los padres ya
+-- tienen su UNIQUE (id_empresa, id) por el bloque dinámico de arriba):
+ALTER TABLE gobierno.usuario
+  ADD CONSTRAINT fk_usuario_empleado FOREIGN KEY (id_empresa, id_empleado)
+  REFERENCES catalogos.empleado (id_empresa, id) ON DELETE RESTRICT;
+ALTER TABLE gobierno.usuario_rol
+  ADD CONSTRAINT fk_usuario_rol_mina FOREIGN KEY (id_empresa, id_mina)
+  REFERENCES catalogos.mina (id_empresa, id) ON DELETE RESTRICT;
+
 -- Autoverificación: no debe quedar NINGUNA FK simple de negocio entre tablas tenant
 DO $$
 DECLARE v_rest int;

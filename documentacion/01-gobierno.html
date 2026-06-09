@@ -12,9 +12,10 @@
   <div class="wrap">
     <p class="eyebrow">Página 1 de 9 · Modelo de datos</p>
     <h1>Gobierno y Acceso</h1>
-    <p class="sub">Capacidad transversal que fundamenta la <b>multi-tenencia</b> y la <b>auditoría</b> de todo el sistema. Define <span class="mono">empresa</span> (raíz del tenant) y <span class="mono">usuario</span> (actor de la trazabilidad). Todas las demás capacidades la consumen por FK — ninguna tabla existe fuera de un <span class="mono">id_empresa</span>.</p>
+    <p class="sub">Capacidad transversal que fundamenta la <b>multi-tenencia</b>, el <b>acceso</b> y la <b>auditoría</b>. Define <span class="mono">empresa</span> (tenant), <span class="mono">usuario</span>, los <b>roles</b> (<span class="mono">rol</span> + <span class="mono">usuario_rol</span>) y el <span class="mono">superadmin</span> de plataforma. Modelo: <b>la plataforma crea las empresas; cada empresa administra sus propios usuarios</b>. Nadie se auto-registra.</p>
     <nav class="nav">
       <a href="index.html">Índice</a>
+      <a href="diagrama-general.html">Diagrama</a>
       <a href="01-gobierno.html" class="activo">1 · Gobierno</a>
       <a href="02-catalogos.html">2 · Catálogos</a>
       <a href="03-produccion.html">3 · Producción</a>
@@ -49,7 +50,9 @@
         <div class="grp"><span class="lbl">Raíz de Agregado</span>
           <div class="ents"><span class="ent t-raiz">empresa</span></div></div>
         <div class="grp"><span class="lbl">Entidad</span>
-          <div class="ents"><span class="ent t-entidad">usuario</span></div></div>
+          <div class="ents"><span class="ent t-entidad">usuario</span><span class="ent t-entidad">usuario_rol</span><span class="ent t-entidad">superadmin</span></div></div>
+        <div class="grp"><span class="lbl">Catálogo</span>
+          <div class="ents"><span class="ent t-catalogo">rol</span></div></div>
         <div class="grp"><span class="lbl">Consumen por FK (todas las capacidades)</span>
           <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">catalogos · produccion · planeacion · reconciliacion · beneficio · estandares · costos · inversiones</span></div></div>
       </div>
@@ -68,13 +71,13 @@
         <p class="ej">En gobierno: <b>empresa</b> — raíz de la multi-tenencia. Todo lo demás cuelga de ella.</p></div>
       <div class="gcard g-entidad"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span>
         <p>Objeto con identidad propia (UUID) que persiste aunque cambien sus atributos.</p>
-        <p class="ej">En gobierno: <b>usuario</b> — actor de la auditoría inline de cada tabla.</p></div>
+        <p class="ej">En gobierno: <b>usuario</b>, <b>usuario_rol</b> (asignación con revocación trazable) y <b>superadmin</b>.</p></div>
       <div class="gcard g-evento"><span class="badge t-evento"><span class="dot d-evento"></span>Evento inmutable</span>
         <p>Hecho que ya ocurrió. Append-only: fuente de trazabilidad y clave del sync offline.</p>
         <p class="ej">No aplica en esta capacidad — la auditoría se implementa inline, no como eventos separados.</p></div>
       <div class="gcard g-catalogo"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span>
         <p>Lista de referencia casi estática que tipifica a otras entidades.</p>
-        <p class="ej">No aplica en esta capacidad — los roles y permisos se modelarán en una extensión futura.</p></div>
+        <p class="ej">En gobierno: <b>rol</b> — 6 roles de sistema sembrados por empresa (es_sistema) + roles propios del admin.</p></div>
     </div>
   </div>
 </section>
@@ -87,23 +90,33 @@
     <div class="legend">
       <span class="item"><span class="dot d-raiz"></span>Raíz</span>
       <span class="item"><span class="dot d-entidad"></span>Entidad</span>
+      <span class="item"><span class="dot d-catalogo"></span>Catálogo</span>
       <span class="item"><span class="dot" style="background:#9aa3b8"></span>Otra capacidad</span>
     </div>
 
     <div class="dgrm">
-      <div class="dgrm-bar"><span class="ttl">gobierno</span><span class="cap">multi-tenant · auditoría</span>
+      <div class="dgrm-bar"><span class="ttl">gobierno</span><span class="cap">multi-tenant · acceso (RBAC) · auditoría</span>
         <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
       <div class="dgrm-view"><div class="dgrm-scale"><pre class="mermaid">
 graph LR
 classDef raiz fill:#ede9fe,stroke:#6d28d9,stroke-width:2px,color:#181b27;
 classDef entidad fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#181b27;
+classDef catalogo fill:#d1fae5,stroke:#047857,stroke-width:2px,color:#181b27;
 classDef ext fill:#eef0f4,stroke:#9aa3b8,stroke-width:1px,color:#5b6478,stroke-dasharray:4 3;
+sa["superadmin (plataforma)"]:::entidad
 emp["empresa"]:::raiz
 usr["usuario"]:::entidad
+rol["rol"]:::catalogo
+ur["usuario_rol"]:::entidad
 caps["catalogos · produccion · planeacion\nreconciliacion · beneficio · estandares\ncostos · inversiones"]:::ext
+sa -.->|crea y administra tenants| emp
 emp --> usr
+emp --> rol
+usr --> ur
+rol --> ur
+ur -.->|alcance opcional por mina| caps
 emp -.->|id_empresa| caps
-usr -.->|creado/actualizado/eliminado_por_usuario_id| caps
+usr -.->|auditoría _por_usuario_id| caps
 </pre></div></div>
     </div>
   </div>
@@ -128,6 +141,21 @@ usr -.->|creado/actualizado/eliminado_por_usuario_id| caps
         <h4>usuario</h4><div class="from">auditoría</div>
         <div class="pop"><p class="h">Responsabilidad</p><p>Usuario operativo o administrativo por empresa: login, nombre completo, correo y estado. Es el actor que firma la auditoría inline de cada tabla del sistema.</p>
         <p class="h">Por qué</p><p>Cada tabla lleva <span class="mono">creado_por_usuario_id</span>, <span class="mono">actualizado_por_usuario_id</span> y <span class="mono">eliminado_por_usuario_id</span>. Esas columnas apuntan aquí — pero sin FK declarada, para evitar dependencias circulares y mantener la tabla liviana.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">gobierno</span></div>
+        <h4>rol</h4><div class="from">RBAC por empresa</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Roles de la empresa: 6 de sistema sembrados al crear el tenant (ADMIN_EMPRESA, JEFE_TURNO, CAPITAN_MINA, OPERADOR, PLANEACION, LECTURA) + los que el admin defina.</p>
+        <p class="h">Por qué</p><p>Por empresa (no globales): cada tenant puede tener roles propios sin afectar a otros. <span class="mono">es_sistema</span> protege los sembrados.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">gobierno</span></div>
+        <h4>usuario_rol</h4><div class="from">asignación con alcance</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Qué rol tiene cada usuario, con alcance opcional por mina (<span class="mono">id_mina</span> NULL = toda la empresa).</p>
+        <p class="h">Por qué</p><p>La <b>revocación es baja lógica</b>: queda quién asignó, quién revocó y cuándo (trazabilidad ante reclamos). FKs compuestas: imposible asignar roles de otra empresa.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">gobierno · plataforma</span></div>
+        <h4>superadmin</h4><div class="from">fuera de los tenants</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Operadores de la plataforma (nosotros): crean cada empresa y su primer administrador.</p>
+        <p class="h">Por qué</p><p>Vive <b>fuera</b> de los tenants (sin <span class="mono">id_empresa</span>) y es <b>invisible para la app de los tenants</b>: solo el rol de BD <span class="mono">plataforma</span> puede verla (test T31).</p></div></article>
     </div>
   </div>
 </section>
@@ -179,6 +207,75 @@ ALTER TABLE gobierno.usuario
 CREATE UNIQUE INDEX uq_usuario ON gobierno.usuario (id_empresa, usuario) WHERE eliminado_en IS NULL;
 COMMENT ON TABLE gobierno.usuario IS 'Usuario operativo/administrativo por empresa. Actor de la auditoria inline.';</pre>
     </details>
+
+    <details class="code">
+      <summary>gobierno / rol.sql + usuario_rol.sql  (RBAC con alcance por mina)</summary>
+      <pre class="sql">CREATE TABLE gobierno.rol (
+  <span class="c" data-tip="PK del rol (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Empresa dueña: los roles son POR EMPRESA, no globales.">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="ADMIN_EMPRESA, JEFE_TURNO, CAPITAN_MINA, OPERADOR, PLANEACION, LECTURA + propios.">codigo</span> TEXT NOT NULL,
+  <span class="c" data-tip="Descripción legible del rol.">descripcion</span> TEXT NOT NULL,
+  <span class="c" data-tip="true = rol semilla del sistema, protegido (no se edita ni borra desde la app).">es_sistema</span> BOOLEAN NOT NULL DEFAULT false,
+  estado TEXT NOT NULL DEFAULT 'ACTIVO',
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT uq_rol_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_rol_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_rol_codigo ON gobierno.rol (id_empresa, codigo) WHERE eliminado_en IS NULL;
+
+CREATE TABLE gobierno.usuario_rol (
+  <span class="c" data-tip="PK de la asignación (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Tenant de la asignación.">id_empresa</span> UUID NOT NULL,
+  <span class="c" data-tip="Usuario que recibe el rol (FK compuesta con el tenant).">id_usuario</span> UUID NOT NULL,
+  <span class="c" data-tip="Rol asignado (FK compuesta: imposible asignar roles de otra empresa).">id_rol</span> UUID NOT NULL,
+  <span class="c" data-tip="Alcance: una mina específica, o NULL = toda la empresa.">id_mina</span> UUID,
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  <span class="c" data-tip="La REVOCACIÓN es baja lógica: queda quién la hizo y cuándo.">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
+  CONSTRAINT fk_usuario_rol_usuario FOREIGN KEY (id_empresa, id_usuario) REFERENCES gobierno.usuario (id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_usuario_rol_rol     FOREIGN KEY (id_empresa, id_rol)     REFERENCES gobierno.rol     (id_empresa, id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_usuario_rol ON gobierno.usuario_rol
+  (id_empresa, id_usuario, id_rol, COALESCE(id_mina, '00000000-0000-0000-0000-000000000000'))
+  WHERE eliminado_en IS NULL;</pre>
+    </details>
+
+    <details class="code">
+      <summary>gobierno / superadmin.sql  (plataforma — fuera de los tenants)</summary>
+      <pre class="sql">CREATE TABLE gobierno.superadmin (
+  <span class="c" data-tip="PK (UUID). SIN id_empresa: vive fuera de los tenants.">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  <span class="c" data-tip="Login del operador de plataforma. Único entre activos.">usuario</span> TEXT NOT NULL,
+  <span class="c" data-tip="Nombre completo.">nombre</span> TEXT NOT NULL,
+  correo TEXT,
+  <span class="c" data-tip="Hash de contraseña (argon2/bcrypt); lo gestiona el backend.">contrasena_hash</span> TEXT,
+  estado TEXT NOT NULL DEFAULT 'ACTIVO',
+  creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
+  actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
+  eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID
+);
+CREATE UNIQUE INDEX uq_superadmin ON gobierno.superadmin (usuario) WHERE eliminado_en IS NULL;
+-- RLS: solo el rol de BD "plataforma" puede ver/escribir esta tabla.
+-- Para el rol "aplicacion" (los tenants) es invisible: sin grants y sin política.</pre>
+    </details>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Modelo de administración</p>
+    <h2>¿Quién crea a quién?</h2>
+    <p class="lead">Es el modelo estándar del software B2B empresarial: <b>aprovisionamiento controlado por la plataforma</b> + <b>administración delegada</b> en cada empresa. Sin auto-registro.</p>
+    <table class="tabla-comp">
+      <thead><tr><th style="width:24%">Nivel</th><th style="width:30%">Quién</th><th>Qué puede hacer</th></tr></thead>
+      <tbody>
+        <tr><td><b>1 · Plataforma</b></td><td class="mono">superadmin (nosotros)</td><td class="why">Crea y administra las <b>empresas</b> (tenants) y su primer administrador. Panel propio con el rol de BD <span class="mono">plataforma</span>. <b>Una empresa nunca crea otras empresas.</b></td></tr>
+        <tr><td><b>2 · Empresa</b></td><td class="mono">rol ADMIN_EMPRESA</td><td class="why">Da de alta/baja a <b>sus</b> usuarios y les asigna roles — con alcance por mina si aplica. Si alguien deja la empresa, el admin lo da de baja y <b>pierde el acceso al instante</b> (baja lógica trazable).</td></tr>
+        <tr><td><b>3 · Operación</b></td><td class="mono">JEFE_TURNO · CAPITAN_MINA · OPERADOR · PLANEACION · LECTURA</td><td class="why">Roles de sistema sembrados al crear cada empresa; definen lo que cada quien ve y captura. El admin puede crear roles propios adicionales.</td></tr>
+      </tbody>
+    </table>
+    <p class="nota"><b>Por qué así:</b> en sistemas industriales el acceso es un activo controlado — los usuarios <b>no</b> se registran solos (como en una red social); los da de alta un encargado. Eso garantiza que el acceso de un ex-empleado se revoca de inmediato y que cada alta/baja queda auditada con actor y fecha.</p>
   </div>
 </section>
 
@@ -225,12 +322,19 @@ COMMIT;                                               -- al cerrar, el tenant y 
     <details class="qa"><summary>¿Por qué la auditoría inline (creado/actualizado/eliminado_por_usuario_id) no usa FK a usuario?</summary><div class="resp">Por dos razones. Primera, una FK a <span class="mono">gobierno.usuario</span> desde <em>cada una</em> de las decenas de tablas del sistema crea un grafo de dependencias que complica las migraciones y los <span class="mono">DROP</span>. Segunda, la auditoría debe perdurar incluso si el usuario es dado de baja (<span class="mono">eliminado_en</span> != NULL) o si en el futuro se modela como evento independiente. Con UUID sin FK el historial queda intacto y la resolución del nombre se hace en la capa de lectura (query o vista).</div></details>
 
     <details class="qa"><summary>¿Cómo funciona la multi-tenencia con el índice único parcial?</summary><div class="resp">Cada tabla de negocio declara su unicidad sobre <span class="mono">(id_empresa, clave_natural) WHERE eliminado_en IS NULL</span>. Esto garantiza que dos empresas distintas puedan tener el mismo código (ej. <span class="mono">EMP-001</span>) sin conflicto, y que dentro de una misma empresa un código pueda reutilizarse tras una baja lógica. Es el mismo patrón que en <span class="mono">uq_empresa_codigo</span> y <span class="mono">uq_usuario</span> de esta misma capacidad.</div></details>
+
+    <details class="qa"><summary>¿Una empresa puede crear otras empresas?</summary><div class="resp"><b>No.</b> Los tenants los crea únicamente la <b>plataforma</b> (superadmin). Es el estándar B2B enterprise: el alta de una empresa implica aprovisionar sus roles semilla y su primer admin — un proceso controlado, no self-service. A nivel BD, el rol <span class="mono">aplicacion</span> ni siquiera tiene permiso de INSERT sobre <span class="mono">empresa</span>.</div></details>
+
+    <details class="qa"><summary>¿Cómo se quita el acceso a alguien que ya no trabaja en la mina?</summary><div class="resp">El <b>admin de la empresa</b> lo da de baja (baja lógica de <span class="mono">usuario</span> o revocación en <span class="mono">usuario_rol</span>). Queda registrado <b>quién</b> lo dio de baja y <b>cuándo</b>. Además, si la cuenta está vinculada a su <span class="mono">empleado</span>, la baja del personal se refleja en el acceso.</div></details>
+
+    <details class="qa"><summary>¿Por qué los roles son por empresa y no globales?</summary><div class="resp">Cada empresa siembra los <b>6 roles de sistema</b> al crearse (protegidos con <span class="mono">es_sistema</span>) y puede definir roles propios sin afectar a otros tenants. Las FKs compuestas garantizan que una asignación nunca cruce de empresa (test T32).</div></details>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><b>Página 1 de 9</b> · Schema gobierno · 2 tablas. <a href="index.html">Volver al índice</a> · Siguiente: <a href="02-catalogos.html">Catálogos →</a></p>
+    <p><b>Página 1 de 9</b> · Schema gobierno · 5 tablas (empresa, usuario, rol, usuario_rol, superadmin). <a href="index.html">Volver al índice</a>
+      <a href="diagrama-general.html">Diagrama</a> · Siguiente: <a href="02-catalogos.html">Catálogos →</a></p>
   </div>
 </footer>
 

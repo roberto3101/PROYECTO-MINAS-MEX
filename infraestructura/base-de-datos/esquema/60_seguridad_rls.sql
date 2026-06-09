@@ -55,8 +55,26 @@ BEGIN
   END LOOP;
 END $$;
 
-GRANT SELECT ON gobierno.empresa TO aplicacion;            -- los tenants los administra el operador, no la app
+GRANT SELECT ON gobierno.empresa TO aplicacion;            -- los tenants los administra la plataforma, no la app
 GRANT SELECT, INSERT, UPDATE ON gobierno.usuario TO aplicacion;
+GRANT SELECT, INSERT, UPDATE ON gobierno.rol TO aplicacion;          -- el admin de empresa gestiona sus roles
+GRANT SELECT, INSERT, UPDATE ON gobierno.usuario_rol TO aplicacion;  -- ...y las asignaciones (revocación = baja lógica)
+-- gobierno.superadmin: SIN grants para aplicacion (invisible para los tenants)
+
+-- ---------- Rol de PLATAFORMA (superadmin: nosotros) ----------
+-- Administra tenants: crea empresas, su primer admin y los roles semilla.
+-- Es la ÚNICA vía de la aplicación de plataforma; también está sujeta a RLS
+-- pero con política propia (ve todos los tenants SOLO en tablas de gobierno).
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'plataforma') THEN
+    CREATE ROLE plataforma NOLOGIN;
+    COMMENT ON ROLE plataforma IS 'Rol del panel superadmin de la plataforma: gestiona empresas, admins iniciales y roles. No accede a datos operativos.';
+  END IF;
+END $$;
+GRANT USAGE ON SCHEMA gobierno TO plataforma;
+GRANT SELECT, INSERT, UPDATE ON gobierno.empresa, gobierno.usuario, gobierno.rol,
+                               gobierno.usuario_rol, gobierno.superadmin TO plataforma;
 
 -- ---------- (2) RLS fail-closed en toda tabla con id_empresa ----------
 DO $$
@@ -86,6 +104,24 @@ ALTER TABLE gobierno.empresa FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS p_tenant ON gobierno.empresa;
 CREATE POLICY p_tenant ON gobierno.empresa
   USING (id = NULLIF(current_setting('app.empresa_actual', true), '')::uuid);
+
+-- superadmin: tabla de plataforma, fuera de los tenants. Solo el rol plataforma.
+ALTER TABLE gobierno.superadmin ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gobierno.superadmin FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_plataforma ON gobierno.superadmin;
+CREATE POLICY p_plataforma ON gobierno.superadmin TO plataforma USING (true) WITH CHECK (true);
+
+-- El panel de plataforma ve y administra TODOS los tenants, pero SOLO en gobierno
+-- (las políticas son permisivas: se suman con OR a p_tenant para este rol).
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['empresa','usuario','rol','usuario_rol']
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS p_plataforma ON gobierno.%I', t);
+    EXECUTE format('CREATE POLICY p_plataforma ON gobierno.%I TO plataforma USING (true) WITH CHECK (true)', t);
+  END LOOP;
+END $$;
 
 -- ---------- (4) Vistas: el RLS del consultante atraviesa la vista ----------
 DO $$
