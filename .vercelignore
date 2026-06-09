@@ -1,0 +1,4 @@
+# Vercel solo publica la documentación (carpeta documentacion/, vía rewrites en vercel.json).
+# El esquema de base de datos y el resto NO se despliegan (siguen en GitHub).
+infraestructura
+.devdb
