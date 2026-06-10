@@ -9,7 +9,7 @@
 CREATE TABLE catalogos.tipo_obra (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   id_empresa UUID NOT NULL,
-  codigo TEXT NOT NULL,           -- RPA, LAT, ACG, CRO, REB, STOCK, STILL
+  codigo TEXT NOT NULL,           -- RPA, LAT, ACC, CRO, REB, STOCK, SILL
   descripcion TEXT NOT NULL,
   estado TEXT NOT NULL DEFAULT 'ACTIVO',
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
@@ -33,7 +33,7 @@ CREATE TABLE catalogos.sistema_minado (   -- campo "Tumbe" del ER: BL, CR, TSC
 );
 CREATE UNIQUE INDEX uq_sistema_minado ON catalogos.sistema_minado (id_empresa, codigo) WHERE eliminado_en IS NULL;
 
-CREATE TABLE catalogos.tipo_equipo (   -- antes "Tipo" texto libre: CAMION, SCOOP, JUMBO_LINEAL...
+CREATE TABLE catalogos.tipo_equipo (   -- antes "Tipo" texto libre: CAMION, SCOOP, JUMBO_LINEAL, TIRO (shaft), BANDA...
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   id_empresa UUID NOT NULL,
   codigo TEXT NOT NULL, descripcion TEXT NOT NULL,

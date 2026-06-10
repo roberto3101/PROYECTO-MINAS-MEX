@@ -179,8 +179,8 @@ tsm -. "obra/tumbe" .-> obra
 
       <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
         <h4>tipo_obra</h4><div class="from">antes lista en <span class="mono">MINAS</span></div>
-        <div class="pop"><p class="h">Responsabilidad</p><p>Tipifica la obra de desarrollo: RPA, LAT, ACG, CRO, REB, STOCK, STILL.</p>
-        <p class="h">Por qué</p><p>Era una lista fija embebida como texto; pasa a catálogo con integridad real.</p></div></article>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Tipifica la obra de desarrollo: RPA, LAT, ACC (Acceso), CRO, REB, STOCK, SILL.</p>
+        <p class="h">Por qué</p><p>Era una lista fija embebida como texto; pasa a catálogo con integridad real. Códigos validados con el experto de dominio (ACC y SILL).</p></div></article>
 
       <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
         <h4>sistema_minado</h4><div class="from">antes <span class="mono">Tumbe</span></div>
@@ -189,8 +189,8 @@ tsm -. "obra/tumbe" .-> obra
 
       <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
         <h4>tipo_equipo</h4><div class="from">antes <span class="mono">Tipo</span> (texto libre)</div>
-        <div class="pop"><p class="h">Responsabilidad</p><p>Clasifica el equipo: camión, scooptram, jumbo, anclador…</p>
-        <p class="h">Por qué</p><p>Era texto libre (riesgo de variantes); catálogo cerrado para reportes confiables.</p></div></article>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Clasifica el equipo: camión, scooptram, jumbo, anclador, <b>tiro/shaft</b> y <b>banda de extracción</b>…</p>
+        <p class="h">Por qué</p><p>Era texto libre (riesgo de variantes); catálogo cerrado para reportes confiables. Tiro y banda cubren las minas que extraen el mineral a superficie por izaje vertical o por banda transportadora.</p></div></article>
 
       <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">catalogos</span></div>
         <h4>modulo_trabajo</h4><div class="from">antes texto</div>
@@ -272,7 +272,7 @@ CREATE UNIQUE INDEX uq_mina_nombre ON catalogos.mina (id_empresa, nombre) WHERE 
   <span class="c" data-tip="PK del registro (UUID).">id</span> UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
   <span class="c" data-tip="Mina a la que pertenece la obra.">id_mina</span> UUID NOT NULL,
-  <span class="c" data-tip="Tipificación: RPA, LAT, ACG, CRO, REB, STOCK, STILL.">id_tipo_obra</span> UUID,
+  <span class="c" data-tip="Tipificación: RPA, LAT, ACC, CRO, REB, STOCK, SILL.">id_tipo_obra</span> UUID,
   <span class="c" data-tip="Código de la obra (p.ej. REB-2400W). Único por mina entre activas.">codigo</span> TEXT NOT NULL,
   <span class="c" data-tip="Nombre legible de la obra.">nombre</span> TEXT,
   <span class="c" data-tip="Nivel / zona dentro de la mina.">ubicacion</span> TEXT,

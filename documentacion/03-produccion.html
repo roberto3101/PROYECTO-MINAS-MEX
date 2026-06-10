@@ -145,7 +145,7 @@ pb -.->|opc| ce
 
       <article class="card"><div class="row1"><span class="badge t-raiz"><span class="dot d-raiz"></span>Raíz</span><span class="cap-tag">produccion</span></div>
         <h4>parte_acarreo</h4><div class="from">antes <span class="mono">ACARREO</span> (cabecera)</div>
-        <div class="pop"><p class="h">Responsabilidad</p><p>El parte de un turno de acarreo: mina, obra, equipo (camión/locomotora), operador, supervisor, fecha, turno y horómetros inicial/final.</p>
+        <div class="pop"><p class="h">Responsabilidad</p><p>El parte de un turno de acarreo: mina, obra, equipo (camión, locomotora, <b>tiro/shaft</b> o <b>banda de extracción</b>), operador, supervisor, fecha, turno y horómetros inicial/final.</p>
         <p class="h">Por qué</p><p>Cabecera del agregado, separada del detalle (los viajes). Los nombres copiados se eliminan: solo viven los FK. UUID evita colisiones al sincronizar desde el sitio.</p></div></article>
 
       <article class="card"><div class="row1"><span class="badge t-evento"><span class="dot d-evento"></span>Evento</span><span class="cap-tag">produccion</span></div>
@@ -205,7 +205,7 @@ pb -.->|opc| ce
   <span class="c" data-tip="Empresa dueña del registro (multi-tenant).">id_empresa</span> UUID NOT NULL,
   <span class="c" data-tip="Mina donde se realizó el turno.">id_mina</span> UUID NOT NULL,
   <span class="c" data-tip="Obra trabajada — FK a catalogos.obra (entidad, no texto libre).">id_obra</span> UUID NOT NULL,
-  <span class="c" data-tip="Camión o locomotora asignado al turno.">id_equipo</span> UUID NOT NULL,
+  <span class="c" data-tip="Equipo de acarreo del turno: camión, locomotora, tiro/shaft o banda de extracción.">id_equipo</span> UUID NOT NULL,
   <span class="c" data-tip="Operador del turno.">id_operador</span> UUID NOT NULL,
   <span class="c" data-tip="Supervisor (puede ser nulo si no aplica).">id_supervisor</span> UUID,
   <span class="c" data-tip="Fecha del turno (fecha de negocio, no timestamp de inserción).">fecha</span> DATE NOT NULL,
@@ -236,7 +236,7 @@ CREATE INDEX ix_parte_acarreo_obra ON produccion.parte_acarreo (id_obra);</pre>
   <span class="c" data-tip="Empresa dueña (multi-tenant).">id_empresa</span> UUID NOT NULL,
   <span class="c" data-tip="Parte de turno al que pertenece este viaje.">id_parte_acarreo</span> UUID NOT NULL,
   <span class="c" data-tip="Lugar de origen del viaje (frente, bodega, stockpile…).">desde</span> TEXT NOT NULL,
-  <span class="c" data-tip="Destino del viaje (patio, silo, quebradora…).">hasta</span> TEXT NOT NULL,
+  <span class="c" data-tip="Destino del viaje (patio, silo, quebradora, tiro a superficie…).">hasta</span> TEXT NOT NULL,
   <span class="c" data-tip="Clasifica el material transportado: mineral, tepetate, etc.">id_tipo_mineral</span> UUID NOT NULL,
   <span class="c" data-tip="Carga del viaje en toneladas. Nullable si aún no se pesa.">toneladas</span> NUMERIC(12,3),
   <span class="c" data-tip="Solo campo de auditoría en eventos: no hay actualizado_en porque el evento no se modifica.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,

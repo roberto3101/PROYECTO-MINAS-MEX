@@ -44,14 +44,15 @@ INSERT INTO catalogos.mina (id, id_empresa, nombre, area) VALUES (:'m_b', :'empB
 
 -- ---- Lookups ----
 INSERT INTO catalogos.tipo_obra (id_empresa, codigo, descripcion) VALUES
- (:'emp','RPA','Rampa'),(:'emp','LAT','Lateral'),(:'emp','ACG','Acceso a galería'),
- (:'emp','CRO','Crucero'),(:'emp','REB','Rebaje'),(:'emp','STOCK','Stock'),(:'emp','STILL','Still');
+ (:'emp','RPA','Rampa'),(:'emp','LAT','Lateral'),(:'emp','ACC','Acceso'),
+ (:'emp','CRO','Crucero'),(:'emp','REB','Rebaje'),(:'emp','STOCK','Stock'),(:'emp','SILL','Sill (galería de base)');
 INSERT INTO catalogos.sistema_minado (id_empresa, codigo, descripcion) VALUES
  (:'emp','BL','Bench and Long'),(:'emp','CR','Corte y relleno'),(:'emp','TSC','Tumbe sobre carga');
 INSERT INTO catalogos.tipo_equipo (id_empresa, codigo, descripcion) VALUES
  (:'emp','CAMION','Camion'),(:'emp','SCOOP','Scooptram'),(:'emp','JUMBO_LINEAL','Jumbo lineal'),
  (:'emp','JUMBO_LARGA','Jumbo barrenacion larga'),(:'emp','ANCLADOR','Anclador'),
- (:'emp','LOCOMOTORA','Locomotora'),(:'emp','TRACTOR','Tractor');
+ (:'emp','LOCOMOTORA','Locomotora'),(:'emp','TRACTOR','Tractor'),
+ (:'emp','TIRO','Tiro / Shaft (izaje vertical a superficie)'),(:'emp','BANDA','Banda transportadora de extracción');
 INSERT INTO catalogos.modulo_trabajo (id_empresa, codigo, descripcion) VALUES
  (:'emp','ACARREO','Acarreo'),(:'emp','REZAGADO','Rezagado'),(:'emp','BARRENACION','Barrenacion'),
  (:'emp','ANCLAJE','Anclaje'),(:'emp','RELLENO','Relleno');
