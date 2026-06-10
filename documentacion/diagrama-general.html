@@ -12,7 +12,7 @@
   <div class="wrap">
     <p class="eyebrow">Mapa completo del modelo de datos</p>
     <h1>Diagrama general interactivo</h1>
-    <p class="sub">Las <b>50 tablas</b> del sistema en un solo mapa, agrupadas por <b>capacidad</b> y coloreadas por su tipo DDD. <b>Haz clic en cualquier tabla</b> para ir a la página de su capacidad. Usa los controles para ampliar, reducir o ver en pantalla completa.</p>
+    <p class="sub">Las <b>52 tablas</b> del sistema en un solo mapa, agrupadas por <b>capacidad</b> y coloreadas por su tipo DDD. <b>Haz clic en cualquier tabla</b> para ir a la página de su capacidad. Usa los controles para ampliar, reducir o ver en pantalla completa.</p>
     <nav class="nav">
       <a href="index.html">Índice</a>
       <a href="diagrama-general.html" class="activo">Diagrama</a>
@@ -44,7 +44,7 @@
     </div>
 
     <div class="dgrm">
-      <div class="dgrm-bar"><span class="ttl">sistema completo</span><span class="cap">50 tablas · 9 capacidades · clic para navegar</span>
+      <div class="dgrm-bar"><span class="ttl">sistema completo</span><span class="cap">52 tablas · 9 capacidades · clic para navegar</span>
         <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
       <div class="dgrm-view" style="max-height:78vh"><div class="dgrm-scale"><pre class="mermaid">
 flowchart TB
@@ -61,6 +61,8 @@ direction LR
   g_usr["usuario"]:::entidad
   g_rol["rol"]:::catalogo
   g_ur["usuario_rol"]:::entidad
+  g_perm["permiso"]:::catalogo
+  g_rp["rol_permiso"]:::entidad
 end
 
 subgraph G2["2 · catalogos — maestros y tipificaciones"]
@@ -147,6 +149,8 @@ g_emp --> g_usr
 g_emp --> g_rol
 g_usr --> g_ur
 g_rol --> g_ur
+g_rol --> g_rp
+g_perm -.-> g_rp
 g_ur -.->|alcance| c_mina
 
 c_mina --> c_obra
@@ -200,6 +204,8 @@ click g_emp "01-gobierno.html" "Gobierno"
 click g_usr "01-gobierno.html" "Gobierno"
 click g_rol "01-gobierno.html" "Gobierno"
 click g_ur "01-gobierno.html" "Gobierno"
+click g_perm "01-gobierno.html" "Gobierno"
+click g_rp "01-gobierno.html" "Gobierno"
 click c_mina "02-catalogos.html" "Catálogos"
 click c_obra "02-catalogos.html" "Catálogos"
 click c_equipo "02-catalogos.html" "Catálogos"
@@ -254,7 +260,7 @@ click i_ace "09-inversiones.html" "Inversiones"
 
 <footer>
   <div class="wrap">
-    <p><b>Diagrama general</b> · 50 tablas · 9 capacidades · PostgreSQL 17. <a href="index.html">Volver al índice</a></p>
+    <p><b>Diagrama general</b> · 52 tablas · 9 capacidades · PostgreSQL 17. <a href="index.html">Volver al índice</a></p>
   </div>
 </footer>
 

@@ -59,6 +59,8 @@ GRANT SELECT ON gobierno.empresa TO aplicacion;            -- los tenants los ad
 GRANT SELECT, INSERT, UPDATE ON gobierno.usuario TO aplicacion;
 GRANT SELECT, INSERT, UPDATE ON gobierno.rol TO aplicacion;          -- el admin de empresa gestiona sus roles
 GRANT SELECT, INSERT, UPDATE ON gobierno.usuario_rol TO aplicacion;  -- ...y las asignaciones (revocación = baja lógica)
+GRANT SELECT ON gobierno.permiso TO aplicacion;                       -- catálogo global: los tenants lo LEEN, la plataforma lo mantiene
+GRANT SELECT, INSERT, UPDATE ON gobierno.rol_permiso TO aplicacion;   -- la matriz de SUS roles (los de sistema, protegidos abajo)
 -- gobierno.superadmin: SIN grants para aplicacion (invisible para los tenants)
 
 -- ---------- Rol de PLATAFORMA (superadmin: nosotros) ----------
@@ -74,7 +76,8 @@ BEGIN
 END $$;
 GRANT USAGE ON SCHEMA gobierno TO plataforma;
 GRANT SELECT, INSERT, UPDATE ON gobierno.empresa, gobierno.usuario, gobierno.rol,
-                               gobierno.usuario_rol, gobierno.superadmin TO plataforma;
+                               gobierno.usuario_rol, gobierno.superadmin,
+                               gobierno.permiso, gobierno.rol_permiso TO plataforma;
 
 -- ---------- (2) RLS fail-closed en toda tabla con id_empresa ----------
 DO $$
@@ -116,12 +119,52 @@ CREATE POLICY p_plataforma ON gobierno.superadmin TO plataforma USING (true) WIT
 DO $$
 DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['empresa','usuario','rol','usuario_rol']
+  FOREACH t IN ARRAY ARRAY['empresa','usuario','rol','usuario_rol','rol_permiso']
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS p_plataforma ON gobierno.%I', t);
     EXECUTE format('CREATE POLICY p_plataforma ON gobierno.%I TO plataforma USING (true) WITH CHECK (true)', t);
   END LOOP;
 END $$;
+
+-- ---------- Catálogo de permisos: global de lectura, escritura solo plataforma ----------
+ALTER TABLE gobierno.permiso ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gobierno.permiso FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS p_permiso_lectura ON gobierno.permiso;
+CREATE POLICY p_permiso_lectura ON gobierno.permiso FOR SELECT TO aplicacion, plataforma USING (true);
+DROP POLICY IF EXISTS p_permiso_plataforma ON gobierno.permiso;
+CREATE POLICY p_permiso_plataforma ON gobierno.permiso FOR ALL TO plataforma USING (true) WITH CHECK (true);
+
+-- ---------- Guards: los roles de SISTEMA no se tocan desde la app ----------
+-- (restrictivas: se combinan con AND sobre las permisivas; el admin de empresa
+--  personaliza CLONANDO a un rol propio, nunca alterando los de sistema)
+DROP POLICY IF EXISTS p_guard_rol_sistema ON gobierno.rol;
+CREATE POLICY p_guard_rol_sistema ON gobierno.rol AS RESTRICTIVE FOR UPDATE TO aplicacion
+  USING (NOT es_sistema);
+DROP POLICY IF EXISTS p_guard_rp_ins ON gobierno.rol_permiso;
+CREATE POLICY p_guard_rp_ins ON gobierno.rol_permiso AS RESTRICTIVE FOR INSERT TO aplicacion
+  WITH CHECK (NOT EXISTS (SELECT 1 FROM gobierno.rol r WHERE r.id = id_rol AND r.es_sistema));
+DROP POLICY IF EXISTS p_guard_rp_upd ON gobierno.rol_permiso;
+CREATE POLICY p_guard_rp_upd ON gobierno.rol_permiso AS RESTRICTIVE FOR UPDATE TO aplicacion
+  USING (NOT EXISTS (SELECT 1 FROM gobierno.rol r WHERE r.id = id_rol AND r.es_sistema));
+
+-- ---------- Permisos efectivos por usuario (para el backend / JWT) ----------
+CREATE OR REPLACE VIEW gobierno.v_permisos_usuario AS
+SELECT ur.id_empresa,
+       ur.id_usuario,
+       u.usuario,
+       ur.id_mina AS alcance_mina,      -- NULL = toda la empresa
+       p.codigo   AS permiso,
+       p.modulo
+FROM gobierno.usuario_rol ur
+JOIN gobierno.usuario u  ON u.id = ur.id_usuario AND u.eliminado_en IS NULL AND u.estado = 'ACTIVO'
+JOIN gobierno.rol r      ON r.id = ur.id_rol     AND r.eliminado_en IS NULL AND r.estado = 'ACTIVO'
+JOIN gobierno.rol_permiso rp ON rp.id_rol = r.id AND rp.eliminado_en IS NULL
+JOIN gobierno.permiso p  ON p.id = rp.id_permiso AND p.eliminado_en IS NULL AND p.estado = 'ACTIVO'
+WHERE ur.eliminado_en IS NULL;
+ALTER VIEW gobierno.v_permisos_usuario SET (security_invoker = on);
+GRANT SELECT ON gobierno.v_permisos_usuario TO aplicacion, plataforma;
+COMMENT ON VIEW gobierno.v_permisos_usuario IS
+  'Permisos vigentes de cada usuario (via roles activos), con alcance por mina. Al revocar un rol o dar de baja al usuario, sus permisos desaparecen de aqui al instante. El backend la consulta al emitir el JWT.';
 
 -- ---------- (4) Vistas: el RLS del consultante atraviesa la vista ----------
 DO $$

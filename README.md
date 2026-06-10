@@ -19,7 +19,8 @@ PROYECTO-MINAS-MEX/
     └── base-de-datos/             Esquema PostgreSQL (fuente de verdad)
         ├── esquema/               00..60 DDL por capacidad + índices + vistas + seguridad RLS
         ├── semilla/20_seed.sql    datos de ejemplo
-        ├── pruebas/30_tests.sql   32 tests: integración/lógica/gobernanza/aislamiento/RBAC
+        ├── pruebas/30_tests.sql   38 tests: integración/lógica/gobernanza/aislamiento/RBAC/permisos
+        ├── pruebas/40_escenario_usuarios.sql   E2E: ciclo de vida real de una empresa y sus usuarios
         ├── pruebas/agentes/       baterías de auditoría senior
         ├── ejecutar.ps1           carga todo en orden
         └── README.md              detalle de la BD
@@ -29,14 +30,17 @@ PROYECTO-MINAS-MEX/
 > poder desplegarla sola en Vercel sin exponer el esquema ni el backend.
 
 ## Base de datos
-PostgreSQL 17. **50 tablas** en 9 capacidades (schemas: gobierno, catalogos, produccion,
+PostgreSQL 17. **52 tablas** en 9 capacidades (schemas: gobierno, catalogos, produccion,
 planeacion, reconciliacion, beneficio, estandares, costos, inversiones), **19 vistas**
-(+1 materializada) y **32 tests** que pasan en local.
+(+1 materializada) y **38 tests + escenario E2E** que pasan en local.
 
 **Modelo de administración** (estándar B2B enterprise): la **plataforma** (superadmin)
-crea las empresas; el **ADMIN_EMPRESA** de cada una da de alta/baja a sus usuarios y les
-asigna roles (6 de sistema sembrados + propios), con alcance opcional por mina. Sin
-auto-registro: una empresa nunca crea otras empresas.
+crea las empresas — con su branding (logo, color, zona horaria, moneda) —; el
+**ADMIN_EMPRESA** de cada una da de alta/baja a sus usuarios y les asigna roles
+(6 de sistema sembrados + propios), con alcance opcional por mina. Sin auto-registro:
+una empresa nunca crea otras empresas. El **catálogo de permisos** es global
+(29, convención `recurso.accion`); cada rol lleva su matriz en `rol_permiso` y la vista
+`gobierno.v_permisos_usuario` entrega los permisos efectivos para el JWT.
 
 El **aislamiento multi-tenant vive en la base**, no en el código: RLS fail-closed por
 tenant, FKs compuestas `(id_empresa, id)` que hacen imposible referenciar datos de otra

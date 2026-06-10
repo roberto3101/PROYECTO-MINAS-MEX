@@ -4,7 +4,8 @@ Esquema **PostgreSQL 17**, organizado por **capacidades** (schemas), con DDD lig
 UUID, multi-tenant, auditoría inline, eventos append-only, índices únicos parciales y
 vistas de reportes. El **aislamiento multi-tenant vive en la base** (RLS + FK compuestas
 + privilegios), no en el código de la aplicación. Todo el pipeline (esquema → vistas →
-seed → tests) se ejecuta y **pasa en local** (32 pruebas, auditada además por subagentes senior).
+seed → tests) se ejecuta y **pasa en local** (38 pruebas + un escenario E2E de usuarios
+reales, auditada además por subagentes senior).
 
 ## Cómo ejecutar
 
@@ -25,11 +26,12 @@ cd C:\Users\user\Desktop\MinasSali\infraestructura\base-de-datos
 ```
 Imprime `TODOS LOS TESTS PASARON` al final si todo está correcto.
 
-## Páginas (capacidades) — 50 tablas
+## Páginas (capacidades) — 52 tablas
 ```
 infraestructura/base-de-datos/esquema/
 ├── 00_reset_y_esquemas.sql   schemas por capacidad (idempotente)
-├── 01_gobierno.sql           (5)  empresa, usuario, rol, usuario_rol, superadmin (RBAC)
+├── 01_gobierno.sql           (7)  empresa (con branding), usuario, rol, usuario_rol,
+│                                   permiso (catálogo GLOBAL recurso.accion), rol_permiso, superadmin
 ├── 02_catalogos.sql          (16) mina, equipo, empleado, mineral, obra + 11 tipificaciones
 ├── 03_produccion.sql         (9)  parte_acarreo+acarreo_viaje, parte_rezagado+rezagado_ciclo,
 │                                   parte_barrenacion+barrenacion_avance+barrenacion_ejecutado,
@@ -47,7 +49,10 @@ infraestructura/base-de-datos/esquema/
 ├── 50_vistas.sql             19 vistas + 1 materializada (capa reportes)
 └── 60_seguridad_rls.sql      rol `aplicacion`, RLS fail-closed, security_invoker, privilegios
 semilla/20_seed.sql           datos de ejemplo (Excel real + tenant B mínimo para aislamiento)
-pruebas/30_tests.sql          32 tests: integración, lógica, gobernanza, aislamiento multi-tenant y RBAC
+pruebas/30_tests.sql          38 tests: integración, lógica, gobernanza, aislamiento, RBAC y permisos
+pruebas/40_escenario_usuarios.sql  E2E de usuarios reales: plataforma aprovisiona empresa con branding →
+                                   admin configura y da de alta operador (alcance por mina) → operador
+                                   captura → aislamiento → permisos efectivos → revocación y baja
 pruebas/agentes/              baterías de auditoría senior (smoke · integridad · lógica · rendimiento · trazabilidad · dominio)
 ejecutar.ps1 · README.md
 ```
@@ -91,6 +96,12 @@ El backend **no** escribe `WHERE id_empresa` en ninguna consulta. Tres capas lo 
    los roles semilla. `gobierno.superadmin` es invisible para `aplicacion`. El RBAC
    (`rol` + `usuario_rol`, con alcance opcional por mina) usa FKs compuestas: imposible
    asignar roles de otra empresa. La revocación es baja lógica (queda quién y cuándo).
+5. **Catálogo de permisos** (tests T33-T35, T38): `permiso` es GLOBAL (convención
+   `recurso.accion`, 29 sembrados) — lo mantiene la plataforma, los tenants lo leen y
+   combinan en sus roles vía `rol_permiso`. Los roles de SISTEMA están protegidos por
+   políticas restrictivas (se personalizan clonando a un rol propio). La vista
+   `gobierno.v_permisos_usuario` entrega los permisos efectivos (para el JWT del backend);
+   al revocar un rol o dar de baja al usuario, desaparecen al instante.
 
 Patrón del backend (por transacción):
 ```sql

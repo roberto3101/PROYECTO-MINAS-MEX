@@ -382,6 +382,110 @@ DO $$ DECLARE v_rol_b uuid; BEGIN
   END;
 END $$;
 
+-- T33: catálogo de permisos GLOBAL — legible por los tenants, escribible solo por plataforma
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM gobierno.permiso WHERE eliminado_en IS NULL;
+  IF v <> 29 THEN RAISE EXCEPTION 'T33 FALLO: catalogo esperado 29 permisos, hay %', v; END IF;
+  BEGIN
+    INSERT INTO gobierno.permiso (codigo, descripcion, modulo) VALUES ('hack.crear','x','gobierno');
+    RAISE EXCEPTION 'T33 FALLO: un tenant pudo crear permisos';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  RAISE NOTICE 'OK  T33: catalogo global de 29 permisos, solo-lectura para los tenants';
+END $$;
+RESET ROLE;
+
+-- T34: ADMIN_EMPRESA tiene TODOS los permisos; la matriz está aislada por tenant
+SET ROLE aplicacion;
+DO $$ DECLARE v int; v_emp int; BEGIN
+  SELECT count(*) INTO v FROM gobierno.rol_permiso rp
+    JOIN gobierno.rol r ON r.id = rp.id_rol
+    WHERE r.codigo='ADMIN_EMPRESA' AND rp.eliminado_en IS NULL;
+  IF v <> 29 THEN RAISE EXCEPTION 'T34 FALLO: ADMIN_EMPRESA debe tener 29 permisos, tiene %', v; END IF;
+  SELECT count(DISTINCT id_empresa) INTO v_emp FROM gobierno.rol_permiso;
+  IF v_emp <> 1 THEN RAISE EXCEPTION 'T34 FALLO: la matriz muestra % empresas (RLS roto)', v_emp; END IF;
+  RAISE NOTICE 'OK  T34: ADMIN_EMPRESA con los 29 permisos; matriz aislada por tenant';
+END $$;
+RESET ROLE;
+
+-- T35: roles de SISTEMA protegidos; roles propios personalizables
+SET ROLE aplicacion;
+DO $$ DECLARE v int; v_rol uuid; BEGIN
+  UPDATE gobierno.rol SET descripcion = 'hackeado' WHERE codigo='OPERADOR';
+  GET DIAGNOSTICS v = ROW_COUNT;
+  IF v <> 0 THEN RAISE EXCEPTION 'T35 FALLO: se pudo editar un rol de sistema (% filas)', v; END IF;
+  BEGIN
+    INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
+    SELECT r.id_empresa, r.id, p.id FROM gobierno.rol r, gobierno.permiso p
+    WHERE r.codigo='OPERADOR' AND p.codigo='auditoria.ver';
+    RAISE EXCEPTION 'T35 FALLO: se pudo alterar la matriz de un rol de sistema';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  INSERT INTO gobierno.rol (id_empresa, codigo, descripcion)
+  VALUES (current_setting('app.empresa_actual')::uuid, 'SUPERVISOR_PATIO', 'Rol propio de la empresa')
+  ON CONFLICT (id_empresa, codigo) WHERE eliminado_en IS NULL DO NOTHING;
+  SELECT id INTO v_rol FROM gobierno.rol WHERE codigo='SUPERVISOR_PATIO' AND eliminado_en IS NULL;
+  INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
+  SELECT current_setting('app.empresa_actual')::uuid, v_rol, p.id FROM gobierno.permiso p WHERE p.codigo='reportes.ver'
+  ON CONFLICT (id_empresa, id_rol, id_permiso) WHERE eliminado_en IS NULL DO NOTHING;
+  RAISE NOTICE 'OK  T35: roles de sistema intocables; rol propio creado y personalizado por el admin';
+END $$;
+RESET ROLE;
+
+-- T36: branding/configuración de empresa (logo, color, zona horaria, moneda)
+DO $$ DECLARE v text; BEGIN
+  SELECT zona_horaria INTO v FROM gobierno.empresa WHERE codigo='MIN';
+  IF v <> 'America/Mexico_City' THEN RAISE EXCEPTION 'T36 FALLO: zona_horaria default, obtenido %', v; END IF;
+END $$;
+SET ROLE plataforma;
+DO $$ BEGIN
+  BEGIN
+    UPDATE gobierno.empresa SET color_primario = 'naranja' WHERE codigo='MIN';
+    RAISE EXCEPTION 'T36 FALLO: color invalido aceptado';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  UPDATE gobierno.empresa
+     SET logo_url = 'https://cdn.ejemplo.com/min/logo.png', color_primario = '#7A4B16'
+   WHERE codigo='MIN';
+END $$;
+RESET ROLE;
+SET ROLE aplicacion;
+DO $$ DECLARE v text; BEGIN
+  SELECT logo_url INTO v FROM gobierno.empresa;
+  IF v <> 'https://cdn.ejemplo.com/min/logo.png' THEN RAISE EXCEPTION 'T36 FALLO: el tenant no ve su logo (%)', v; END IF;
+  RAISE NOTICE 'OK  T36: branding por empresa (logo + color validado + zona horaria/moneda default)';
+END $$;
+RESET ROLE;
+
+-- T37: observaciones en los partes (requerimiento de operación real)
+SET ROLE aplicacion;
+DO $$ DECLARE v int; v_id uuid; v_txt text; BEGIN
+  SELECT count(*) INTO v FROM information_schema.columns
+   WHERE table_schema='produccion' AND column_name='observaciones'
+     AND table_name IN ('parte_acarreo','parte_rezagado','parte_barrenacion');
+  IF v <> 3 THEN RAISE EXCEPTION 'T37 FALLO: observaciones presente en % de 3 partes', v; END IF;
+  SELECT id INTO v_id FROM produccion.parte_acarreo LIMIT 1;
+  UPDATE produccion.parte_acarreo SET observaciones = 'Turno sin novedades; tope 2400W con agua.' WHERE id = v_id;
+  SELECT observaciones INTO v_txt FROM produccion.parte_acarreo WHERE id = v_id;
+  IF v_txt IS NULL THEN RAISE EXCEPTION 'T37 FALLO: observaciones no persistio'; END IF;
+  RAISE NOTICE 'OK  T37: observaciones en los 3 partes, escribible por la app';
+END $$;
+RESET ROLE;
+
+-- T38: permisos efectivos (v_permisos_usuario) — lo que el backend pone en el JWT
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM gobierno.v_permisos_usuario WHERE usuario='admin.mina';
+  IF v < 29 THEN RAISE EXCEPTION 'T38 FALLO: admin.mina debe tener >=29 permisos efectivos, tiene %', v; END IF;
+  IF NOT EXISTS (SELECT 1 FROM gobierno.v_permisos_usuario WHERE usuario='admin.mina' AND permiso='usuarios.crear') THEN
+    RAISE EXCEPTION 'T38 FALLO: admin.mina sin usuarios.crear';
+  END IF;
+  RAISE NOTICE 'OK  T38: v_permisos_usuario entrega los permisos efectivos (admin.mina con % permisos)', v;
+END $$;
+RESET ROLE;
+
 SELECT set_config('app.empresa_actual', '', false);
 
 DO $$ BEGIN RAISE NOTICE '========================================'; RAISE NOTICE 'TODOS LOS TESTS PASARON'; RAISE NOTICE '========================================'; END $$;

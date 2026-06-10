@@ -18,6 +18,7 @@ CREATE TABLE produccion.parte_acarreo (
   turno TEXT NOT NULL,                  -- M / V / N
   horometro_inicial NUMERIC(10,2) NOT NULL,
   horometro_final NUMERIC(10,2) NOT NULL,
+  observaciones TEXT,                   -- novedades del turno (registro operativo real)
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
   eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
@@ -61,6 +62,7 @@ CREATE TABLE produccion.parte_rezagado (
   turno TEXT NOT NULL,
   horometro_inicial NUMERIC(10,2) NOT NULL,
   horometro_final NUMERIC(10,2) NOT NULL,
+  observaciones TEXT,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
   eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,
@@ -112,6 +114,7 @@ CREATE TABLE produccion.parte_barrenacion (
   horometro_electrico_final NUMERIC(10,2),
   horometro_percusion_inicial NUMERIC(10,2),
   horometro_percusion_final NUMERIC(10,2),
+  observaciones TEXT,
   creado_en TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
   actualizado_en TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
   eliminado_en TIMESTAMPTZ, eliminado_por_usuario_id UUID,

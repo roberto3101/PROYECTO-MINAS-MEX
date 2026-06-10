@@ -120,6 +120,62 @@ WHERE r.id_empresa = :'emp' AND r.codigo = 'ADMIN_EMPRESA';
 
 INSERT INTO gobierno.superadmin (usuario, nombre) VALUES ('plataforma', 'Superadmin Plataforma');
 
+-- ---- Catálogo GLOBAL de permisos (recurso.accion) ----
+INSERT INTO gobierno.permiso (codigo, descripcion, modulo) VALUES
+ ('usuarios.ver','Ver usuarios de la empresa','gobierno'),
+ ('usuarios.crear','Dar de alta usuarios','gobierno'),
+ ('usuarios.editar','Editar usuarios','gobierno'),
+ ('usuarios.desactivar','Dar de baja usuarios','gobierno'),
+ ('roles.ver','Ver roles y sus permisos','gobierno'),
+ ('roles.crear','Crear roles propios','gobierno'),
+ ('roles.editar','Editar roles propios','gobierno'),
+ ('roles.asignar','Asignar/revocar roles a usuarios','gobierno'),
+ ('empresa.configurar','Configurar datos y branding de la empresa (logo, colores)','gobierno'),
+ ('auditoria.ver','Consultar la trazabilidad (quien hizo que y cuando)','gobierno'),
+ ('catalogos.ver','Ver catalogos (minas, equipos, personal, obras...)','catalogos'),
+ ('catalogos.editar','Crear y editar catalogos','catalogos'),
+ ('produccion.ver','Ver partes y eventos de produccion','produccion'),
+ ('produccion.capturar','Capturar partes, viajes, avances, demoras y explosivo','produccion'),
+ ('produccion.editar','Corregir cabeceras de partes (con auditoria)','produccion'),
+ ('planeacion.ver','Ver planes, bloques y metas','planeacion'),
+ ('planeacion.editar','Crear y editar planes, bloques y metas','planeacion'),
+ ('reconciliacion.ver','Ver segmentos y mediciones','reconciliacion'),
+ ('reconciliacion.capturar','Registrar mediciones por fuente','reconciliacion'),
+ ('beneficio.ver','Ver lotes de molienda y balance metalurgico','beneficio'),
+ ('beneficio.capturar','Registrar lotes, leyes y recuperaciones','beneficio'),
+ ('estandares.ver','Ver estandares de tiempos y productividad','estandares'),
+ ('estandares.editar','Definir estandares y metas','estandares'),
+ ('costos.ver','Ver estimaciones, presupuestos y costos','costos'),
+ ('costos.editar','Capturar estimaciones, presupuestos, costos y cut-off','costos'),
+ ('inversiones.ver','Ver inversiones, activos y acero','inversiones'),
+ ('inversiones.editar','Capturar inversiones, activos y acero','inversiones'),
+ ('reportes.ver','Consultar tableros y reportes','reportes'),
+ ('reportes.exportar','Exportar reportes','reportes');
+
+-- ---- Matriz de permisos de los roles de SISTEMA (por cada empresa) ----
+-- ADMIN_EMPRESA: todos los permisos del catalogo.
+INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
+SELECT r.id_empresa, r.id, p.id
+FROM gobierno.rol r CROSS JOIN gobierno.permiso p
+WHERE r.codigo = 'ADMIN_EMPRESA' AND r.es_sistema;
+-- Resto de roles: matriz minima profesional.
+INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
+SELECT r.id_empresa, r.id, p.id
+FROM gobierno.rol r
+JOIN (VALUES
+  ('JEFE_TURNO','produccion.ver'),('JEFE_TURNO','produccion.capturar'),('JEFE_TURNO','produccion.editar'),
+  ('JEFE_TURNO','catalogos.ver'),('JEFE_TURNO','planeacion.ver'),('JEFE_TURNO','estandares.ver'),('JEFE_TURNO','reportes.ver'),
+  ('CAPITAN_MINA','produccion.ver'),('CAPITAN_MINA','produccion.capturar'),('CAPITAN_MINA','catalogos.ver'),('CAPITAN_MINA','reportes.ver'),
+  ('OPERADOR','produccion.ver'),('OPERADOR','produccion.capturar'),
+  ('PLANEACION','planeacion.ver'),('PLANEACION','planeacion.editar'),('PLANEACION','reconciliacion.ver'),('PLANEACION','reconciliacion.capturar'),
+  ('PLANEACION','costos.ver'),('PLANEACION','costos.editar'),('PLANEACION','estandares.ver'),('PLANEACION','estandares.editar'),
+  ('PLANEACION','catalogos.ver'),('PLANEACION','reportes.ver'),('PLANEACION','reportes.exportar'),
+  ('LECTURA','catalogos.ver'),('LECTURA','produccion.ver'),('LECTURA','planeacion.ver'),('LECTURA','reconciliacion.ver'),
+  ('LECTURA','beneficio.ver'),('LECTURA','estandares.ver'),('LECTURA','costos.ver'),('LECTURA','inversiones.ver'),('LECTURA','reportes.ver')
+) AS m(rol_codigo, permiso_codigo)
+  ON m.rol_codigo = r.codigo AND r.es_sistema
+JOIN gobierno.permiso p ON p.codigo = m.permiso_codigo;
+
 -- ---- Minerales ----
 INSERT INTO catalogos.mineral (id_empresa, id_mina, id_tipo_mineral, nombre, unidad_medida, ley) VALUES
  (:'emp', :'m_cien', (SELECT id FROM catalogos.tipo_mineral WHERE id_empresa=:'emp' AND codigo='MINERAL'),  'Plata','g/t',350.5),

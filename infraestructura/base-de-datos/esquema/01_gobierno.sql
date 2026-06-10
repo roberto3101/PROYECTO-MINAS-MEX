@@ -15,6 +15,13 @@ CREATE TABLE gobierno.empresa (
   id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   codigo                      TEXT NOT NULL,
   razon_social                TEXT NOT NULL,
+  identificacion_fiscal       TEXT,                -- RFC / RUC / NIT según país
+  correo_contacto             TEXT,
+  telefono                    TEXT,
+  logo_url                    TEXT,                -- el archivo vive en object storage; aquí solo la URL
+  color_primario              TEXT,                -- branding del tenant en la app (#RRGGBB)
+  zona_horaria                TEXT NOT NULL DEFAULT 'America/Mexico_City',
+  moneda_defecto              TEXT NOT NULL DEFAULT 'USD',
   estado                      TEXT NOT NULL DEFAULT 'ACTIVA',
   creado_en                   TIMESTAMPTZ NOT NULL DEFAULT now(),
   creado_por_usuario_id       UUID,
@@ -22,7 +29,9 @@ CREATE TABLE gobierno.empresa (
   actualizado_por_usuario_id  UUID,
   eliminado_en                TIMESTAMPTZ,
   eliminado_por_usuario_id    UUID,
-  CONSTRAINT ck_empresa_estado CHECK (estado IN ('ACTIVA','INACTIVA'))
+  CONSTRAINT ck_empresa_estado CHECK (estado IN ('ACTIVA','INACTIVA')),
+  CONSTRAINT ck_empresa_moneda CHECK (moneda_defecto IN ('USD','MXN')),
+  CONSTRAINT ck_empresa_color CHECK (color_primario IS NULL OR color_primario ~ '^#[0-9A-Fa-f]{6}$')
 );
 CREATE UNIQUE INDEX uq_empresa_codigo ON gobierno.empresa (codigo) WHERE eliminado_en IS NULL;
 COMMENT ON TABLE gobierno.empresa IS 'Tenant: empresa/grupo minero dueño de los datos. La crea SOLO la plataforma (superadmin).';
@@ -94,6 +103,49 @@ CREATE UNIQUE INDEX uq_usuario_rol ON gobierno.usuario_rol
 CREATE INDEX ix_usuario_rol_usuario ON gobierno.usuario_rol (id_usuario) WHERE eliminado_en IS NULL;
 CREATE INDEX ix_usuario_rol_rol     ON gobierno.usuario_rol (id_rol) WHERE eliminado_en IS NULL;
 COMMENT ON TABLE gobierno.usuario_rol IS 'Asignación usuario-rol con alcance opcional por mina. FKs compuestas: imposible asignar roles de otra empresa.';
+
+-- ---------- Catálogo de PERMISOS (global de la plataforma) ----------
+-- Convención recurso.accion (usuarios.crear, produccion.capturar, reportes.exportar).
+-- Es GLOBAL (sin id_empresa): cada permiso corresponde a una capacidad que el
+-- código sabe aplicar; los tenants NO inventan permisos — combinan permisos en
+-- roles propios. Lo mantiene la plataforma; los tenants lo leen.
+CREATE TABLE gobierno.permiso (
+  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  codigo                      TEXT NOT NULL,        -- recurso.accion
+  descripcion                 TEXT NOT NULL,
+  modulo                      TEXT NOT NULL,        -- agrupador para la UI: gobierno, catalogos, produccion...
+  estado                      TEXT NOT NULL DEFAULT 'ACTIVO',
+  creado_en                   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  creado_por_usuario_id       UUID,
+  actualizado_en              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id  UUID,
+  eliminado_en                TIMESTAMPTZ,
+  eliminado_por_usuario_id    UUID,
+  CONSTRAINT ck_permiso_estado CHECK (estado IN ('ACTIVO','INACTIVO')),
+  CONSTRAINT ck_permiso_codigo CHECK (codigo ~ '^[a-z_]+\.[a-z_]+$')
+);
+CREATE UNIQUE INDEX uq_permiso_codigo ON gobierno.permiso (codigo) WHERE eliminado_en IS NULL;
+COMMENT ON TABLE gobierno.permiso IS 'Catalogo GLOBAL de permisos (recurso.accion). Lo administra la plataforma; los tenants lo consumen via rol_permiso.';
+
+-- ---------- Permisos por rol (la matriz de cada empresa) ----------
+CREATE TABLE gobierno.rol_permiso (
+  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id_empresa                  UUID NOT NULL,
+  id_rol                      UUID NOT NULL,
+  id_permiso                  UUID NOT NULL,
+  creado_en                   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  creado_por_usuario_id       UUID,
+  actualizado_en              TIMESTAMPTZ NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id  UUID,
+  eliminado_en                TIMESTAMPTZ,          -- quitar un permiso = baja lógica trazable
+  eliminado_por_usuario_id    UUID,
+  CONSTRAINT fk_rol_permiso_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rol_permiso_rol     FOREIGN KEY (id_empresa, id_rol) REFERENCES gobierno.rol (id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rol_permiso_permiso FOREIGN KEY (id_permiso) REFERENCES gobierno.permiso(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_rol_permiso ON gobierno.rol_permiso (id_empresa, id_rol, id_permiso) WHERE eliminado_en IS NULL;
+CREATE INDEX ix_rol_permiso_rol ON gobierno.rol_permiso (id_rol) WHERE eliminado_en IS NULL;
+COMMENT ON TABLE gobierno.rol_permiso IS 'Que permisos tiene cada rol de cada empresa. FK compuesta a rol: imposible cruzar tenants. Roles de sistema protegidos por politica restrictiva.';
 
 -- ---------- Superadmin de plataforma (FUERA de los tenants) ----------
 CREATE TABLE gobierno.superadmin (

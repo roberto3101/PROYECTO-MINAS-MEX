@@ -31,7 +31,7 @@ $esquema = @(
   'esquema\12_integridad_tenant.sql','esquema\50_vistas.sql','esquema\60_seguridad_rls.sql'
 )
 $datos  = @('semilla\20_seed.sql')
-$tests  = @('pruebas\30_tests.sql')
+$tests  = @('pruebas\30_tests.sql','pruebas\40_escenario_usuarios.sql')
 
 $lista = $esquema
 if (-not $SoloEsquema) { $lista += $datos + $tests }

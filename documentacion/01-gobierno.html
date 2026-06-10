@@ -51,8 +51,10 @@
           <div class="ents"><span class="ent t-raiz">empresa</span></div></div>
         <div class="grp"><span class="lbl">Entidad</span>
           <div class="ents"><span class="ent t-entidad">usuario</span><span class="ent t-entidad">usuario_rol</span><span class="ent t-entidad">superadmin</span></div></div>
+        <div class="grp"><span class="lbl">Entidad (matriz)</span>
+          <div class="ents"><span class="ent t-entidad">rol_permiso</span></div></div>
         <div class="grp"><span class="lbl">Catálogo</span>
-          <div class="ents"><span class="ent t-catalogo">rol</span></div></div>
+          <div class="ents"><span class="ent t-catalogo">rol</span><span class="ent t-catalogo">permiso (global)</span></div></div>
         <div class="grp"><span class="lbl">Consumen por FK (todas las capacidades)</span>
           <div class="ents"><span class="ent" style="color:#94a0b8;border-color:var(--line)">catalogos · produccion · planeacion · reconciliacion · beneficio · estandares · costos · inversiones</span></div></div>
       </div>
@@ -108,12 +110,16 @@ emp["empresa"]:::raiz
 usr["usuario"]:::entidad
 rol["rol"]:::catalogo
 ur["usuario_rol"]:::entidad
+perm["permiso (catálogo global)"]:::catalogo
+rp["rol_permiso"]:::entidad
 caps["catalogos · produccion · planeacion\nreconciliacion · beneficio · estandares\ncostos · inversiones"]:::ext
 sa -.->|crea y administra tenants| emp
 emp --> usr
 emp --> rol
 usr --> ur
 rol --> ur
+rol --> rp
+perm -.->|recurso.accion| rp
 ur -.->|alcance opcional por mina| caps
 emp -.->|id_empresa| caps
 usr -.->|auditoría _por_usuario_id| caps
@@ -156,6 +162,16 @@ usr -.->|auditoría _por_usuario_id| caps
         <h4>superadmin</h4><div class="from">fuera de los tenants</div>
         <div class="pop"><p class="h">Responsabilidad</p><p>Operadores de la plataforma (nosotros): crean cada empresa y su primer administrador.</p>
         <p class="h">Por qué</p><p>Vive <b>fuera</b> de los tenants (sin <span class="mono">id_empresa</span>) y es <b>invisible para la app de los tenants</b>: solo el rol de BD <span class="mono">plataforma</span> puede verla (test T31).</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-catalogo"><span class="dot d-catalogo"></span>Catálogo</span><span class="cap-tag">gobierno · global</span></div>
+        <h4>permiso</h4><div class="from">29 permisos recurso.accion</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>El catálogo <b>global</b> de permisos de la plataforma: <span class="mono">usuarios.crear</span>, <span class="mono">produccion.capturar</span>, <span class="mono">reportes.exportar</span>… agrupados por módulo.</p>
+        <p class="h">Por qué</p><p>Cada permiso corresponde a algo que el <b>código</b> sabe aplicar — por eso lo define la plataforma y los tenants lo <b>leen</b> (no inventan permisos: combinan los existentes en sus roles). Test T33.</p></div></article>
+
+      <article class="card"><div class="row1"><span class="badge t-entidad"><span class="dot d-entidad"></span>Entidad</span><span class="cap-tag">gobierno</span></div>
+        <h4>rol_permiso</h4><div class="from">la matriz de cada empresa</div>
+        <div class="pop"><p class="h">Responsabilidad</p><p>Qué permisos tiene cada rol de cada empresa. ADMIN_EMPRESA nace con los 29; los demás roles de sistema con su matriz mínima profesional.</p>
+        <p class="h">Por qué</p><p>Los roles de <b>sistema</b> están protegidos por política restrictiva (se personalizan <b>clonando</b> a un rol propio). Quitar un permiso = baja lógica trazable. Tests T34-T35.</p></div></article>
     </div>
   </div>
 </section>
@@ -276,6 +292,20 @@ CREATE UNIQUE INDEX uq_superadmin ON gobierno.superadmin (usuario) WHERE elimina
       </tbody>
     </table>
     <p class="nota"><b>Por qué así:</b> en sistemas industriales el acceso es un activo controlado — los usuarios <b>no</b> se registran solos (como en una red social); los da de alta un encargado. Eso garantiza que el acceso de un ex-empleado se revoca de inmediato y que cada alta/baja queda auditada con actor y fecha.</p>
+
+    <p class="subt">El catálogo de permisos (29, convención recurso.accion)</p>
+    <table class="tabla-comp">
+      <thead><tr><th style="width:22%">Módulo</th><th>Permisos</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">gobierno</td><td class="mono">usuarios.ver/crear/editar/desactivar · roles.ver/crear/editar/asignar · empresa.configurar · auditoria.ver</td></tr>
+        <tr><td class="mono">catalogos</td><td class="mono">catalogos.ver/editar</td></tr>
+        <tr><td class="mono">produccion</td><td class="mono">produccion.ver/capturar/editar</td></tr>
+        <tr><td class="mono">planeacion · reconciliacion · beneficio</td><td class="mono">planeacion.ver/editar · reconciliacion.ver/capturar · beneficio.ver/capturar</td></tr>
+        <tr><td class="mono">estandares · costos · inversiones</td><td class="mono">estandares.ver/editar · costos.ver/editar · inversiones.ver/editar</td></tr>
+        <tr><td class="mono">reportes</td><td class="mono">reportes.ver/exportar</td></tr>
+      </tbody>
+    </table>
+    <p class="nota" style="margin-top:14px"><b>Permisos efectivos:</b> la vista <span class="mono">gobierno.v_permisos_usuario</span> entrega los permisos vigentes de cada usuario (vía sus roles activos, con alcance por mina). El backend la consulta al emitir el JWT — y al revocar un rol o dar de baja al usuario, sus permisos desaparecen de ahí <b>al instante</b> (test T38 y escenario E2E).</p>
   </div>
 </section>
 
@@ -328,12 +358,16 @@ COMMIT;                                               -- al cerrar, el tenant y 
     <details class="qa"><summary>¿Cómo se quita el acceso a alguien que ya no trabaja en la mina?</summary><div class="resp">El <b>admin de la empresa</b> lo da de baja (baja lógica de <span class="mono">usuario</span> o revocación en <span class="mono">usuario_rol</span>). Queda registrado <b>quién</b> lo dio de baja y <b>cuándo</b>. Además, si la cuenta está vinculada a su <span class="mono">empleado</span>, la baja del personal se refleja en el acceso.</div></details>
 
     <details class="qa"><summary>¿Por qué los roles son por empresa y no globales?</summary><div class="resp">Cada empresa siembra los <b>6 roles de sistema</b> al crearse (protegidos con <span class="mono">es_sistema</span>) y puede definir roles propios sin afectar a otros tenants. Las FKs compuestas garantizan que una asignación nunca cruce de empresa (test T32).</div></details>
+
+    <details class="qa"><summary>¿Por qué permisos por ROL y no permisos directos por usuario?</summary><div class="resp">Es el estándar RBAC: <b>usuario → rol → permiso</b>. Asignar permisos directamente a usuarios se vuelve inmanejable (cada alta/baja exige revisar decenas de permisos individuales y nadie sabe "quién puede qué"). Con roles, dar de alta un operador es <b>una</b> asignación; y auditar es leer la matriz del rol. Los permisos por usuario quedan descartados a propósito.</div></details>
+
+    <details class="qa"><summary>¿Por qué el catálogo de permisos es global y los tenants no crean permisos?</summary><div class="resp">Porque un permiso solo sirve si el <b>código lo aplica</b>: <span class="mono">produccion.capturar</span> existe porque hay endpoints que lo verifican. Un permiso inventado por un tenant no tendría efecto. Por eso el catálogo (convención <span class="mono">recurso.accion</span>) lo mantiene la plataforma y los tenants <b>combinan</b> permisos en roles propios — exactamente como lo hacen los productos B2B maduros.</div></details>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><b>Página 1 de 9</b> · Schema gobierno · 5 tablas (empresa, usuario, rol, usuario_rol, superadmin). <a href="index.html">Volver al índice</a>
+    <p><b>Página 1 de 9</b> · Schema gobierno · 7 tablas (empresa, usuario, rol, usuario_rol, permiso, rol_permiso, superadmin). <a href="index.html">Volver al índice</a>
       <a href="diagrama-general.html">Diagrama</a> · Siguiente: <a href="02-catalogos.html">Catálogos →</a></p>
   </div>
 </footer>
