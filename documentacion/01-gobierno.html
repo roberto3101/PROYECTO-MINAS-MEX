@@ -188,6 +188,13 @@ usr -.->|auditoría _por_usuario_id| caps
   <span class="c" data-tip="PK del tenant (UUID).">id</span>                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   <span class="c" data-tip="Código corto de la empresa. Único entre activas (índice parcial).">codigo</span>                      TEXT NOT NULL,
   <span class="c" data-tip="Razón social oficial de la empresa.">razon_social</span>                TEXT NOT NULL,
+  <span class="c" data-tip="RFC / RUC / NIT según el país.">identificacion_fiscal</span>       TEXT,
+  <span class="c" data-tip="Correo de contacto de la empresa.">correo_contacto</span>             TEXT,
+  <span class="c" data-tip="Teléfono de contacto.">telefono</span>                    TEXT,
+  <span class="c" data-tip="URL del logo del tenant (el archivo vive en object storage, no en la BD).">logo_url</span>                    TEXT,
+  <span class="c" data-tip="Color de marca del tenant en la app. Validado #RRGGBB por CHECK.">color_primario</span>              TEXT,
+  <span class="c" data-tip="Zona horaria de la operación (fechas de turno).">zona_horaria</span>                TEXT NOT NULL DEFAULT 'America/Mexico_City',
+  <span class="c" data-tip="Moneda por defecto para costos/presupuestos (USD/MXN).">moneda_defecto</span>              TEXT NOT NULL DEFAULT 'USD',
   <span class="c" data-tip="ACTIVA / INACTIVA. Controla si el tenant puede operar.">estado</span>                      TEXT NOT NULL DEFAULT 'ACTIVA',
   <span class="c" data-tip="Auditoría: cuándo se creó el registro.">creado_en</span>                   TIMESTAMPTZ NOT NULL DEFAULT now(),
   <span class="c" data-tip="Auditoría: qué usuario lo creó (sin FK para evitar dependencia circular).">creado_por_usuario_id</span>       UUID,
@@ -209,6 +216,9 @@ COMMENT ON TABLE gobierno.empresa IS 'Tenant: empresa/grupo minero dueño de los
   <span class="c" data-tip="Login / nombre de acceso. Único por empresa entre activos.">usuario</span>                     TEXT NOT NULL,
   <span class="c" data-tip="Nombre completo del usuario.">nombre</span>                      TEXT NOT NULL,
   <span class="c" data-tip="Correo electrónico (opcional).">correo</span>                      TEXT,
+  <span class="c" data-tip="Hash de la contraseña (argon2/bcrypt); lo gestiona el backend.">contrasena_hash</span>             TEXT,
+  <span class="c" data-tip="Vínculo opcional al empleado (FK compuesta): la baja del personal se refleja en el acceso.">id_empleado</span>                 UUID,
+  <span class="c" data-tip="Última vez que inició sesión.">ultimo_acceso_en</span>            TIMESTAMPTZ,
   <span class="c" data-tip="ACTIVO / INACTIVO. Controla si puede autenticarse.">estado</span>                      TEXT NOT NULL DEFAULT 'ACTIVO',
   <span class="c" data-tip="Auditoría: cuándo se creó el registro.">creado_en</span>                   TIMESTAMPTZ NOT NULL DEFAULT now(),
   <span class="c" data-tip="Auditoría: qué usuario lo creó.">creado_por_usuario_id</span>       UUID,
@@ -333,6 +343,55 @@ SET LOCAL ROLE aplicacion;                            -- rol sujeto a RLS
 COMMIT;                                               -- al cerrar, el tenant y el rol se limpian solos</pre>
     </details>
     <p class="nota"><b>Por qué así:</b> si el aislamiento viviera en el código, cada consulta sería un punto de fallo (el clásico <i>WHERE olvidado</i>). Con RLS + FK compuestas, un bug en la app <b>no puede</b> filtrar ni mezclar datos de otra empresa — y el backend queda liviano.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">C&oacute;digo SQL</p>
+    <h2>DDL completo restante (extra&iacute;do de la base viva)</h2>
+    <p class="lead">El resto de tablas de la capacidad, generado directamente del esquema cargado para que la p&aacute;gina refleje el <b>100%</b>. Aqu&iacute; las FK ya aparecen en su forma final <b>compuesta (id_empresa, id)</b> &mdash; los archivos fuente las declaran simples y <span class="mono">12_integridad_tenant.sql</span> las convierte al cargar. Pasa el cursor sobre las l&iacute;neas para la explicaci&oacute;n autom&aacute;tica.</p>
+    <details class="code">
+      <summary>gobierno / permiso.sql</summary>
+      <pre class="sql">CREATE TABLE gobierno.permiso (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  modulo text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT permiso_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_permiso_codigo CHECK ((codigo ~ '^[a-z_]+\.[a-z_]+$'::text)),
+  CONSTRAINT ck_permiso_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text])))
+);
+CREATE UNIQUE INDEX uq_permiso_codigo ON gobierno.permiso USING btree (codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>gobierno / rol_permiso.sql</summary>
+      <pre class="sql">CREATE TABLE gobierno.rol_permiso (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_rol uuid NOT NULL,
+  id_permiso uuid NOT NULL,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT rol_permiso_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_rol_permiso_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rol_permiso_permiso FOREIGN KEY (id_permiso) REFERENCES gobierno.permiso(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rol_permiso_rol FOREIGN KEY (id_empresa, id_rol) REFERENCES gobierno.rol(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_rol_permiso_rol ON gobierno.rol_permiso USING btree (id_rol) WHERE (eliminado_en IS NULL);
+CREATE UNIQUE INDEX uq_rol_permiso ON gobierno.rol_permiso USING btree (id_empresa, id_rol, id_permiso) WHERE (eliminado_en IS NULL);</pre>
+    </details>
   </div>
 </section>
 

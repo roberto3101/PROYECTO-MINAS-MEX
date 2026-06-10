@@ -212,6 +212,7 @@ pb -.->|opc| ce
   <span class="c" data-tip="M = Mañana · V = Vespertino · N = Nocturno.">turno</span> TEXT NOT NULL,
   <span class="c" data-tip="Lectura del horómetro al inicio del turno (horas).">horometro_inicial</span> NUMERIC(10,2) NOT NULL,
   <span class="c" data-tip="Lectura al cierre del turno. Debe ser >= horometro_inicial.">horometro_final</span> NUMERIC(10,2) NOT NULL,
+  <span class="c" data-tip="Novedades del turno (registro operativo real). Presente en los 3 partes.">observaciones</span> TEXT,
   <span class="c" data-tip="Auditoría de creación.">creado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), creado_por_usuario_id UUID,
   <span class="c" data-tip="Auditoría de última modificación.">actualizado_en</span> TIMESTAMPTZ NOT NULL DEFAULT now(), actualizado_por_usuario_id UUID,
   <span class="c" data-tip="Borrado lógico (NULL = activo). Permite reactivar sin perder historia.">eliminado_en</span> TIMESTAMPTZ, eliminado_por_usuario_id UUID,
@@ -285,6 +286,172 @@ CREATE INDEX ix_parte_barr_tipo ON produccion.parte_barrenacion (id_empresa, tip
     </details>
 
     <p class="nota"><b>rezagado</b> (<span class="mono">parte_rezagado</span> + <span class="mono">rezagado_ciclo</span>) sigue la misma plantilla cabecera/detalle con scooptram. <b>barrenacion_avance</b> añade el discriminador <span class="mono">actividad</span> (BARRENACION / RE_BARRENACION / ESCAREO). <b>barrenacion_ejecutado</b> es la tabla N:M append-only que modela el campo "Ejecutado" del ER.</p>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">C&oacute;digo SQL</p>
+    <h2>DDL completo restante (extra&iacute;do de la base viva)</h2>
+    <p class="lead">El resto de tablas de la capacidad, generado directamente del esquema cargado para que la p&aacute;gina refleje el <b>100%</b>. Aqu&iacute; las FK ya aparecen en su forma final <b>compuesta (id_empresa, id)</b> &mdash; los archivos fuente las declaran simples y <span class="mono">12_integridad_tenant.sql</span> las convierte al cargar. Pasa el cursor sobre las l&iacute;neas para la explicaci&oacute;n autom&aacute;tica.</p>
+    <details class="code">
+      <summary>produccion / parte_rezagado.sql</summary>
+      <pre class="sql">CREATE TABLE produccion.parte_rezagado (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  id_obra uuid NOT NULL,
+  id_equipo uuid NOT NULL,
+  id_operador uuid NOT NULL,
+  id_supervisor uuid,
+  fecha date NOT NULL,
+  turno text NOT NULL,
+  horometro_inicial numeric(10,2) NOT NULL,
+  horometro_final numeric(10,2) NOT NULL,
+  observaciones text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT parte_rezagado_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_parte_rezagado_horometro CHECK ((horometro_final &gt;= horometro_inicial)),
+  CONSTRAINT ck_parte_rezagado_turno CHECK ((turno = ANY (ARRAY['M'::text, 'V'::text, 'N'::text]))),
+  CONSTRAINT uq_parte_rezagado_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_parte_rezagado_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_parte_rezagado_equipo FOREIGN KEY (id_empresa, id_equipo) REFERENCES catalogos.equipo(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_parte_rezagado_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_parte_rezagado_obra FOREIGN KEY (id_empresa, id_obra) REFERENCES catalogos.obra(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_parte_rezagado_operador FOREIGN KEY (id_empresa, id_operador) REFERENCES catalogos.empleado(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_parte_rezagado_supervisor FOREIGN KEY (id_empresa, id_supervisor) REFERENCES catalogos.empleado(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_parte_rezagado_activos ON produccion.parte_rezagado USING btree (id_empresa, id_mina, fecha) WHERE (eliminado_en IS NULL);
+CREATE INDEX ix_parte_rezagado_equipo ON produccion.parte_rezagado USING btree (id_equipo);
+CREATE INDEX ix_parte_rezagado_mina_fecha ON produccion.parte_rezagado USING btree (id_empresa, id_mina, fecha);
+CREATE INDEX ix_parte_rezagado_obra ON produccion.parte_rezagado USING btree (id_obra);
+CREATE INDEX ix_parte_rezagado_operador ON produccion.parte_rezagado USING btree (id_operador);
+CREATE INDEX ix_parte_rezagado_supervisor ON produccion.parte_rezagado USING btree (id_supervisor) WHERE (id_supervisor IS NOT NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>produccion / rezagado_ciclo.sql</summary>
+      <pre class="sql">CREATE TABLE produccion.rezagado_ciclo (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_parte_rezagado uuid NOT NULL,
+  desde text NOT NULL,
+  hasta text NOT NULL,
+  id_tipo_mineral uuid NOT NULL,
+  toneladas numeric(12,3),
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  CONSTRAINT rezagado_ciclo_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_rezagado_ciclo_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rezagado_ciclo_parte FOREIGN KEY (id_empresa, id_parte_rezagado) REFERENCES produccion.parte_rezagado(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rezagado_ciclo_tipo_mineral FOREIGN KEY (id_empresa, id_tipo_mineral) REFERENCES catalogos.tipo_mineral(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_rezagado_ciclo_parte ON produccion.rezagado_ciclo USING btree (id_parte_rezagado);
+CREATE INDEX ix_rezagado_ciclo_tipo_mineral ON produccion.rezagado_ciclo USING btree (id_tipo_mineral);</pre>
+    </details>
+    <details class="code">
+      <summary>produccion / barrenacion_avance.sql</summary>
+      <pre class="sql">CREATE TABLE produccion.barrenacion_avance (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_parte_barrenacion uuid NOT NULL,
+  actividad text NOT NULL,
+  lugar text NOT NULL,
+  no_secciones smallint,
+  longitud numeric(7,2) NOT NULL,
+  no_barrenos integer NOT NULL,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  CONSTRAINT barrenacion_avance_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_barr_avance_actividad CHECK ((actividad = ANY (ARRAY['BARRENACION'::text, 'RE_BARRENACION'::text, 'ESCAREO'::text]))),
+  CONSTRAINT ck_barr_avance_barrenos CHECK ((no_barrenos &gt;= 0)),
+  CONSTRAINT ck_barr_avance_longitud CHECK ((longitud &gt;= (0)::numeric)),
+  CONSTRAINT uq_barrenacion_avance_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_barr_avance_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_barr_avance_parte FOREIGN KEY (id_empresa, id_parte_barrenacion) REFERENCES produccion.parte_barrenacion(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_barr_avance_parte ON produccion.barrenacion_avance USING btree (id_parte_barrenacion);</pre>
+    </details>
+    <details class="code">
+      <summary>produccion / barrenacion_ejecutado.sql</summary>
+      <pre class="sql">CREATE TABLE produccion.barrenacion_ejecutado (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_barrenacion_avance uuid NOT NULL,
+  id_tipo_barreno uuid NOT NULL,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  CONSTRAINT barrenacion_ejecutado_pkey PRIMARY KEY (id),
+  CONSTRAINT uq_barr_ejecutado UNIQUE (id_barrenacion_avance, id_tipo_barreno),
+  CONSTRAINT fk_barr_ejec_avance FOREIGN KEY (id_empresa, id_barrenacion_avance) REFERENCES produccion.barrenacion_avance(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_barr_ejec_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_barr_ejec_tipo FOREIGN KEY (id_empresa, id_tipo_barreno) REFERENCES catalogos.tipo_barreno(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_barr_ejec_avance ON produccion.barrenacion_ejecutado USING btree (id_barrenacion_avance);
+CREATE INDEX ix_barr_ejec_tipo ON produccion.barrenacion_ejecutado USING btree (id_tipo_barreno);</pre>
+    </details>
+    <details class="code">
+      <summary>produccion / demora_equipo.sql</summary>
+      <pre class="sql">CREATE TABLE produccion.demora_equipo (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  id_equipo uuid NOT NULL,
+  id_tipo_demora uuid NOT NULL,
+  fecha date NOT NULL,
+  turno text NOT NULL,
+  minutos integer NOT NULL,
+  observacion text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  CONSTRAINT demora_equipo_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_demora_minutos CHECK ((minutos &gt;= 0)),
+  CONSTRAINT ck_demora_turno CHECK ((turno = ANY (ARRAY['M'::text, 'V'::text, 'N'::text]))),
+  CONSTRAINT fk_demora_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_demora_equipo FOREIGN KEY (id_empresa, id_equipo) REFERENCES catalogos.equipo(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_demora_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_demora_tipo FOREIGN KEY (id_empresa, id_tipo_demora) REFERENCES catalogos.tipo_demora(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_demora_equipo_fecha ON produccion.demora_equipo USING btree (id_empresa, id_equipo, fecha);
+CREATE INDEX ix_demora_equipo_fk ON produccion.demora_equipo USING btree (id_equipo);
+CREATE INDEX ix_demora_mina ON produccion.demora_equipo USING btree (id_empresa, id_mina, fecha);
+CREATE INDEX ix_demora_tipo_demora ON produccion.demora_equipo USING btree (id_tipo_demora);</pre>
+    </details>
+    <details class="code">
+      <summary>produccion / consumo_explosivo.sql</summary>
+      <pre class="sql">CREATE TABLE produccion.consumo_explosivo (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  id_obra uuid NOT NULL,
+  id_tipo_explosivo uuid NOT NULL,
+  id_parte_barrenacion uuid,
+  fecha date NOT NULL,
+  turno text NOT NULL,
+  destino text NOT NULL DEFAULT 'DESARROLLO'::text,
+  cantidad numeric(14,3) NOT NULL,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  CONSTRAINT consumo_explosivo_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_consumo_exp_cantidad CHECK ((cantidad &gt;= (0)::numeric)),
+  CONSTRAINT ck_consumo_exp_destino CHECK ((destino = ANY (ARRAY['DESARROLLO'::text, 'TUMBE'::text]))),
+  CONSTRAINT ck_consumo_exp_turno CHECK ((turno = ANY (ARRAY['M'::text, 'V'::text, 'N'::text]))),
+  CONSTRAINT fk_consumo_exp_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumo_exp_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumo_exp_obra FOREIGN KEY (id_empresa, id_obra) REFERENCES catalogos.obra(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumo_exp_parte FOREIGN KEY (id_empresa, id_parte_barrenacion) REFERENCES produccion.parte_barrenacion(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumo_exp_tipo FOREIGN KEY (id_empresa, id_tipo_explosivo) REFERENCES catalogos.tipo_explosivo(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_consumo_exp_mina_fecha ON produccion.consumo_explosivo USING btree (id_empresa, id_mina, fecha);
+CREATE INDEX ix_consumo_exp_obra ON produccion.consumo_explosivo USING btree (id_empresa, id_obra, fecha);
+CREATE INDEX ix_consumo_exp_obra_fk ON produccion.consumo_explosivo USING btree (id_obra);
+CREATE INDEX ix_consumo_exp_parte ON produccion.consumo_explosivo USING btree (id_parte_barrenacion) WHERE (id_parte_barrenacion IS NOT NULL);
+CREATE INDEX ix_consumo_exp_tipo ON produccion.consumo_explosivo USING btree (id_tipo_explosivo);</pre>
+    </details>
   </div>
 </section>
 

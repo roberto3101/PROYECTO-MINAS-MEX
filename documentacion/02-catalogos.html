@@ -327,6 +327,313 @@ CREATE UNIQUE INDEX uq_equipo_codigo ON catalogos.equipo (id_empresa, codigo) WH
 
 <section style="padding-top:0">
   <div class="wrap">
+    <p class="eyebrow">C&oacute;digo SQL</p>
+    <h2>DDL completo restante (extra&iacute;do de la base viva)</h2>
+    <p class="lead">El resto de tablas de la capacidad, generado directamente del esquema cargado para que la p&aacute;gina refleje el <b>100%</b>. Aqu&iacute; las FK ya aparecen en su forma final <b>compuesta (id_empresa, id)</b> &mdash; los archivos fuente las declaran simples y <span class="mono">12_integridad_tenant.sql</span> las convierte al cargar. Pasa el cursor sobre las l&iacute;neas para la explicaci&oacute;n autom&aacute;tica.</p>
+    <details class="code">
+      <summary>catalogos / empleado.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.empleado (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  numero_nomina text NOT NULL,
+  nombre_completo text NOT NULL,
+  id_departamento uuid,
+  id_puesto uuid,
+  centro_costo text,
+  gerente_a_cargo text,
+  id_actividad uuid,
+  grupo text,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT empleado_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_empleado_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_empleado_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_empleado_actividad FOREIGN KEY (id_empresa, id_actividad) REFERENCES catalogos.actividad(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_empleado_departamento FOREIGN KEY (id_empresa, id_departamento) REFERENCES catalogos.departamento(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_empleado_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_empleado_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_empleado_puesto FOREIGN KEY (id_empresa, id_puesto) REFERENCES catalogos.puesto(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_empleado_actividad ON catalogos.empleado USING btree (id_actividad) WHERE (id_actividad IS NOT NULL);
+CREATE INDEX ix_empleado_departamento ON catalogos.empleado USING btree (id_departamento) WHERE (id_departamento IS NOT NULL);
+CREATE INDEX ix_empleado_mina ON catalogos.empleado USING btree (id_empresa, id_mina);
+CREATE INDEX ix_empleado_puesto ON catalogos.empleado USING btree (id_puesto) WHERE (id_puesto IS NOT NULL);
+CREATE UNIQUE INDEX uq_empleado_nomina ON catalogos.empleado USING btree (id_empresa, numero_nomina) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / mineral.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.mineral (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  id_tipo_mineral uuid NOT NULL,
+  nombre text NOT NULL,
+  unidad_medida text NOT NULL,
+  ley numeric(10,4),
+  observaciones text,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT mineral_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_mineral_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT fk_mineral_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_mineral_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_mineral_tipo FOREIGN KEY (id_empresa, id_tipo_mineral) REFERENCES catalogos.tipo_mineral(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_mineral_tipo_mineral ON catalogos.mineral USING btree (id_tipo_mineral);
+CREATE UNIQUE INDEX uq_mineral ON catalogos.mineral USING btree (id_empresa, id_mina, nombre) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / tipo_obra.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.tipo_obra (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT tipo_obra_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_tipo_obra_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_tipo_obra_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_tipo_obra_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_tipo_obra ON catalogos.tipo_obra USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / sistema_minado.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.sistema_minado (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT sistema_minado_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_sistema_minado_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_sistema_minado_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_sistema_minado_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_sistema_minado ON catalogos.sistema_minado USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / tipo_equipo.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.tipo_equipo (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT tipo_equipo_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_tipo_equipo_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_tipo_equipo_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_tipo_equipo_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_tipo_equipo ON catalogos.tipo_equipo USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / modulo_trabajo.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.modulo_trabajo (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT modulo_trabajo_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_modulo_trabajo_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_modulo_trabajo_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_modulo_trabajo_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_modulo_trabajo ON catalogos.modulo_trabajo USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / tipo_mineral.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.tipo_mineral (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  es_mineral boolean NOT NULL DEFAULT true,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT tipo_mineral_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_tipo_mineral_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_tipo_mineral_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_tipo_mineral_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_tipo_mineral ON catalogos.tipo_mineral USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / departamento.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.departamento (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT departamento_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_departamento_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_departamento_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_departamento_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_departamento ON catalogos.departamento USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / puesto.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.puesto (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT puesto_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_puesto_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_puesto_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_puesto_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_puesto ON catalogos.puesto USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / actividad.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.actividad (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT actividad_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_actividad_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_actividad_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_actividad_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_actividad ON catalogos.actividad USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / tipo_demora.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.tipo_demora (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  es_programada boolean NOT NULL DEFAULT false,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT tipo_demora_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_tipo_demora_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_tipo_demora_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_tipo_demora_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_tipo_demora ON catalogos.tipo_demora USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / tipo_explosivo.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.tipo_explosivo (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  familia text NOT NULL DEFAULT 'AGENTE'::text,
+  unidad_medida text NOT NULL DEFAULT 'kg'::text,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT tipo_explosivo_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_tipo_explosivo_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT ck_tipo_explosivo_familia CHECK ((familia = ANY (ARRAY['AGENTE'::text, 'INICIADOR'::text, 'CORDON'::text, 'CONECTOR'::text]))),
+  CONSTRAINT uq_tipo_explosivo_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_tipo_explosivo_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_tipo_explosivo ON catalogos.tipo_explosivo USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>catalogos / tipo_barreno.sql</summary>
+      <pre class="sql">CREATE TABLE catalogos.tipo_barreno (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  descripcion text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT tipo_barreno_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_tipo_barreno_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_tipo_barreno_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_tipo_barreno_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_tipo_barreno ON catalogos.tipo_barreno USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
     <p class="eyebrow">Preguntas frecuentes</p>
     <h2>Decisiones de diseño</h2>
 

@@ -255,6 +255,87 @@ CREATE INDEX ix_costo_unitario_mina_periodo ON costos.costo_unitario (id_empresa
 
 <section style="padding-top:0">
   <div class="wrap">
+    <p class="eyebrow">C&oacute;digo SQL</p>
+    <h2>DDL completo restante (extra&iacute;do de la base viva)</h2>
+    <p class="lead">El resto de tablas de la capacidad, generado directamente del esquema cargado para que la p&aacute;gina refleje el <b>100%</b>. Aqu&iacute; las FK ya aparecen en su forma final <b>compuesta (id_empresa, id)</b> &mdash; los archivos fuente las declaran simples y <span class="mono">12_integridad_tenant.sql</span> las convierte al cargar. Pasa el cursor sobre las l&iacute;neas para la explicaci&oacute;n autom&aacute;tica.</p>
+    <details class="code">
+      <summary>costos / contratista.sql</summary>
+      <pre class="sql">CREATE TABLE costos.contratista (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  codigo text NOT NULL,
+  nombre text NOT NULL,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT contratista_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_contratista_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text]))),
+  CONSTRAINT uq_contratista_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_contratista_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_contratista ON costos.contratista USING btree (id_empresa, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>costos / presupuesto.sql</summary>
+      <pre class="sql">CREATE TABLE costos.presupuesto (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  anio smallint NOT NULL,
+  periodo text,
+  rubro text,
+  departamento text,
+  actividad text,
+  monto_presupuestado numeric(16,2) NOT NULL DEFAULT 0,
+  moneda text NOT NULL DEFAULT 'USD'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT presupuesto_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_presupuesto_moneda CHECK ((moneda = ANY (ARRAY['USD'::text, 'MXN'::text]))),
+  CONSTRAINT fk_presupuesto_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_presupuesto_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_presupuesto_mina_anio ON costos.presupuesto USING btree (id_empresa, id_mina, anio);</pre>
+    </details>
+    <details class="code">
+      <summary>costos / cutoff_variable.sql</summary>
+      <pre class="sql">CREATE TABLE costos.cutoff_variable (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  id_rebaje uuid,
+  zona text,
+  periodo text NOT NULL,
+  cutoff_valor numeric(14,4) NOT NULL,
+  unidad text NOT NULL DEFAULT 'USD_TON'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT cutoff_variable_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_cutoff_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_cutoff_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_cutoff_rebaje FOREIGN KEY (id_empresa, id_rebaje) REFERENCES planeacion.rebaje(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_cutoff_mina_periodo ON costos.cutoff_variable USING btree (id_empresa, id_mina, periodo);
+CREATE INDEX ix_cutoff_rebaje ON costos.cutoff_variable USING btree (id_empresa, id_rebaje, periodo) WHERE (id_rebaje IS NOT NULL);
+CREATE INDEX ix_cutoff_rebaje_fk ON costos.cutoff_variable USING btree (id_rebaje) WHERE (id_rebaje IS NOT NULL);</pre>
+    </details>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
     <p class="eyebrow">Preguntas frecuentes</p>
     <h2>Decisiones de diseño</h2>
 

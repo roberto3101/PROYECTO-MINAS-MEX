@@ -202,6 +202,75 @@ CREATE UNIQUE INDEX uq_meta_periodo ON planeacion.meta_periodo
 
 <section style="padding-top:0">
   <div class="wrap">
+    <p class="eyebrow">C&oacute;digo SQL</p>
+    <h2>DDL completo restante (extra&iacute;do de la base viva)</h2>
+    <p class="lead">El resto de tablas de la capacidad, generado directamente del esquema cargado para que la p&aacute;gina refleje el <b>100%</b>. Aqu&iacute; las FK ya aparecen en su forma final <b>compuesta (id_empresa, id)</b> &mdash; los archivos fuente las declaran simples y <span class="mono">12_integridad_tenant.sql</span> las convierte al cargar. Pasa el cursor sobre las l&iacute;neas para la explicaci&oacute;n autom&aacute;tica.</p>
+    <details class="code">
+      <summary>planeacion / rebaje.sql</summary>
+      <pre class="sql">CREATE TABLE planeacion.rebaje (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  id_obra uuid,
+  codigo text NOT NULL,
+  descripcion text,
+  id_tipo_obra uuid,
+  id_sistema_minado uuid,
+  estado text NOT NULL DEFAULT 'ACTIVO'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT rebaje_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_rebaje_estado CHECK ((estado = ANY (ARRAY['ACTIVO'::text, 'INACTIVO'::text, 'AGOTADO'::text]))),
+  CONSTRAINT uq_rebaje_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_rebaje_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rebaje_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rebaje_obra FOREIGN KEY (id_empresa, id_obra) REFERENCES catalogos.obra(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rebaje_sistema_minado FOREIGN KEY (id_empresa, id_sistema_minado) REFERENCES catalogos.sistema_minado(id_empresa, id) ON DELETE RESTRICT,
+  CONSTRAINT fk_rebaje_tipo_obra FOREIGN KEY (id_empresa, id_tipo_obra) REFERENCES catalogos.tipo_obra(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE INDEX ix_rebaje_mina ON planeacion.rebaje USING btree (id_mina);
+CREATE INDEX ix_rebaje_obra ON planeacion.rebaje USING btree (id_obra) WHERE (id_obra IS NOT NULL);
+CREATE INDEX ix_rebaje_sistema_minado ON planeacion.rebaje USING btree (id_sistema_minado) WHERE (id_sistema_minado IS NOT NULL);
+CREATE INDEX ix_rebaje_tipo_obra ON planeacion.rebaje USING btree (id_tipo_obra) WHERE (id_tipo_obra IS NOT NULL);
+CREATE UNIQUE INDEX uq_rebaje ON planeacion.rebaje USING btree (id_empresa, id_mina, codigo) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+    <details class="code">
+      <summary>planeacion / plan.sql</summary>
+      <pre class="sql">CREATE TABLE planeacion.plan (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  id_empresa uuid NOT NULL,
+  id_mina uuid NOT NULL,
+  nombre text NOT NULL,
+  anio smallint NOT NULL,
+  t_inversion text NOT NULL DEFAULT 'OPEX'::text,
+  enfoque text NOT NULL DEFAULT 'BASE'::text,
+  descripcion text,
+  estado text NOT NULL DEFAULT 'VIGENTE'::text,
+  creado_en timestamp with time zone NOT NULL DEFAULT now(),
+  creado_por_usuario_id uuid,
+  actualizado_en timestamp with time zone NOT NULL DEFAULT now(),
+  actualizado_por_usuario_id uuid,
+  eliminado_en timestamp with time zone,
+  eliminado_por_usuario_id uuid,
+  CONSTRAINT plan_pkey PRIMARY KEY (id),
+  CONSTRAINT ck_plan_enfoque CHECK ((enfoque = ANY (ARRAY['BASE'::text, 'OPERATIVO'::text, 'BUDGET'::text, 'FORECAST'::text]))),
+  CONSTRAINT ck_plan_estado CHECK ((estado = ANY (ARRAY['VIGENTE'::text, 'CERRADO'::text, 'BORRADOR'::text]))),
+  CONSTRAINT ck_plan_tinv CHECK ((t_inversion = ANY (ARRAY['OPEX'::text, 'CAPEX'::text]))),
+  CONSTRAINT uq_plan_tenant UNIQUE (id_empresa, id),
+  CONSTRAINT fk_plan_empresa FOREIGN KEY (id_empresa) REFERENCES gobierno.empresa(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_plan_mina FOREIGN KEY (id_empresa, id_mina) REFERENCES catalogos.mina(id_empresa, id) ON DELETE RESTRICT
+);
+CREATE UNIQUE INDEX uq_plan ON planeacion.plan USING btree (id_empresa, id_mina, nombre, anio, enfoque) WHERE (eliminado_en IS NULL);</pre>
+    </details>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
     <p class="eyebrow">Preguntas frecuentes</p>
     <h2>Decisiones de diseño</h2>
 
