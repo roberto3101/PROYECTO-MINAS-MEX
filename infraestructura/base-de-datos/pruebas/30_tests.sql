@@ -447,7 +447,7 @@ DO $$ BEGIN
   EXCEPTION WHEN check_violation THEN NULL;
   END;
   UPDATE gobierno.empresa
-     SET logo_url = 'https://cdn.ejemplo.com/min/logo.png', color_primario = '#7A4B16'
+     SET logo_url = 'https://cdn.ejemplo.com/min/logo.png', color_primario = '#E8A33D'
    WHERE codigo='MIN';
 END $$;
 RESET ROLE;

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>404 — Galería sin salida</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0e14'/%3E%3Cpath d='M6 22 L13 9 L19 17 L23 12 L26 22 Z' fill='%23f2b63d'/%3E%3C/svg%3E">
+<style>
+  :root { box-sizing: border-box; cursor: default; --dorado: #f2b63d; --fondo: #0b0e14; }
+  ::selection { color: #0b0e14; background-color: #f2b63d; }
+  *, *::before, *::after { box-sizing: inherit; }
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--fondo); color: var(--dorado); font-size: calc(7px + 0.8125vw); overflow: hidden; }
+
+  .error-body { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  .error-body::before { content: ""; position: fixed; inset: 0; background-color: var(--dorado); mix-blend-mode: overlay; z-index: 1; }
+  .error-body::after {
+    content: ""; position: fixed; inset: 0;
+    background:
+      linear-gradient(90deg, var(--fondo) 21px, transparent 1%) center,
+      linear-gradient(var(--fondo) 21px, transparent 1%) center,
+      #1a2233;
+    background-size: 22px 22px; background-position: center; opacity: 0.22; z-index: 1;
+  }
+  .error-body .background { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; filter: grayscale(1); mix-blend-mode: luminosity; object-fit: cover; }
+
+  .error-body .message { position: relative; width: 100%; height: 100%; text-align: center; z-index: 3; }
+  .error-body .message h1 {
+    position: absolute; top: 12%; left: 0; width: 100%; font-size: 10em; margin: 0; font-family: "Segoe UI", monospace; font-weight: 800;
+    animation: shake 600ms ease-in-out infinite alternate;
+    text-shadow: 0 0 0.07em var(--dorado), -0.2em 0 2em rgba(242,182,61,.35), 0.2em 0 2em rgba(242,182,61,.35);
+    user-select: none;
+  }
+  .error-body .message h1::before {
+    content: attr(data-text); position: absolute; left: 50%; transform: translate(-50%, .34em); height: .1em; line-height: .5em; width: 100%;
+    animation: scan 500ms ease-in-out infinite alternate 594ms, glitch-anim 300ms ease-in-out infinite alternate; overflow: hidden; opacity: .7;
+  }
+  .error-body .message h1::after {
+    content: attr(data-text); position: absolute; top: -17px; left: 50%; transform: translate(-50%, .34em); height: .5em; line-height: .1em; width: 100%;
+    animation: scan 665ms ease-in-out infinite alternate 201ms, glitch-anim 300ms ease-in-out infinite alternate; overflow: hidden; opacity: .8;
+  }
+  .error-body .message .bottom { position: absolute; top: 64%; left: 0; width: 100%; }
+  .error-body .message p, .error-body .message a { font-size: 2em; font-family: "Segoe UI", monospace; text-shadow: 0 0 5px rgba(242,182,61,.55); }
+  .error-body .message .sub { font-size: 1.05em; color: #c9b48a; text-shadow: none; filter: none; margin-top: -.3em; }
+  .error-body .message a {
+    position: relative; display: inline-block; margin-top: 1.4em; color: var(--dorado); text-decoration: none; font-weight: 700;
+    border: 2px solid var(--dorado); text-transform: uppercase; letter-spacing: .04em; padding: 7px 32px;
+    box-shadow: inset 0 0 0 0 rgba(242,182,61,.2); transition: 25ms ease-in-out all 0ms; overflow: hidden; animation: attn 3s ease-in-out infinite;
+  }
+  .error-body .message a:hover {
+    cursor: crosshair; color: #0b0e14; box-shadow: inset 0 -3em 0 0 var(--dorado); transition: 225ms ease-in-out all 225ms; animation: none;
+  }
+  .error-body .message a:active { box-shadow: inset 0 -3em 0 0 rgba(242,182,61,.7); transition: 225ms ease-in-out all 225ms; }
+
+  @keyframes scan { from, 20%, 100% { height: 0; transform: translate(-50%, .44em); } 10%, 15% { height: 1em; line-height: .2em; transform: translate(-55%, .26em); } }
+  @keyframes attn { 0%, 100% { opacity: 1; } 30%, 35% { opacity: .45; } }
+  @keyframes shake {
+    0%, 100% { transform: translate(-1px, 0); } 10% { transform: translate(2px, 1px); }
+    30% { transform: translate(-3px, 2px); } 35% { transform: translate(2px, -3px); filter: blur(4px); }
+    45% { transform: translate(2px, 2px) skewY(-8deg) scale(.96, 1); filter: blur(0); } 50% { transform: translate(-3px, 1px); }
+  }
+  @keyframes glitch-anim {
+    0% { clip: rect(17px,9999px,83px,0); } 10% { clip: rect(76px,9999px,14px,0); } 20% { clip: rect(26px,9999px,39px,0); }
+    30% { clip: rect(92px,9999px,37px,0); } 40% { clip: rect(18px,9999px,7px,0); } 50% { clip: rect(90px,9999px,19px,0); }
+    60% { clip: rect(36px,9999px,3px,0); } 70% { clip: rect(83px,9999px,38px,0); } 80% { clip: rect(7px,9999px,16px,0); }
+    90% { clip: rect(86px,9999px,42px,0); } 100% { clip: rect(19px,9999px,48px,0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .error-body .message h1, .error-body .message h1::before, .error-body .message h1::after, .error-body .message a { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <section class="error-body">
+    <video class="background" src="/err.mp4" autoplay muted loop playsinline preload="auto"></video>
+    <div class="message">
+      <h1 data-text="404">404</h1>
+      <div class="bottom">
+        <p>Esta galería no existe</p>
+        <p class="sub">la ruta que buscas no está en el sistema</p>
+        <a href="/">Volver a la superficie</a>
+      </div>
+    </div>
+  </section>
+</body>
+</html>

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -114,7 +113,7 @@ func main() {
 		Autenticador:       web.NuevoAutenticador(emisor, relojDelSistema),
 		Gobierno:           manejadorGobierno,
 		Catalogos:          manejadorCatalogos,
-		Frontend:           http.FileServer(http.Dir(directorioFrontend)),
+		Frontend:           web.NuevoServidorDeFrontend(directorioFrontend),
 		DirectorioArchivos: directorioArchivos,
 	})
 

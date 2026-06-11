@@ -1,6 +1,7 @@
 :root {
-  --acento: #d9a440;
+  --acento: #f2b63d;
   --acento-tinta: #1a1306;
+  --acento-texto: color-mix(in srgb, var(--acento), #ffffff 46%);
   --fondo: #0b0e14;
   --fondo-2: #10141d;
   --panel: #141a26;
@@ -402,7 +403,7 @@ svg { display: block; }
 .insignia.verde { background: color-mix(in srgb, var(--exito) 15%, transparent); color: var(--exito); }
 .insignia.rojo { background: color-mix(in srgb, var(--peligro) 14%, transparent); color: var(--peligro); }
 .insignia.ambar { background: color-mix(in srgb, var(--aviso) 15%, transparent); color: var(--aviso); }
-.insignia.dorado { background: color-mix(in srgb, var(--acento) 16%, transparent); color: var(--acento); }
+.insignia.dorado { background: color-mix(in srgb, var(--acento) 20%, transparent); color: var(--acento-texto); }
 .insignia.gris { background: rgba(148,163,198,.14); color: var(--texto-2); }
 
 .chip {
@@ -416,7 +417,7 @@ svg { display: block; }
   color: var(--texto-2);
   margin: 3px 4px 0 0;
 }
-.chip.acento { border-color: color-mix(in srgb, var(--acento) 45%, transparent); color: var(--acento); }
+.chip.acento { border-color: color-mix(in srgb, var(--acento) 55%, transparent); background: color-mix(in srgb, var(--acento) 14%, transparent); color: var(--acento-texto); }
 
 .pie-lista { display: flex; justify-content: center; padding: 14px 0 4px; }
 .boton-cargar {
@@ -542,7 +543,7 @@ svg { display: block; }
 .nota-formulario { font-size: 12.5px; color: var(--texto-3); margin: -4px 0 14px; }
 .seccion-formulario {
   font-size: 12px; text-transform: uppercase; letter-spacing: .12em;
-  color: var(--acento); margin: 18px 0 10px;
+  color: var(--acento-texto); margin: 18px 0 10px;
   padding-bottom: 6px; border-bottom: 1px solid var(--linea);
 }
 .seccion-formulario:first-child { margin-top: 0; }

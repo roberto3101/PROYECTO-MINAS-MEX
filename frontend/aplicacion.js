@@ -368,9 +368,24 @@ function fichaHtml(pares) {
     `<dt>${escapar(etiqueta)}</dt><dd>${valor}</dd>`).join("")}</dl>`;
 }
 
+function luminancia(hex) {
+  const coincidencia = /^#?([0-9a-f]{6})$/i.exec(hex ?? "");
+  if (!coincidencia) return 1;
+  const entero = parseInt(coincidencia[1], 16);
+  const rojo = (entero >> 16) & 255, verde = (entero >> 8) & 255, azul = entero & 255;
+  return (0.299 * rojo + 0.587 * verde + 0.114 * azul) / 255;
+}
+
 function aplicarMarca(empresa) {
   estado.empresa = empresa;
-  if (empresa.ColorPrimario) document.documentElement.style.setProperty("--acento", empresa.ColorPrimario);
+  const raiz = document.documentElement.style;
+  if (empresa.ColorPrimario) {
+    raiz.setProperty("--acento", empresa.ColorPrimario);
+    raiz.setProperty("--acento-tinta", luminancia(empresa.ColorPrimario) > 0.52 ? "#1a1306" : "#fff5e6");
+  } else {
+    raiz.removeProperty("--acento");
+    raiz.removeProperty("--acento-tinta");
+  }
   $("#nombre-identidad").textContent = empresa.RazonSocial;
   $("#detalle-identidad").textContent = `${empresa.Codigo} · ${empresa.Moneda}`;
   const logo = $("#logo-empresa");
@@ -1136,6 +1151,7 @@ function cerrarSesion() {
   estado.sesion = null;
   estado.empresa = null;
   document.documentElement.style.removeProperty("--acento");
+  document.documentElement.style.removeProperty("--acento-tinta");
   $("#aplicacion").hidden = true;
   $("#pantalla-login").hidden = false;
   cerrarPanel();
