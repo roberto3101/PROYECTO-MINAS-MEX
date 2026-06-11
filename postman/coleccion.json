@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "7c4e9a10-mina-api",
     "name": "Plataforma Minera · API",
-    "description": "Flujo completo listo para clics.\n\n1) Importa tambien `entorno.json` y seleccionalo arriba a la derecha.\n2) Arranca el backend (`go run ./cmd/servidor` con la BD local arriba).\n3) Corre la coleccion entera (Run) o ve carpeta por carpeta: el login guarda el token solo, y cada creacion guarda su id para el siguiente request.\n\nLa coleccion es re-ejecutable: el login del admin genera un sufijo nuevo por corrida, asi los codigos (rol, mina, equipo, operador) nunca chocan.",
+    "description": "Flujo completo listo para clics (API v2).\n\n1) Importa tambien `entorno.json` y seleccionalo arriba a la derecha.\n2) Arranca el backend (`go run ./cmd/servidor` con la BD local arriba).\n3) Corre la coleccion entera (Run) o ve carpeta por carpeta: el login guarda el token solo, y cada creacion guarda su id para el siguiente request.\n\nLa coleccion es re-ejecutable: el login del admin genera un sufijo nuevo por corrida, asi los codigos (rol, mina, equipo, operador, empresa) nunca chocan.\n\nv2: las listas grandes (usuarios, minas, empleados, equipos y empresas de plataforma) responden {Elementos, SiguienteCursor} y aceptan ?busqueda=&estado=&cursor=&limite=. La baja de usuario ahora es PATCH /gobierno/usuarios/{id}/estado, el logo se sube por multipart a /gobierno/empresa/logo, y la carpeta 7 demuestra el panel de plataforma (superadmin): alta de empresa con su admin aprovisionado y suspension con bloqueo de login.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
@@ -80,12 +80,24 @@
           }
         },
         {
-          "name": "GET minas",
+          "name": "GET minas (paginado: Elementos + SiguienteCursor)",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('lista de minas', () => pm.response.to.have.status(200));",
-            "pm.test('incluye la recien creada', () => pm.expect(pm.response.json().some(m => m.Identificador === pm.environment.get('id_mina'))).to.be.true);"
+            "pm.test('lista paginada de minas', () => pm.response.to.have.status(200));",
+            "const cuerpo = pm.response.json();",
+            "pm.test('responde {Elementos, SiguienteCursor}', () => { pm.expect(cuerpo.Elementos).to.be.an('array'); pm.expect(cuerpo).to.have.property('SiguienteCursor'); });",
+            "pm.test('incluye la recien creada', () => pm.expect(cuerpo.Elementos.some(m => m.Identificador === pm.environment.get('id_mina'))).to.be.true);"
           ] } }],
-          "request": { "method": "GET", "url": "{{base_url}}/catalogos/minas" }
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/minas?busqueda={{sufijo}}&limite=50" }
+        },
+        {
+          "name": "GET detalle de la mina",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('detalle de la mina', () => pm.response.to.have.status(200));",
+            "const cuerpo = pm.response.json();",
+            "const mina = cuerpo.Mina || cuerpo;",
+            "pm.test('es la mina creada', () => pm.expect(mina.Identificador).to.eql(pm.environment.get('id_mina')));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/minas/{{id_mina}}" }
         },
         {
           "name": "GET tipos de equipo → guarda {{id_tipo_equipo}} (TIRO)",
@@ -109,7 +121,33 @@
           "request": { "method": "GET", "url": "{{base_url}}/catalogos/modulos-de-trabajo" }
         },
         {
-          "name": "POST contratar empleado → guarda {{id_empleado}}",
+          "name": "GET departamentos → guarda {{id_departamento}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de departamentos', () => pm.response.to.have.status(200));",
+            "const departamentos = pm.response.json();",
+            "pm.test('es un array', () => pm.expect(departamentos).to.be.an('array'));",
+            "pm.environment.set('id_departamento', ((departamentos[0] || {}).Identificador) || '');"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/departamentos" }
+        },
+        {
+          "name": "GET puestos",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de puestos', () => pm.response.to.have.status(200));",
+            "pm.test('es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/puestos" }
+        },
+        {
+          "name": "GET actividades",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de actividades', () => pm.response.to.have.status(200));",
+            "pm.test('es un array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/actividades" }
+        },
+        {
+          "name": "POST contratar empleado (todos los campos) → guarda {{id_empleado}}",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('empleado contratado', () => pm.response.to.have.status(201));",
             "pm.environment.set('id_empleado', pm.response.json().id);"
@@ -118,7 +156,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/catalogos/empleados",
-            "body": { "mode": "raw", "raw": "{\n  \"id_mina\": \"{{id_mina}}\",\n  \"numero_nomina\": \"PM-{{sufijo}}\",\n  \"nombre_completo\": \"Operador Postman {{sufijo}}\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"id_mina\": \"{{id_mina}}\",\n  \"numero_nomina\": \"PM-{{sufijo}}\",\n  \"nombre_completo\": \"Operador Postman {{sufijo}}\",\n  \"id_departamento\": \"{{id_departamento}}\",\n  \"centro_costo\": \"CC-{{sufijo}}\",\n  \"gerente_a_cargo\": \"ING. POSTMAN\",\n  \"grupo\": \"A\"\n}" }
           }
         },
         {
@@ -131,22 +169,48 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/catalogos/equipos",
-            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"TIRO-{{sufijo}}\",\n  \"id_mina\": \"{{id_mina}}\",\n  \"id_tipo_equipo\": \"{{id_tipo_equipo}}\",\n  \"id_modulo_trabajo\": \"{{id_modulo_trabajo}}\",\n  \"fabricante\": \"Izaje SA\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"TIRO-{{sufijo}}\",\n  \"id_mina\": \"{{id_mina}}\",\n  \"id_tipo_equipo\": \"{{id_tipo_equipo}}\",\n  \"id_modulo_trabajo\": \"{{id_modulo_trabajo}}\",\n  \"fabricante\": \"Izaje SA\",\n  \"modelo\": \"TH540\",\n  \"numero_serie\": \"SN-{{sufijo}}\",\n  \"anio_fabricacion\": 2022,\n  \"fecha_ingreso_mina\": \"2026-01-15\"\n}" }
           }
         },
         {
-          "name": "GET empleados",
+          "name": "GET empleados (paginado)",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('lista de empleados', () => pm.response.to.have.status(200));"
+            "pm.test('lista paginada de empleados', () => pm.response.to.have.status(200));",
+            "pm.test('responde Elementos', () => pm.expect(pm.response.json().Elementos).to.be.an('array'));"
           ] } }],
-          "request": { "method": "GET", "url": "{{base_url}}/catalogos/empleados" }
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/empleados?limite=20" }
         },
         {
-          "name": "GET equipos",
+          "name": "GET equipos (paginado)",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('lista de equipos', () => pm.response.to.have.status(200));"
+            "pm.test('lista paginada de equipos', () => pm.response.to.have.status(200));",
+            "pm.test('responde Elementos', () => pm.expect(pm.response.json().Elementos).to.be.an('array'));"
           ] } }],
-          "request": { "method": "GET", "url": "{{base_url}}/catalogos/equipos" }
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/equipos?limite=20" }
+        },
+        {
+          "name": "PATCH desactivar mina (estado INACTIVA)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('mina desactivada', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/catalogos/minas/{{id_mina}}/estado",
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"INACTIVA\"\n}" }
+          }
+        },
+        {
+          "name": "PATCH reactivar mina (estado ACTIVA)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('mina reactivada', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/catalogos/minas/{{id_mina}}/estado",
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"ACTIVA\"\n}" }
+          }
         }
       ]
     },
@@ -167,12 +231,36 @@
           }
         },
         {
-          "name": "GET usuarios",
+          "name": "GET usuarios (paginado: Elementos + SiguienteCursor)",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
-            "pm.test('lista de usuarios', () => pm.response.to.have.status(200));",
-            "pm.test('incluye al operador nuevo', () => pm.expect(pm.response.json().some(u => u.Identificador === pm.environment.get('id_usuario'))).to.be.true);"
+            "pm.test('lista paginada de usuarios', () => pm.response.to.have.status(200));",
+            "const cuerpo = pm.response.json();",
+            "pm.test('responde {Elementos, SiguienteCursor}', () => { pm.expect(cuerpo.Elementos).to.be.an('array'); pm.expect(cuerpo).to.have.property('SiguienteCursor'); });",
+            "pm.test('incluye al operador nuevo', () => pm.expect(cuerpo.Elementos.some(u => u.Identificador === pm.environment.get('id_usuario'))).to.be.true);"
           ] } }],
-          "request": { "method": "GET", "url": "{{base_url}}/gobierno/usuarios" }
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/usuarios?busqueda={{sufijo}}&limite=50" }
+        },
+        {
+          "name": "GET detalle del usuario ({Usuario, Asignaciones})",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('detalle del usuario', () => pm.response.to.have.status(200));",
+            "const cuerpo = pm.response.json();",
+            "pm.test('trae Usuario y Asignaciones', () => { pm.expect(cuerpo).to.have.property('Usuario'); pm.expect(cuerpo).to.have.property('Asignaciones'); });",
+            "pm.test('es el operador', () => pm.expect(cuerpo.Usuario.Identificador).to.eql(pm.environment.get('id_usuario')));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/usuarios/{{id_usuario}}" }
+        },
+        {
+          "name": "PUT editar usuario (nombre y correo)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('usuario editado', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/usuarios/{{id_usuario}}",
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Operador Editado {{sufijo}}\",\n  \"correo\": \"editado{{sufijo}}@mina.mx\"\n}" }
+          }
         },
         {
           "name": "POST crear rol propio → guarda {{id_rol}}",
@@ -311,11 +399,16 @@
           }
         },
         {
-          "name": "DELETE desactivar usuario",
+          "name": "PATCH desactivar usuario (estado INACTIVO)",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('usuario desactivado', () => pm.response.to.have.status(200));"
           ] } }],
-          "request": { "method": "DELETE", "url": "{{base_url}}/gobierno/usuarios/{{id_usuario}}" }
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/usuarios/{{id_usuario}}/estado",
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"INACTIVO\"\n}" }
+          }
         },
         {
           "name": "POST sesión del usuario inactivo (401)",
@@ -336,7 +429,7 @@
       "name": "6 · Branding del tenant",
       "item": [
         {
-          "name": "PUT configurar empresa (logo + color)",
+          "name": "PUT configurar empresa (color, zona, moneda, fiscal, contacto)",
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('branding configurado', () => pm.response.to.have.status(200));"
           ] } }],
@@ -344,7 +437,7 @@
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/gobierno/empresa",
-            "body": { "mode": "raw", "raw": "{\n  \"logo_url\": \"https://cdn.ejemplo.com/min/logo.png\",\n  \"color_primario\": \"#D9A440\",\n  \"zona_horaria\": \"America/Mexico_City\",\n  \"moneda\": \"USD\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"color_primario\": \"#D9A440\",\n  \"zona_horaria\": \"America/Mexico_City\",\n  \"moneda\": \"USD\",\n  \"identificacion_fiscal\": \"MIN-{{sufijo}}\",\n  \"correo_contacto\": \"contacto@minera-min.mx\",\n  \"telefono\": \"6141234567\"\n}" }
           }
         },
         {
@@ -356,7 +449,136 @@
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{base_url}}/gobierno/empresa",
-            "body": { "mode": "raw", "raw": "{\n  \"logo_url\": \"\",\n  \"color_primario\": \"naranja\",\n  \"zona_horaria\": \"America/Mexico_City\",\n  \"moneda\": \"USD\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"color_primario\": \"naranja\",\n  \"zona_horaria\": \"America/Mexico_City\",\n  \"moneda\": \"USD\",\n  \"identificacion_fiscal\": \"MIN-{{sufijo}}\",\n  \"correo_contacto\": \"contacto@minera-min.mx\",\n  \"telefono\": \"6141234567\"\n}" }
+          }
+        },
+        {
+          "name": "POST subir logo (multipart: campo logo, png/jpg/webp ≤2MB)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('logo subido', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/gobierno/empresa/logo",
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "logo", "type": "file", "src": null, "description": "Selecciona aqui una imagen png/jpg/webp de hasta 2MB" }
+            ] }
+          }
+        },
+        {
+          "name": "POST subir logo .txt (400: el servidor valida la imagen)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('rechaza un archivo que no es imagen', () => pm.response.to.have.status(400));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/gobierno/empresa/logo",
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "logo", "type": "file", "src": null, "description": "Selecciona aqui un archivo .txt para ver el rechazo del servidor" }
+            ] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7 · Plataforma (superadmin)",
+      "item": [
+        {
+          "name": "POST sesión de plataforma → guarda {{token_plataforma}}",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "if (!pm.environment.get('sufijo')) { pm.environment.set('sufijo', Date.now().toString().slice(-6)); }"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('sesion de plataforma iniciada', () => pm.response.to.have.status(200));",
+              "const cuerpo = pm.response.json();",
+              "pm.environment.set('token_plataforma', cuerpo.token);",
+              "pm.test('ambito plataforma', () => pm.expect(cuerpo.ambito).to.eql('plataforma'));"
+            ] } }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/plataforma/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": \"{{usuario_plataforma}}\",\n  \"contrasena\": \"{{contrasena_plataforma}}\"\n}" }
+          }
+        },
+        {
+          "name": "GET empresas (paginado)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de empresas', () => pm.response.to.have.status(200));",
+            "pm.test('responde Elementos', () => pm.expect(pm.response.json().Elementos).to.be.an('array'));"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_plataforma}}", "type": "string" }] },
+            "method": "GET",
+            "url": "{{base_url}}/plataforma/empresas?limite=10"
+          }
+        },
+        {
+          "name": "POST crear empresa con admin → guarda {{id_empresa_nueva}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('empresa creada y aprovisionada', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_empresa_nueva', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_plataforma}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/plataforma/empresas",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"PM{{sufijo}}\",\n  \"razon_social\": \"Minera Postman {{sufijo}} SA\",\n  \"identificacion_fiscal\": \"PMX{{sufijo}}\",\n  \"correo_contacto\": \"contacto{{sufijo}}@minera.mx\",\n  \"telefono\": \"6140000000\",\n  \"zona_horaria\": \"America/Chihuahua\",\n  \"moneda\": \"MXN\",\n  \"color_primario\": \"#0E7A4B\",\n  \"admin\": {\n    \"usuario\": \"admin.pm{{sufijo}}\",\n    \"nombre\": \"Admin Postman\",\n    \"correo\": \"admin{{sufijo}}@minera.mx\",\n    \"contrasena\": \"Postman#2026X\"\n  }\n}" }
+          }
+        },
+        {
+          "name": "GET detalle de la empresa nueva",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('detalle de la empresa', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_plataforma}}", "type": "string" }] },
+            "method": "GET",
+            "url": "{{base_url}}/plataforma/empresas/{{id_empresa_nueva}}"
+          }
+        },
+        {
+          "name": "POST login del admin de la empresa nueva (aprovisionamiento completo)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('el admin nuevo entra a su empresa', () => pm.response.to.have.status(200));",
+            "pm.test('aprovisionada completa: >= 29 permisos', () => pm.expect(pm.response.json().permisos.length).to.be.at.least(29));"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo_empresa\": \"PM{{sufijo}}\",\n  \"usuario\": \"admin.pm{{sufijo}}\",\n  \"contrasena\": \"Postman#2026X\"\n}" }
+          }
+        },
+        {
+          "name": "PATCH suspender empresa (estado INACTIVA)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('empresa suspendida', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_plataforma}}", "type": "string" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/plataforma/empresas/{{id_empresa_nueva}}/estado",
+            "body": { "mode": "raw", "raw": "{\n  \"estado\": \"INACTIVA\"\n}" }
+          }
+        },
+        {
+          "name": "POST login en empresa suspendida (401)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('nadie entra a una empresa inactiva', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo_empresa\": \"PM{{sufijo}}\",\n  \"usuario\": \"admin.pm{{sufijo}}\",\n  \"contrasena\": \"Postman#2026X\"\n}" }
           }
         }
       ]

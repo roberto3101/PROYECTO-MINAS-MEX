@@ -23,7 +23,7 @@ func (LectorDeAccesoPostgres) BuscarCredencial(ctx context.Context, codigoEmpres
 		`SELECT u.id, u.id_empresa, u.usuario, COALESCE(u.contrasena_hash, ''), (u.estado = 'ACTIVO' AND u.eliminado_en IS NULL)
 		 FROM gobierno.usuario u
 		 JOIN gobierno.empresa e ON e.id = u.id_empresa
-		 WHERE e.codigo = $1 AND u.usuario = $2 AND e.eliminado_en IS NULL`,
+		 WHERE e.codigo = $1 AND u.usuario = $2 AND e.eliminado_en IS NULL AND e.estado = 'ACTIVA'`,
 		codigoEmpresa, nombreCorto)
 	if err := fila.Scan(&credencial.IdentificadorUsuario, &credencial.IdentificadorEmpresa, &credencial.NombreCorto, &credencial.HashContrasena, &credencial.UsuarioActivo); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

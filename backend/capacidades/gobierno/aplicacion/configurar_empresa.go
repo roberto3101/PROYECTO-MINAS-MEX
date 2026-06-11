@@ -6,14 +6,17 @@ import (
 	"minas/capacidades/gobierno/dominio"
 	"minas/capacidades/gobierno/puertos"
 	"minas/compartido/identificador"
+	"minas/plataforma/escudo"
 )
 
 type ComandoConfigurarEmpresa struct {
 	IdentificadorEmpresa string
-	LogoUrl              string
 	ColorPrimario        string
 	ZonaHoraria          string
 	Moneda               string
+	IdentificacionFiscal string
+	CorreoContacto       string
+	Telefono             string
 }
 
 type ConfigurarEmpresa struct {
@@ -30,8 +33,7 @@ func (caso *ConfigurarEmpresa) Ejecutar(ctx context.Context, comando ComandoConf
 	if err != nil {
 		return err
 	}
-	branding, err := dominio.ConfigurarBranding(comando.LogoUrl, comando.ColorPrimario, comando.ZonaHoraria, comando.Moneda)
-	if err != nil {
+	if err := escudo.ValidarCorreo(comando.CorreoContacto); err != nil {
 		return err
 	}
 	return caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
@@ -42,7 +44,16 @@ func (caso *ConfigurarEmpresa) Ejecutar(ctx context.Context, comando ComandoConf
 		if !encontrada {
 			return ErrEmpresaNoEncontrada
 		}
+		branding, err := dominio.ConfigurarBranding(empresa.Branding().LogoUrl(), comando.ColorPrimario, comando.ZonaHoraria, comando.Moneda)
+		if err != nil {
+			return err
+		}
 		empresa.AplicarBranding(branding)
+		empresa.ActualizarPerfil(dominio.PerfilDeContacto{
+			IdentificacionFiscal: comando.IdentificacionFiscal,
+			CorreoContacto:       comando.CorreoContacto,
+			Telefono:             comando.Telefono,
+		})
 		return caso.empresas.Guardar(ctx, empresa)
 	})
 }

@@ -56,6 +56,10 @@ BEGIN
 END $$;
 
 GRANT SELECT ON gobierno.empresa TO aplicacion;            -- los tenants los administra la plataforma, no la app
+GRANT UPDATE (razon_social, identificacion_fiscal, correo_contacto, telefono,
+              logo_url, color_primario, zona_horaria, moneda_defecto,
+              actualizado_en, actualizado_por_usuario_id)
+  ON gobierno.empresa TO aplicacion;                        -- el admin configura SU identidad; jamás codigo/estado
 GRANT SELECT, INSERT, UPDATE ON gobierno.usuario TO aplicacion;
 GRANT SELECT, INSERT, UPDATE ON gobierno.rol TO aplicacion;          -- el admin de empresa gestiona sus roles
 GRANT SELECT, INSERT, UPDATE ON gobierno.usuario_rol TO aplicacion;  -- ...y las asignaciones (revocación = baja lógica)

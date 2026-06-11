@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"minas/capacidades/gobierno/puertos"
+	"minas/compartido/paginacion"
 	"minas/plataforma/persistencia"
 )
 
@@ -13,24 +14,63 @@ func NuevoLectorDeGobierno() LectorDeGobiernoPostgres {
 	return LectorDeGobiernoPostgres{}
 }
 
-func (LectorDeGobiernoPostgres) ListarUsuarios(ctx context.Context) ([]puertos.ResumenUsuario, error) {
+func (LectorDeGobiernoPostgres) ListarUsuarios(ctx context.Context, filtro puertos.FiltroDeUsuarios) ([]puertos.ResumenUsuario, string, error) {
 	consultas := persistencia.ConsultasDe(ctx)
-	filas, err := consultas.Query(ctx,
-		`SELECT id, usuario, nombre, COALESCE(correo, ''), estado
-		 FROM gobierno.usuario WHERE eliminado_en IS NULL ORDER BY usuario`)
+	orden, identificadorCursor, err := paginacion.DecodificarCursor(filtro.Cursor)
 	if err != nil {
-		return nil, err
+		return nil, "", err
+	}
+	filas, err := consultas.Query(ctx,
+		`SELECT id, usuario, nombre, COALESCE(correo, ''), estado,
+		        COALESCE(to_char(ultimo_acceso_en, 'YYYY-MM-DD"T"HH24:MI:SSZ'), '')
+		 FROM gobierno.usuario
+		 WHERE eliminado_en IS NULL
+		   AND ($1 = '' OR usuario ILIKE '%'||$1||'%' OR nombre ILIKE '%'||$1||'%' OR COALESCE(correo,'') ILIKE '%'||$1||'%')
+		   AND ($2 = '' OR $2 = 'TODOS' OR estado = $2)
+		   AND ($3 = '' OR (usuario, id::text) > ($3, $4))
+		 ORDER BY usuario, id LIMIT $5`,
+		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1)
+	if err != nil {
+		return nil, "", err
 	}
 	defer filas.Close()
 	var usuarios []puertos.ResumenUsuario
 	for filas.Next() {
 		var usuario puertos.ResumenUsuario
-		if err := filas.Scan(&usuario.Identificador, &usuario.NombreCorto, &usuario.Nombre, &usuario.Correo, &usuario.Estado); err != nil {
-			return nil, err
+		if err := filas.Scan(&usuario.Identificador, &usuario.NombreCorto, &usuario.Nombre, &usuario.Correo, &usuario.Estado, &usuario.UltimoAccesoEn); err != nil {
+			return nil, "", err
 		}
 		usuarios = append(usuarios, usuario)
 	}
-	return usuarios, filas.Err()
+	if err := filas.Err(); err != nil {
+		return nil, "", err
+	}
+	siguiente := ""
+	if len(usuarios) > filtro.Limite {
+		usuarios = usuarios[:filtro.Limite]
+		ultimo := usuarios[len(usuarios)-1]
+		siguiente = paginacion.CodificarCursor(ultimo.NombreCorto, ultimo.Identificador)
+	}
+	return usuarios, siguiente, nil
+}
+
+func (LectorDeGobiernoPostgres) DetalleDeUsuario(ctx context.Context, identificadorUsuario string) (puertos.DetalleUsuario, bool, error) {
+	consultas := persistencia.ConsultasDe(ctx)
+	var detalle puertos.DetalleUsuario
+	fila := consultas.QueryRow(ctx,
+		`SELECT id, usuario, nombre, COALESCE(correo, ''), estado,
+		        COALESCE(to_char(ultimo_acceso_en, 'YYYY-MM-DD"T"HH24:MI:SSZ'), ''),
+		        to_char(creado_en, 'YYYY-MM-DD"T"HH24:MI:SSZ'), COALESCE(id_empleado::text, '')
+		 FROM gobierno.usuario WHERE id = $1 AND eliminado_en IS NULL`, identificadorUsuario)
+	err := fila.Scan(&detalle.Identificador, &detalle.NombreCorto, &detalle.Nombre, &detalle.Correo,
+		&detalle.Estado, &detalle.UltimoAccesoEn, &detalle.CreadoEn, &detalle.IdentificadorEmpleado)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return puertos.DetalleUsuario{}, false, nil
+		}
+		return puertos.DetalleUsuario{}, false, err
+	}
+	return detalle, true, nil
 }
 
 func (LectorDeGobiernoPostgres) ListarRoles(ctx context.Context) ([]puertos.ResumenRol, error) {

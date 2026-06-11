@@ -15,12 +15,13 @@ func NuevoListarEquipos(unidad puertos.UnidadDeTrabajo, lector puertos.LectorDeC
 	return &ListarEquipos{unidad: unidad, lector: lector}
 }
 
-func (caso *ListarEquipos) Ejecutar(ctx context.Context) ([]puertos.ResumenEquipo, error) {
+func (caso *ListarEquipos) Ejecutar(ctx context.Context, filtro puertos.FiltroDeCatalogo) ([]puertos.ResumenEquipo, string, error) {
 	var equipos []puertos.ResumenEquipo
+	var siguiente string
 	err := caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
-		listados, err := caso.lector.ListarEquipos(ctx)
-		equipos = listados
+		listados, cursor, err := caso.lector.ListarEquipos(ctx, filtro)
+		equipos, siguiente = listados, cursor
 		return err
 	})
-	return equipos, err
+	return equipos, siguiente, err
 }

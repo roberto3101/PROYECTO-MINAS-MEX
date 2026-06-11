@@ -13,4 +13,9 @@ var (
 	ErrPermisoNoConcedido    = errors.New("el permiso no estaba concedido al rol")
 	ErrUsuarioYaInactivo     = errors.New("el usuario ya esta inactivo")
 	ErrAsignacionYaRevocada  = errors.New("la asignacion de rol ya fue revocada")
+
+	ErrCodigoDeEmpresaObligatorio = errors.New("el codigo de la empresa es obligatorio")
+	ErrRazonSocialObligatoria     = errors.New("la razon social es obligatoria")
+	ErrUsuarioYaActivo            = errors.New("el usuario ya esta activo")
+	ErrEstadoNoReconocido         = errors.New("el estado solicitado no es valido")
 )

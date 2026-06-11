@@ -7,8 +7,11 @@
     { "key": "usuario_admin", "value": "admin.mina", "enabled": true },
     { "key": "contrasena_admin", "value": "Mina#2026", "enabled": true },
     { "key": "contrasena_operador", "value": "Postman#2026", "enabled": true },
+    { "key": "usuario_plataforma", "value": "plataforma", "enabled": true },
+    { "key": "contrasena_plataforma", "value": "Plataforma#2026", "enabled": true },
     { "key": "token", "value": "", "enabled": true },
     { "key": "token_operador", "value": "", "enabled": true },
+    { "key": "token_plataforma", "value": "", "enabled": true },
     { "key": "sufijo", "value": "", "enabled": true },
     { "key": "usuario_operador", "value": "", "enabled": true },
     { "key": "id_usuario", "value": "", "enabled": true },
@@ -18,7 +21,9 @@
     { "key": "id_empleado", "value": "", "enabled": true },
     { "key": "id_equipo", "value": "", "enabled": true },
     { "key": "id_tipo_equipo", "value": "", "enabled": true },
-    { "key": "id_modulo_trabajo", "value": "", "enabled": true }
+    { "key": "id_modulo_trabajo", "value": "", "enabled": true },
+    { "key": "id_empresa_nueva", "value": "", "enabled": true },
+    { "key": "id_departamento", "value": "", "enabled": true }
   ],
   "_postman_variable_scope": "environment"
 }

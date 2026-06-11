@@ -22,7 +22,7 @@ func NuevoAutenticador(emisor identidad.EmisorDeToken, reloj reloj.Reloj) Autent
 func (autenticador Autenticador) Requerir(siguiente http.Handler) http.Handler {
 	return http.HandlerFunc(func(escritor http.ResponseWriter, peticion *http.Request) {
 		sesion, err := autenticador.emisor.Verificar(tokenPortador(peticion), autenticador.reloj.Ahora())
-		if err != nil {
+		if err != nil || sesion.Ambito != identidad.AmbitoEmpresa {
 			ResponderError(escritor, http.StatusUnauthorized, "no autorizado")
 			return
 		}
@@ -51,6 +51,17 @@ func (autenticador Autenticador) Exigir(permiso string, manejador http.HandlerFu
 		}
 		manejador(escritor, peticion)
 	}))
+}
+
+func (autenticador Autenticador) RequerirPlataforma(manejador http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(escritor http.ResponseWriter, peticion *http.Request) {
+		sesion, err := autenticador.emisor.Verificar(tokenPortador(peticion), autenticador.reloj.Ahora())
+		if err != nil || sesion.Ambito != identidad.AmbitoPlataforma {
+			ResponderError(escritor, http.StatusUnauthorized, "no autorizado")
+			return
+		}
+		manejador(escritor, peticion.WithContext(conSesion(peticion.Context(), sesion)))
+	})
 }
 
 func tokenPortador(peticion *http.Request) string {

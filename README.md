@@ -48,6 +48,8 @@ go run ./cmd/servidor                                       # 2) API + frontend 
 
 Abre **http://localhost:8080** y entra con `MIN` / `admin.mina` / `Mina#2026` — o importa
 la carpeta [`postman/`](postman/) y corre la colección completa con un clic.
+Panel de **plataforma** (superadmin): `plataforma` / `Plataforma#2026` en la pestaña
+**Plataforma** del login.
 
 > La carpeta `documentacion/` está **separada a propósito** del resto del proyecto para
 > poder desplegarla sola en Vercel sin exponer el esquema ni el backend.

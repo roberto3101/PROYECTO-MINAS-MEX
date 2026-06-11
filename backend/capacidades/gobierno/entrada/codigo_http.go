@@ -17,9 +17,11 @@ func codigoHttp(err error) int {
 		errors.Is(err, aplicacion.ErrEmpresaNoEncontrada):
 		return http.StatusNotFound
 	case errors.Is(err, aplicacion.ErrUsuarioDuplicado),
+		errors.Is(err, aplicacion.ErrCodigoDeEmpresaEnUso),
 		errors.Is(err, dominio.ErrPermisoYaConcedido),
 		errors.Is(err, dominio.ErrPermisoNoConcedido),
 		errors.Is(err, dominio.ErrUsuarioYaInactivo),
+		errors.Is(err, dominio.ErrUsuarioYaActivo),
 		errors.Is(err, dominio.ErrAsignacionYaRevocada):
 		return http.StatusConflict
 	case errors.Is(err, aplicacion.ErrCredencialesInvalidas):

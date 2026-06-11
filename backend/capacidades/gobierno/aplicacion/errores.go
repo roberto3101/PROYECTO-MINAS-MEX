@@ -10,3 +10,11 @@ var (
 	ErrAsignacionNoEncontrada = errors.New("asignacion de rol no encontrada")
 	ErrEmpresaNoEncontrada    = errors.New("empresa no encontrada")
 )
+
+type ErrDemasiadosIntentos struct {
+	EsperaSegundos int
+}
+
+func (ErrDemasiadosIntentos) Error() string {
+	return "demasiados intentos fallidos, intentalo mas tarde"
+}

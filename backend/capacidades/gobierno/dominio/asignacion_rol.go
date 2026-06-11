@@ -38,5 +38,7 @@ func (asignacion AsignacionRol) Identificador() identificador.Identificador { re
 func (asignacion AsignacionRol) Empresa() identificador.Identificador       { return asignacion.idEmpresa }
 func (asignacion AsignacionRol) Usuario() identificador.Identificador       { return asignacion.idUsuario }
 func (asignacion AsignacionRol) Rol() identificador.Identificador           { return asignacion.idRol }
-func (asignacion AsignacionRol) AlcanceMina() *identificador.Identificador  { return asignacion.alcanceMina }
-func (asignacion AsignacionRol) EstaVigente() bool                         { return !asignacion.revocada }
+func (asignacion AsignacionRol) AlcanceMina() *identificador.Identificador {
+	return asignacion.alcanceMina
+}
+func (asignacion AsignacionRol) EstaVigente() bool { return !asignacion.revocada }
