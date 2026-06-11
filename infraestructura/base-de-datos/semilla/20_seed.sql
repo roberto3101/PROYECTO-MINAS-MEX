@@ -121,7 +121,10 @@ INSERT INTO gobierno.usuario_rol (id_empresa, id_usuario, id_rol)        -- alca
 SELECT :'emp', :'usr_admin', r.id FROM gobierno.rol r
 WHERE r.id_empresa = :'emp' AND r.codigo = 'ADMIN_EMPRESA';
 
-INSERT INTO gobierno.superadmin (usuario, nombre) VALUES ('plataforma', 'Superadmin Plataforma');
+-- contraseña de pruebas del panel de plataforma: Plataforma#2026 (bcrypt)
+INSERT INTO gobierno.superadmin (usuario, nombre, correo, contrasena_hash) VALUES
+ ('plataforma', 'Superadmin Plataforma', 'plataforma@sistema.mx',
+  '$2a$10$KQahDB4MbUMWdgWMrKuopuvpc3FrtXw6799cP/jitMzZkkZthhNlO');
 
 -- ---- Catálogo GLOBAL de permisos (recurso.accion) ----
 INSERT INTO gobierno.permiso (codigo, descripcion, modulo) VALUES
