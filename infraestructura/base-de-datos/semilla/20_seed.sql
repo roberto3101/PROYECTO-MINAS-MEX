@@ -113,8 +113,10 @@ CROSS JOIN (VALUES
 ) AS r(codigo, descripcion);
 
 \set usr_admin '22222222-2222-2222-2222-222222222223'
-INSERT INTO gobierno.usuario (id, id_empresa, id_empleado, usuario, nombre) VALUES
- (:'usr_admin', :'emp', :'e_rey', 'admin.mina', 'REYNALDO JIMENEZ');
+-- contraseña de pruebas: Mina#2026 (bcrypt)
+INSERT INTO gobierno.usuario (id, id_empresa, id_empleado, usuario, nombre, contrasena_hash) VALUES
+ (:'usr_admin', :'emp', :'e_rey', 'admin.mina', 'REYNALDO JIMENEZ',
+  '$2a$10$SFLyMghihtnWNwcyhuJnkOW9E0Sxri6FvKQy5ZZ/uT3lN1KC.2C1C');
 INSERT INTO gobierno.usuario_rol (id_empresa, id_usuario, id_rol)        -- alcance NULL = toda la empresa
 SELECT :'emp', :'usr_admin', r.id FROM gobierno.rol r
 WHERE r.id_empresa = :'emp' AND r.codigo = 'ADMIN_EMPRESA';

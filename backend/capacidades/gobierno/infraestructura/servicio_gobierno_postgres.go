@@ -51,8 +51,11 @@ func (servicio ServicioGobiernoPostgres) EmpresaActual(ctx context.Context) (con
 	err := servicio.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
 		consultas := persistencia.ConsultasDe(ctx)
 		fila := consultas.QueryRow(ctx,
-			"SELECT id, codigo, razon_social, (estado = 'ACTIVA'), zona_horaria, moneda_defecto FROM gobierno.empresa LIMIT 1")
-		err := fila.Scan(&resumen.Identificador, &resumen.Codigo, &resumen.RazonSocial, &resumen.Activa, &resumen.ZonaHoraria, &resumen.Moneda)
+			`SELECT id, codigo, razon_social, (estado = 'ACTIVA'), zona_horaria, moneda_defecto,
+			        COALESCE(logo_url, ''), COALESCE(color_primario, '')
+			 FROM gobierno.empresa LIMIT 1`)
+		err := fila.Scan(&resumen.Identificador, &resumen.Codigo, &resumen.RazonSocial, &resumen.Activa,
+			&resumen.ZonaHoraria, &resumen.Moneda, &resumen.LogoUrl, &resumen.ColorPrimario)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}

@@ -13,16 +13,18 @@ type ComandoRegistrarUsuario struct {
 	NombreCorto           string
 	Nombre                string
 	Correo                string
+	Contrasena            string
 	IdentificadorEmpleado string
 }
 
 type RegistrarUsuario struct {
 	unidad   puertos.UnidadDeTrabajo
 	usuarios puertos.RepositorioUsuario
+	cifrador puertos.CifradorDeContrasena
 }
 
-func NuevoRegistrarUsuario(unidad puertos.UnidadDeTrabajo, usuarios puertos.RepositorioUsuario) *RegistrarUsuario {
-	return &RegistrarUsuario{unidad: unidad, usuarios: usuarios}
+func NuevoRegistrarUsuario(unidad puertos.UnidadDeTrabajo, usuarios puertos.RepositorioUsuario, cifrador puertos.CifradorDeContrasena) *RegistrarUsuario {
+	return &RegistrarUsuario{unidad: unidad, usuarios: usuarios, cifrador: cifrador}
 }
 
 func (caso *RegistrarUsuario) Ejecutar(ctx context.Context, comando ComandoRegistrarUsuario) (string, error) {
@@ -47,6 +49,13 @@ func (caso *RegistrarUsuario) Ejecutar(ctx context.Context, comando ComandoRegis
 			return "", err
 		}
 		usuario.VincularConEmpleado(empleado)
+	}
+	if comando.Contrasena != "" {
+		cifrada, err := caso.cifrador.Cifrar(comando.Contrasena)
+		if err != nil {
+			return "", err
+		}
+		usuario.DefinirContrasenaCifrada(cifrada)
 	}
 	err = caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
 		existente, encontrado, err := caso.usuarios.BuscarPorNombreCorto(ctx, usuario.NombreCorto())

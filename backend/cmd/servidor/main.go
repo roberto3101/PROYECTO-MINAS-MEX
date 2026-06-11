@@ -7,10 +7,14 @@ import (
 	"os"
 	"time"
 
-	"minas/capacidades/gobierno/aplicacion"
-	"minas/capacidades/gobierno/entrada"
-	"minas/capacidades/gobierno/infraestructura"
+	aplicacionCatalogos "minas/capacidades/catalogos/aplicacion"
+	entradaCatalogos "minas/capacidades/catalogos/entrada"
+	infraCatalogos "minas/capacidades/catalogos/infraestructura"
+	aplicacionGobierno "minas/capacidades/gobierno/aplicacion"
+	entradaGobierno "minas/capacidades/gobierno/entrada"
+	infraGobierno "minas/capacidades/gobierno/infraestructura"
 	"minas/compartido/reloj"
+	"minas/pasarela"
 	"minas/plataforma/entrada/web"
 	"minas/plataforma/identidad"
 	"minas/plataforma/persistencia"
@@ -23,6 +27,7 @@ func main() {
 	cadenaDeConexion := variableObligatoria("CADENA_POSTGRES")
 	secretoDelToken := variableObligatoria("SECRETO_TOKEN")
 	direccion := variableConValorPorDefecto("DIRECCION", ":8080")
+	directorioFrontend := variableConValorPorDefecto("DIRECTORIO_FRONTEND", "../frontend")
 
 	pool, err := persistencia.NuevoPool(ctx, cadenaDeConexion)
 	if err != nil {
@@ -33,40 +38,61 @@ func main() {
 	relojDelSistema := reloj.DelSistema()
 	unidad := persistencia.NuevaUnidadDeTrabajo(pool)
 	unidadDePlataforma := persistencia.NuevaUnidadDePlataforma(pool)
-
-	repositorioUsuario := infraestructura.NuevoRepositorioUsuario()
-	repositorioRol := infraestructura.NuevoRepositorioRol()
-	repositorioAsignacion := infraestructura.NuevoRepositorioAsignacion()
-	repositorioEmpresa := infraestructura.NuevoRepositorioEmpresa()
-	repositorioPermiso := infraestructura.NuevoRepositorioPermiso()
-	lectorDeAcceso := infraestructura.NuevoLectorDeAcceso()
-	servicioGobierno := infraestructura.NuevoServicioGobierno(unidad)
 	cifrador := seguridad.NuevoCifradorBcrypt()
-
 	emisor := identidad.NuevoEmisorDeToken(secretoDelToken, 8*time.Hour)
 
-	manejador := entrada.NuevoManejadorGobierno(
-		aplicacion.NuevoIniciarSesion(unidadDePlataforma, lectorDeAcceso, cifrador),
-		aplicacion.NuevoRegistrarUsuario(unidad, repositorioUsuario),
-		aplicacion.NuevoDesactivarUsuario(unidad, repositorioUsuario),
-		aplicacion.NuevoCrearRol(unidad, repositorioRol),
-		aplicacion.NuevoConcederPermisoARol(unidad, repositorioRol, repositorioPermiso),
-		aplicacion.NuevoAsignarRol(unidad, repositorioAsignacion),
-		aplicacion.NuevoRevocarRol(unidad, repositorioAsignacion),
-		aplicacion.NuevoConfigurarEmpresa(unidad, repositorioEmpresa),
+	repositorioUsuario := infraGobierno.NuevoRepositorioUsuario()
+	repositorioRol := infraGobierno.NuevoRepositorioRol()
+	repositorioAsignacion := infraGobierno.NuevoRepositorioAsignacion()
+	repositorioEmpresa := infraGobierno.NuevoRepositorioEmpresa()
+	repositorioPermiso := infraGobierno.NuevoRepositorioPermiso()
+	lectorDeAcceso := infraGobierno.NuevoLectorDeAcceso()
+	lectorDeGobierno := infraGobierno.NuevoLectorDeGobierno()
+	servicioGobierno := infraGobierno.NuevoServicioGobierno(unidad)
+
+	manejadorGobierno := entradaGobierno.NuevoManejadorGobierno(
+		aplicacionGobierno.NuevoIniciarSesion(unidadDePlataforma, lectorDeAcceso, cifrador),
+		aplicacionGobierno.NuevoRegistrarUsuario(unidad, repositorioUsuario, cifrador),
+		aplicacionGobierno.NuevoDesactivarUsuario(unidad, repositorioUsuario),
+		aplicacionGobierno.NuevoListarUsuarios(unidad, lectorDeGobierno),
+		aplicacionGobierno.NuevoCrearRol(unidad, repositorioRol),
+		aplicacionGobierno.NuevoListarRoles(unidad, lectorDeGobierno),
+		aplicacionGobierno.NuevoListarPermisos(unidad, lectorDeGobierno),
+		aplicacionGobierno.NuevoConcederPermisoARol(unidad, repositorioRol, repositorioPermiso),
+		aplicacionGobierno.NuevoAsignarRol(unidad, repositorioAsignacion),
+		aplicacionGobierno.NuevoRevocarRol(unidad, repositorioAsignacion),
+		aplicacionGobierno.NuevoListarAsignacionesDeUsuario(unidad, lectorDeGobierno),
+		aplicacionGobierno.NuevoConfigurarEmpresa(unidad, repositorioEmpresa),
 		servicioGobierno,
 		emisor,
 		relojDelSistema,
 	)
 
-	rutas := http.NewServeMux()
-	rutas.HandleFunc("GET /salud", func(escritor http.ResponseWriter, _ *http.Request) {
-		web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": "vivo"})
+	repositorioMina := infraCatalogos.NuevoRepositorioMina()
+	repositorioEmpleado := infraCatalogos.NuevoRepositorioEmpleado()
+	repositorioEquipo := infraCatalogos.NuevoRepositorioEquipo()
+	lectorDeCatalogos := infraCatalogos.NuevoLectorDeCatalogos()
+
+	manejadorCatalogos := entradaCatalogos.NuevoManejadorCatalogos(
+		aplicacionCatalogos.NuevoCrearMina(unidad, repositorioMina),
+		aplicacionCatalogos.NuevoListarMinas(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoContratarEmpleado(unidad, repositorioEmpleado),
+		aplicacionCatalogos.NuevoListarEmpleados(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoDarDeAltaEquipo(unidad, repositorioEquipo),
+		aplicacionCatalogos.NuevoListarEquipos(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoListarTiposDeEquipo(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoListarModulosDeTrabajo(unidad, lectorDeCatalogos),
+	)
+
+	rutas := pasarela.NuevasRutas(pasarela.Dependencias{
+		Autenticador: web.NuevoAutenticador(emisor, relojDelSistema),
+		Gobierno:     manejadorGobierno,
+		Catalogos:    manejadorCatalogos,
+		Frontend:     http.FileServer(http.Dir(directorioFrontend)),
 	})
-	manejador.Registrar(rutas, web.NuevoAutenticador(emisor, relojDelSistema))
 
 	servidor := web.NuevoServidor(direccion, rutas)
-	log.Printf("servidor de gobierno escuchando en %s", direccion)
+	log.Printf("servidor escuchando en %s (frontend: %s)", direccion, directorioFrontend)
 	if err := servidor.ListenAndServe(); err != nil {
 		log.Fatalf("el servidor se detuvo: %v", err)
 	}

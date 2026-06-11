@@ -1,0 +1,365 @@
+{
+  "info": {
+    "_postman_id": "7c4e9a10-mina-api",
+    "name": "Plataforma Minera · API",
+    "description": "Flujo completo listo para clics.\n\n1) Importa tambien `entorno.json` y seleccionalo arriba a la derecha.\n2) Arranca el backend (`go run ./cmd/servidor` con la BD local arriba).\n3) Corre la coleccion entera (Run) o ve carpeta por carpeta: el login guarda el token solo, y cada creacion guarda su id para el siguiente request.\n\nLa coleccion es re-ejecutable: el login del admin genera un sufijo nuevo por corrida, asi los codigos (rol, mina, equipo, operador) nunca chocan.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }] },
+  "item": [
+    {
+      "name": "0 · Salud",
+      "item": [
+        {
+          "name": "GET salud (sin token)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('servidor vivo', () => pm.response.to.have.status(200));",
+            "pm.test('responde estado vivo', () => pm.expect(pm.response.json().estado).to.eql('vivo'));"
+          ] } }],
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/salud" }
+        }
+      ]
+    },
+    {
+      "name": "1 · Sesión (admin)",
+      "item": [
+        {
+          "name": "POST iniciar sesión → guarda {{token}}",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "const sufijo = Date.now().toString().slice(-6);",
+              "pm.environment.set('sufijo', sufijo);",
+              "pm.environment.set('usuario_operador', 'op.' + sufijo);"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('sesion iniciada', () => pm.response.to.have.status(200));",
+              "const cuerpo = pm.response.json();",
+              "pm.environment.set('token', cuerpo.token);",
+              "pm.test('trae permisos', () => pm.expect(cuerpo.permisos.length).to.be.above(25));"
+            ] } }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo_empresa\": \"{{codigo_empresa}}\",\n  \"usuario\": \"{{usuario_admin}}\",\n  \"contrasena\": \"{{contrasena_admin}}\"\n}" }
+          }
+        },
+        {
+          "name": "GET mi empresa (branding)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('empresa del tenant', () => pm.response.to.have.status(200));",
+            "pm.test('es MIN', () => pm.expect(pm.response.json().Codigo).to.eql(pm.environment.get('codigo_empresa')));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/empresa" }
+        },
+        {
+          "name": "GET mis permisos vigentes",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('permisos vigentes', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/sesion/permisos" }
+        }
+      ]
+    },
+    {
+      "name": "2 · Catálogos",
+      "item": [
+        {
+          "name": "POST crear mina → guarda {{id_mina}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('mina creada', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_mina', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/catalogos/minas",
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Mina Postman {{sufijo}}\",\n  \"area\": \"Norte\"\n}" }
+          }
+        },
+        {
+          "name": "GET minas",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de minas', () => pm.response.to.have.status(200));",
+            "pm.test('incluye la recien creada', () => pm.expect(pm.response.json().some(m => m.Identificador === pm.environment.get('id_mina'))).to.be.true);"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/minas" }
+        },
+        {
+          "name": "GET tipos de equipo → guarda {{id_tipo_equipo}} (TIRO)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('tipos de equipo', () => pm.response.to.have.status(200));",
+            "const tipos = pm.response.json();",
+            "const tiro = tipos.find(t => t.Codigo === 'TIRO') ?? tipos[0];",
+            "pm.environment.set('id_tipo_equipo', tiro.Identificador);",
+            "pm.test('existe el tipo TIRO (correccion del ingeniero)', () => pm.expect(tipos.some(t => t.Codigo === 'TIRO')).to.be.true);"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/tipos-de-equipo" }
+        },
+        {
+          "name": "GET módulos de trabajo → guarda {{id_modulo_trabajo}} (ACARREO)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('modulos de trabajo', () => pm.response.to.have.status(200));",
+            "const modulos = pm.response.json();",
+            "const acarreo = modulos.find(m => m.Codigo === 'ACARREO') ?? modulos[0];",
+            "pm.environment.set('id_modulo_trabajo', acarreo.Identificador);"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/modulos-de-trabajo" }
+        },
+        {
+          "name": "POST contratar empleado → guarda {{id_empleado}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('empleado contratado', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_empleado', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/catalogos/empleados",
+            "body": { "mode": "raw", "raw": "{\n  \"id_mina\": \"{{id_mina}}\",\n  \"numero_nomina\": \"PM-{{sufijo}}\",\n  \"nombre_completo\": \"Operador Postman {{sufijo}}\"\n}" }
+          }
+        },
+        {
+          "name": "POST dar de alta equipo (tiro de extracción) → guarda {{id_equipo}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('equipo dado de alta', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_equipo', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/catalogos/equipos",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"TIRO-{{sufijo}}\",\n  \"id_mina\": \"{{id_mina}}\",\n  \"id_tipo_equipo\": \"{{id_tipo_equipo}}\",\n  \"id_modulo_trabajo\": \"{{id_modulo_trabajo}}\",\n  \"fabricante\": \"Izaje SA\"\n}" }
+          }
+        },
+        {
+          "name": "GET empleados",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de empleados', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/empleados" }
+        },
+        {
+          "name": "GET equipos",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de equipos', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/catalogos/equipos" }
+        }
+      ]
+    },
+    {
+      "name": "3 · Gobierno · usuarios y RBAC",
+      "item": [
+        {
+          "name": "POST crear usuario operador → guarda {{id_usuario}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('usuario creado', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_usuario', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/usuarios",
+            "body": { "mode": "raw", "raw": "{\n  \"usuario\": \"{{usuario_operador}}\",\n  \"nombre\": \"Operador Postman {{sufijo}}\",\n  \"correo\": \"op{{sufijo}}@mina.mx\",\n  \"contrasena\": \"{{contrasena_operador}}\",\n  \"id_empleado\": \"{{id_empleado}}\"\n}" }
+          }
+        },
+        {
+          "name": "GET usuarios",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('lista de usuarios', () => pm.response.to.have.status(200));",
+            "pm.test('incluye al operador nuevo', () => pm.expect(pm.response.json().some(u => u.Identificador === pm.environment.get('id_usuario'))).to.be.true);"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/usuarios" }
+        },
+        {
+          "name": "POST crear rol propio → guarda {{id_rol}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('rol creado', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_rol', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/roles",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo\": \"SUPERVISOR_{{sufijo}}\",\n  \"descripcion\": \"Rol propio creado desde Postman\"\n}" }
+          }
+        },
+        {
+          "name": "GET catálogo de permisos (29)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('catalogo de permisos', () => pm.response.to.have.status(200));",
+            "pm.test('al menos 29 permisos recurso.accion', () => pm.expect(pm.response.json().length).to.be.at.least(29));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/permisos" }
+        },
+        {
+          "name": "POST conceder catalogos.ver al rol",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('permiso concedido', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/roles/{{id_rol}}/permisos",
+            "body": { "mode": "raw", "raw": "{\n  \"permiso\": \"catalogos.ver\"\n}" }
+          }
+        },
+        {
+          "name": "POST asignar rol al operador (alcance mina) → guarda {{id_asignacion}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('rol asignado', () => pm.response.to.have.status(201));",
+            "pm.environment.set('id_asignacion', pm.response.json().id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/asignaciones",
+            "body": { "mode": "raw", "raw": "{\n  \"id_usuario\": \"{{id_usuario}}\",\n  \"id_rol\": \"{{id_rol}}\",\n  \"id_mina\": \"{{id_mina}}\"\n}" }
+          }
+        },
+        {
+          "name": "GET asignaciones del operador",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('asignaciones listadas', () => pm.response.to.have.status(200));",
+            "pm.test('tiene la asignacion vigente', () => pm.expect(pm.response.json().some(a => a.Identificador === pm.environment.get('id_asignacion') && a.Vigente)).to.be.true);"
+          ] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/gobierno/usuarios/{{id_usuario}}/asignaciones" }
+        }
+      ]
+    },
+    {
+      "name": "4 · El operador en acción (RBAC en vivo)",
+      "item": [
+        {
+          "name": "POST sesión del operador → guarda {{token_operador}}",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('el operador puede entrar', () => pm.response.to.have.status(200));",
+            "const cuerpo = pm.response.json();",
+            "pm.environment.set('token_operador', cuerpo.token);",
+            "pm.test('solo tiene catalogos.ver', () => pm.expect(cuerpo.permisos).to.eql(['catalogos.ver']));"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo_empresa\": \"{{codigo_empresa}}\",\n  \"usuario\": \"{{usuario_operador}}\",\n  \"contrasena\": \"{{contrasena_operador}}\"\n}" }
+          }
+        },
+        {
+          "name": "GET minas como operador (200: tiene catalogos.ver)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('puede ver catalogos', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_operador}}", "type": "string" }] },
+            "method": "GET",
+            "url": "{{base_url}}/catalogos/minas"
+          }
+        },
+        {
+          "name": "GET usuarios como operador (403: sin usuarios.ver)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('RBAC bloquea gobierno', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_operador}}", "type": "string" }] },
+            "method": "GET",
+            "url": "{{base_url}}/gobierno/usuarios"
+          }
+        },
+        {
+          "name": "POST crear mina como operador (403: sin catalogos.editar)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('RBAC bloquea escritura', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token_operador}}", "type": "string" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/catalogos/minas",
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Mina pirata\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5 · Revocación y baja (lo corren)",
+      "item": [
+        {
+          "name": "DELETE revocar asignación",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('asignacion revocada', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": { "method": "DELETE", "url": "{{base_url}}/gobierno/asignaciones/{{id_asignacion}}" }
+        },
+        {
+          "name": "POST sesión del operador revocado (entra con 0 permisos)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('aun entra', () => pm.response.to.have.status(200));",
+            "pm.test('pero ya sin permisos', () => pm.expect(pm.response.json().permisos ?? []).to.have.length(0));"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo_empresa\": \"{{codigo_empresa}}\",\n  \"usuario\": \"{{usuario_operador}}\",\n  \"contrasena\": \"{{contrasena_operador}}\"\n}" }
+          }
+        },
+        {
+          "name": "DELETE desactivar usuario",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('usuario desactivado', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": { "method": "DELETE", "url": "{{base_url}}/gobierno/usuarios/{{id_usuario}}" }
+        },
+        {
+          "name": "POST sesión del usuario inactivo (401)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('el inactivo ya no entra', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/sesiones",
+            "body": { "mode": "raw", "raw": "{\n  \"codigo_empresa\": \"{{codigo_empresa}}\",\n  \"usuario\": \"{{usuario_operador}}\",\n  \"contrasena\": \"{{contrasena_operador}}\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6 · Branding del tenant",
+      "item": [
+        {
+          "name": "PUT configurar empresa (logo + color)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('branding configurado', () => pm.response.to.have.status(200));"
+          ] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/empresa",
+            "body": { "mode": "raw", "raw": "{\n  \"logo_url\": \"https://cdn.ejemplo.com/min/logo.png\",\n  \"color_primario\": \"#D9A440\",\n  \"zona_horaria\": \"America/Mexico_City\",\n  \"moneda\": \"USD\"\n}" }
+          }
+        },
+        {
+          "name": "PUT color inválido (400 desde la base)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('la BD rechaza el color', () => pm.response.to.have.status(400));"
+          ] } }],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/gobierno/empresa",
+            "body": { "mode": "raw", "raw": "{\n  \"logo_url\": \"\",\n  \"color_primario\": \"naranja\",\n  \"zona_horaria\": \"America/Mexico_City\",\n  \"moneda\": \"USD\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}

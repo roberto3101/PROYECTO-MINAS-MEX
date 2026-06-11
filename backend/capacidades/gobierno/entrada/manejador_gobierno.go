@@ -12,60 +12,60 @@ import (
 )
 
 type ManejadorGobierno struct {
-	iniciarSesion     *aplicacion.IniciarSesion
-	registrarUsuario  *aplicacion.RegistrarUsuario
-	desactivarUsuario *aplicacion.DesactivarUsuario
-	crearRol          *aplicacion.CrearRol
-	concederPermiso   *aplicacion.ConcederPermisoARol
-	asignarRol        *aplicacion.AsignarRol
-	revocarRol        *aplicacion.RevocarRol
-	configurarEmpresa *aplicacion.ConfigurarEmpresa
-	gobierno          contrato.Gobierno
-	emisor            identidad.EmisorDeToken
-	reloj             reloj.Reloj
+	iniciarSesion      *aplicacion.IniciarSesion
+	registrarUsuario   *aplicacion.RegistrarUsuario
+	desactivarUsuario  *aplicacion.DesactivarUsuario
+	listarUsuarios     *aplicacion.ListarUsuarios
+	crearRol           *aplicacion.CrearRol
+	listarRoles        *aplicacion.ListarRoles
+	listarPermisos     *aplicacion.ListarPermisos
+	concederPermiso    *aplicacion.ConcederPermisoARol
+	asignarRol         *aplicacion.AsignarRol
+	revocarRol         *aplicacion.RevocarRol
+	listarAsignaciones *aplicacion.ListarAsignacionesDeUsuario
+	configurarEmpresa  *aplicacion.ConfigurarEmpresa
+	gobierno           contrato.Gobierno
+	emisor             identidad.EmisorDeToken
+	reloj              reloj.Reloj
 }
 
 func NuevoManejadorGobierno(
 	iniciarSesion *aplicacion.IniciarSesion,
 	registrarUsuario *aplicacion.RegistrarUsuario,
 	desactivarUsuario *aplicacion.DesactivarUsuario,
+	listarUsuarios *aplicacion.ListarUsuarios,
 	crearRol *aplicacion.CrearRol,
+	listarRoles *aplicacion.ListarRoles,
+	listarPermisos *aplicacion.ListarPermisos,
 	concederPermiso *aplicacion.ConcederPermisoARol,
 	asignarRol *aplicacion.AsignarRol,
 	revocarRol *aplicacion.RevocarRol,
+	listarAsignaciones *aplicacion.ListarAsignacionesDeUsuario,
 	configurarEmpresa *aplicacion.ConfigurarEmpresa,
 	gobierno contrato.Gobierno,
 	emisor identidad.EmisorDeToken,
 	relojDelSistema reloj.Reloj,
 ) *ManejadorGobierno {
 	return &ManejadorGobierno{
-		iniciarSesion:     iniciarSesion,
-		registrarUsuario:  registrarUsuario,
-		desactivarUsuario: desactivarUsuario,
-		crearRol:          crearRol,
-		concederPermiso:   concederPermiso,
-		asignarRol:        asignarRol,
-		revocarRol:        revocarRol,
-		configurarEmpresa: configurarEmpresa,
-		gobierno:          gobierno,
-		emisor:            emisor,
-		reloj:             relojDelSistema,
+		iniciarSesion:      iniciarSesion,
+		registrarUsuario:   registrarUsuario,
+		desactivarUsuario:  desactivarUsuario,
+		listarUsuarios:     listarUsuarios,
+		crearRol:           crearRol,
+		listarRoles:        listarRoles,
+		listarPermisos:     listarPermisos,
+		concederPermiso:    concederPermiso,
+		asignarRol:         asignarRol,
+		revocarRol:         revocarRol,
+		listarAsignaciones: listarAsignaciones,
+		configurarEmpresa:  configurarEmpresa,
+		gobierno:           gobierno,
+		emisor:             emisor,
+		reloj:              relojDelSistema,
 	}
 }
 
-func (manejador *ManejadorGobierno) Registrar(rutas *http.ServeMux, autenticador web.Autenticador) {
-	rutas.HandleFunc("POST /sesiones", manejador.iniciarSesionHttp)
-	rutas.Handle("POST /gobierno/usuarios", autenticador.Exigir("usuarios.crear", manejador.registrarUsuarioHttp))
-	rutas.Handle("DELETE /gobierno/usuarios/{id}", autenticador.Exigir("usuarios.desactivar", manejador.desactivarUsuarioHttp))
-	rutas.Handle("POST /gobierno/roles", autenticador.Exigir("roles.crear", manejador.crearRolHttp))
-	rutas.Handle("POST /gobierno/roles/{id}/permisos", autenticador.Exigir("roles.editar", manejador.concederPermisoHttp))
-	rutas.Handle("POST /gobierno/asignaciones", autenticador.Exigir("roles.asignar", manejador.asignarRolHttp))
-	rutas.Handle("DELETE /gobierno/asignaciones/{id}", autenticador.Exigir("roles.asignar", manejador.revocarRolHttp))
-	rutas.Handle("PUT /gobierno/empresa", autenticador.Exigir("empresa.configurar", manejador.configurarEmpresaHttp))
-	rutas.Handle("GET /gobierno/permisos-vigentes", autenticador.Requerir(http.HandlerFunc(manejador.permisosVigentesHttp)))
-}
-
-func (manejador *ManejadorGobierno) iniciarSesionHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) IniciarSesion(escritor http.ResponseWriter, peticion *http.Request) {
 	var cuerpo struct {
 		CodigoEmpresa string `json:"codigo_empresa"`
 		NombreCorto   string `json:"usuario"`
@@ -93,14 +93,19 @@ func (manejador *ManejadorGobierno) iniciarSesionHttp(escritor http.ResponseWrit
 		web.ResponderError(escritor, http.StatusInternalServerError, "no se pudo emitir el token")
 		return
 	}
-	web.ResponderJson(escritor, http.StatusOK, map[string]any{"token": token, "permisos": sesion.Permisos})
+	web.ResponderJson(escritor, http.StatusOK, map[string]any{
+		"token":    token,
+		"usuario":  sesion.NombreCorto,
+		"permisos": sesion.Permisos,
+	})
 }
 
-func (manejador *ManejadorGobierno) registrarUsuarioHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) RegistrarUsuario(escritor http.ResponseWriter, peticion *http.Request) {
 	var cuerpo struct {
 		NombreCorto           string `json:"usuario"`
 		Nombre                string `json:"nombre"`
 		Correo                string `json:"correo"`
+		Contrasena            string `json:"contrasena"`
 		IdentificadorEmpleado string `json:"id_empleado"`
 	}
 	if !web.DecodificarCuerpo(escritor, peticion, &cuerpo) {
@@ -111,6 +116,7 @@ func (manejador *ManejadorGobierno) registrarUsuarioHttp(escritor http.ResponseW
 		NombreCorto:           cuerpo.NombreCorto,
 		Nombre:                cuerpo.Nombre,
 		Correo:                cuerpo.Correo,
+		Contrasena:            cuerpo.Contrasena,
 		IdentificadorEmpleado: cuerpo.IdentificadorEmpleado,
 	})
 	if err != nil {
@@ -120,7 +126,7 @@ func (manejador *ManejadorGobierno) registrarUsuarioHttp(escritor http.ResponseW
 	web.ResponderJson(escritor, http.StatusCreated, map[string]string{"id": identificadorUsuario})
 }
 
-func (manejador *ManejadorGobierno) desactivarUsuarioHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) DesactivarUsuario(escritor http.ResponseWriter, peticion *http.Request) {
 	err := manejador.desactivarUsuario.Ejecutar(peticion.Context(), aplicacion.ComandoDesactivarUsuario{
 		IdentificadorUsuario: peticion.PathValue("id"),
 	})
@@ -131,7 +137,16 @@ func (manejador *ManejadorGobierno) desactivarUsuarioHttp(escritor http.Response
 	web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": "INACTIVO"})
 }
 
-func (manejador *ManejadorGobierno) crearRolHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) ListarUsuarios(escritor http.ResponseWriter, peticion *http.Request) {
+	usuarios, err := manejador.listarUsuarios.Ejecutar(peticion.Context())
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, usuarios)
+}
+
+func (manejador *ManejadorGobierno) CrearRol(escritor http.ResponseWriter, peticion *http.Request) {
 	var cuerpo struct {
 		Codigo      string `json:"codigo"`
 		Descripcion string `json:"descripcion"`
@@ -151,7 +166,25 @@ func (manejador *ManejadorGobierno) crearRolHttp(escritor http.ResponseWriter, p
 	web.ResponderJson(escritor, http.StatusCreated, map[string]string{"id": identificadorRol})
 }
 
-func (manejador *ManejadorGobierno) concederPermisoHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) ListarRoles(escritor http.ResponseWriter, peticion *http.Request) {
+	roles, err := manejador.listarRoles.Ejecutar(peticion.Context())
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, roles)
+}
+
+func (manejador *ManejadorGobierno) ListarPermisos(escritor http.ResponseWriter, peticion *http.Request) {
+	permisos, err := manejador.listarPermisos.Ejecutar(peticion.Context())
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, permisos)
+}
+
+func (manejador *ManejadorGobierno) ConcederPermiso(escritor http.ResponseWriter, peticion *http.Request) {
 	var cuerpo struct {
 		CodigoPermiso string `json:"permiso"`
 	}
@@ -169,7 +202,7 @@ func (manejador *ManejadorGobierno) concederPermisoHttp(escritor http.ResponseWr
 	web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": "CONCEDIDO"})
 }
 
-func (manejador *ManejadorGobierno) asignarRolHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) AsignarRol(escritor http.ResponseWriter, peticion *http.Request) {
 	var cuerpo struct {
 		IdentificadorUsuario string `json:"id_usuario"`
 		IdentificadorRol     string `json:"id_rol"`
@@ -191,7 +224,7 @@ func (manejador *ManejadorGobierno) asignarRolHttp(escritor http.ResponseWriter,
 	web.ResponderJson(escritor, http.StatusCreated, map[string]string{"id": identificadorAsignacion})
 }
 
-func (manejador *ManejadorGobierno) revocarRolHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) RevocarRol(escritor http.ResponseWriter, peticion *http.Request) {
 	err := manejador.revocarRol.Ejecutar(peticion.Context(), aplicacion.ComandoRevocarRol{
 		IdentificadorAsignacion: peticion.PathValue("id"),
 	})
@@ -202,7 +235,16 @@ func (manejador *ManejadorGobierno) revocarRolHttp(escritor http.ResponseWriter,
 	web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": "REVOCADA"})
 }
 
-func (manejador *ManejadorGobierno) configurarEmpresaHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) ListarAsignacionesDeUsuario(escritor http.ResponseWriter, peticion *http.Request) {
+	asignaciones, err := manejador.listarAsignaciones.Ejecutar(peticion.Context(), peticion.PathValue("id"))
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, asignaciones)
+}
+
+func (manejador *ManejadorGobierno) ConfigurarEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
 	var cuerpo struct {
 		LogoUrl       string `json:"logo_url"`
 		ColorPrimario string `json:"color_primario"`
@@ -226,7 +268,20 @@ func (manejador *ManejadorGobierno) configurarEmpresaHttp(escritor http.Response
 	web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": "CONFIGURADA"})
 }
 
-func (manejador *ManejadorGobierno) permisosVigentesHttp(escritor http.ResponseWriter, peticion *http.Request) {
+func (manejador *ManejadorGobierno) EmpresaActual(escritor http.ResponseWriter, peticion *http.Request) {
+	empresa, encontrada, err := manejador.gobierno.EmpresaActual(peticion.Context())
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if !encontrada {
+		web.ResponderError(escritor, http.StatusNotFound, "empresa no encontrada")
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, empresa)
+}
+
+func (manejador *ManejadorGobierno) PermisosVigentes(escritor http.ResponseWriter, peticion *http.Request) {
 	sesion, _ := web.SesionDe(peticion.Context())
 	permisos, err := manejador.gobierno.PermisosVigentesDe(peticion.Context(), sesion.IdentificadorUsuario)
 	if err != nil {

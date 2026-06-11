@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plataforma Minera · Operación</title>
+<link rel="stylesheet" href="estilos.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d1117'/%3E%3Cpath d='M6 22 L13 9 L19 17 L23 12 L26 22 Z' fill='%23d9a440'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="pantalla-login" class="pantalla-login">
+  <aside class="panel-marca">
+    <div class="marca">
+      <svg class="logotipo" viewBox="0 0 48 48" aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="rgba(255,255,255,.06)"/>
+        <path d="M9 33 L19 13 L27 24 L33 17 L39 33 Z" fill="var(--acento)"/>
+        <path d="M9 36 h30" stroke="rgba(255,255,255,.25)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>Plataforma <b>Minera</b></span>
+    </div>
+    <svg class="estratos" viewBox="0 0 520 640" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <path class="estrato" d="M0,170 C120,150 200,200 320,180 C420,164 470,190 520,176 L520,640 L0,640 Z" fill="rgba(255,255,255,.03)"/>
+      <path class="estrato" d="M0,300 C140,278 240,330 360,306 C440,290 480,316 520,302 L520,640 L0,640 Z" fill="rgba(255,255,255,.05)"/>
+      <path class="estrato" d="M0,440 C120,420 260,470 380,446 C460,430 490,452 520,442 L520,640 L0,640 Z" fill="rgba(255,255,255,.07)"/>
+      <path class="veta" d="M-10,520 C90,470 150,540 250,488 C340,442 400,500 530,430" fill="none" stroke="var(--acento)" stroke-width="3.5" stroke-linecap="round"/>
+      <path class="veta veta-fina" d="M-10,560 C110,520 180,575 290,530 C380,494 430,540 530,485" fill="none" stroke="var(--acento)" stroke-width="1.5" stroke-linecap="round" opacity=".45"/>
+    </svg>
+    <div class="lema">
+      <h1>El plan y el real,<br>en una sola fuente de verdad.</h1>
+      <p>Captura por turno · multi-empresa con aislamiento en la base · roles y permisos finos · operación offline-first.</p>
+    </div>
+  </aside>
+
+  <main class="panel-acceso">
+    <form id="formulario-login" class="formulario-login" autocomplete="on">
+      <p class="saludo">Bienvenido de vuelta</p>
+      <h2>Iniciar sesión</h2>
+      <label class="campo">
+        <span>Empresa</span>
+        <input id="campo-empresa" name="empresa" value="MIN" required autocapitalize="characters" spellcheck="false">
+      </label>
+      <label class="campo">
+        <span>Usuario</span>
+        <input id="campo-usuario" name="usuario" placeholder="admin.mina" required spellcheck="false">
+      </label>
+      <label class="campo">
+        <span>Contraseña</span>
+        <input id="campo-contrasena" name="contrasena" type="password" placeholder="••••••••" required>
+      </label>
+      <p id="error-login" class="error-login" hidden></p>
+      <button id="boton-entrar" class="boton-primario" type="submit">
+        <span class="texto">Entrar a la operación</span>
+        <span class="cargando" aria-hidden="true"></span>
+      </button>
+      <button type="button" id="usar-demo" class="chip-demo">Usar credenciales demo · admin.mina / Mina#2026</button>
+    </form>
+    <p class="pie-acceso">El acceso lo otorga el administrador de tu empresa. Sin auto-registro.</p>
+  </main>
+</div>
+
+<div id="aplicacion" class="aplicacion" hidden>
+  <aside class="lateral">
+    <div class="identidad-empresa">
+      <img id="logo-empresa" alt="" hidden>
+      <svg id="logo-generico" viewBox="0 0 48 48" aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="rgba(255,255,255,.07)"/>
+        <path d="M9 33 L19 13 L27 24 L33 17 L39 33 Z" fill="var(--acento)"/>
+      </svg>
+      <div>
+        <strong id="nombre-empresa">—</strong>
+        <small id="codigo-empresa">—</small>
+      </div>
+    </div>
+    <nav class="navegacion" id="navegacion"></nav>
+    <div class="sesion-lateral">
+      <div class="avatar" id="avatar-usuario">A</div>
+      <div class="quien">
+        <strong id="nombre-sesion">—</strong>
+        <small id="permisos-sesion">—</small>
+      </div>
+      <button id="boton-salir" class="boton-fantasma" title="Cerrar sesión">⎋</button>
+    </div>
+  </aside>
+
+  <main class="contenido">
+    <header class="cabecera">
+      <div>
+        <h2 id="titulo-vista">Panel</h2>
+        <p id="subtitulo-vista" class="subtitulo"></p>
+      </div>
+      <div id="acciones-vista" class="acciones"></div>
+    </header>
+    <section id="vista" class="vista"></section>
+  </main>
+</div>
+
+<div id="capa-modal" class="capa-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <header><h3 id="titulo-modal"></h3><button id="cerrar-modal" class="boton-fantasma">✕</button></header>
+    <div id="cuerpo-modal"></div>
+  </div>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script type="module" src="aplicacion.js"></script>
+</body>
+</html>

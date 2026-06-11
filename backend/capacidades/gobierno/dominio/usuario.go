@@ -14,13 +14,14 @@ const (
 )
 
 type Usuario struct {
-	id          identificador.Identificador
-	idEmpresa   identificador.Identificador
-	nombreCorto string
-	nombre      string
-	correo      string
-	idEmpleado  *identificador.Identificador
-	estado      EstadoUsuario
+	id                identificador.Identificador
+	idEmpresa         identificador.Identificador
+	nombreCorto       string
+	nombre            string
+	correo            string
+	contrasenaCifrada string
+	idEmpleado        *identificador.Identificador
+	estado            EstadoUsuario
 }
 
 func RegistrarUsuario(idEmpresa identificador.Identificador, nombreCorto, nombre string) (Usuario, error) {
@@ -49,6 +50,10 @@ func (usuario *Usuario) DefinirCorreo(correo Correo) {
 	usuario.correo = correo.Texto()
 }
 
+func (usuario *Usuario) DefinirContrasenaCifrada(cifrada string) {
+	usuario.contrasenaCifrada = cifrada
+}
+
 func (usuario *Usuario) VincularConEmpleado(idEmpleado identificador.Identificador) {
 	usuario.idEmpleado = &idEmpleado
 }
@@ -66,6 +71,7 @@ func (usuario Usuario) Empresa() identificador.Identificador       { return usua
 func (usuario Usuario) NombreCorto() string                        { return usuario.nombreCorto }
 func (usuario Usuario) Nombre() string                             { return usuario.nombre }
 func (usuario Usuario) Correo() string                             { return usuario.correo }
+func (usuario Usuario) ContrasenaCifrada() string                  { return usuario.contrasenaCifrada }
 func (usuario Usuario) EmpleadoVinculado() *identificador.Identificador { return usuario.idEmpleado }
 func (usuario Usuario) Estado() EstadoUsuario                      { return usuario.estado }
 func (usuario Usuario) EstaActivo() bool                           { return usuario.estado == UsuarioActivo }

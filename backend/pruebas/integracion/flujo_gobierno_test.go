@@ -37,9 +37,16 @@ func TestFlujoGobiernoContraPostgres(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cifrado fallido: %v", err)
 	}
+	var hashOriginal string
+	if err := pool.QueryRow(ctx, "SELECT COALESCE(contrasena_hash, '') FROM gobierno.usuario WHERE usuario = 'admin.mina'").Scan(&hashOriginal); err != nil {
+		t.Fatalf("lectura de credencial original fallida: %v", err)
+	}
 	if _, err := pool.Exec(ctx, "UPDATE gobierno.usuario SET contrasena_hash = $1 WHERE usuario = 'admin.mina'", hash); err != nil {
 		t.Fatalf("preparacion de credencial fallida: %v", err)
 	}
+	defer func() {
+		_, _ = pool.Exec(ctx, "UPDATE gobierno.usuario SET contrasena_hash = NULLIF($1, '') WHERE usuario = 'admin.mina'", hashOriginal)
+	}()
 	if _, err := pool.Exec(ctx, "DELETE FROM gobierno.usuario WHERE usuario = 'op.integracion'"); err != nil {
 		t.Fatalf("limpieza previa fallida: %v", err)
 	}
@@ -72,7 +79,7 @@ func TestFlujoGobiernoContraPostgres(t *testing.T) {
 	}
 
 	ctxEmpresa := contexto.ConTenant(ctx, contexto.Tenant{Empresa: empresa, Actor: actor, Rol: contexto.RolAplicacion})
-	registrarUsuario := aplicacion.NuevoRegistrarUsuario(unidad, repositorioUsuario)
+	registrarUsuario := aplicacion.NuevoRegistrarUsuario(unidad, repositorioUsuario, cifrador)
 	identificadorNuevo, err := registrarUsuario.Ejecutar(ctxEmpresa, aplicacion.ComandoRegistrarUsuario{
 		IdentificadorEmpresa: empresa.Texto(),
 		NombreCorto:          "op.integracion",

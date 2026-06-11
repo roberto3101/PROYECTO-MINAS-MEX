@@ -1,30 +1,53 @@
 # PROYECTO-MINAS-MEX
 
 Sistema de **Planeación y Producción Minera** (mina subterránea polimetálica: Au · Ag · Pb · Zn).
-Backend en **Go** (próximo) sobre **PostgreSQL**, organizado por **capacidades** con DDD ligero,
-multi-tenant, eventos append-only, auditoría inline y borrado lógico.
+Backend en **Go** sobre **PostgreSQL**, organizado por **capacidades** con DDD ligero y
+arquitectura hexagonal, multi-tenant, eventos append-only, auditoría inline y borrado lógico.
+Incluye **frontend** servido por el propio backend y **colección Postman** lista para clics.
 
 ## Estructura del repositorio
 
 ```
 PROYECTO-MINAS-MEX/
+├── backend/                       Go: DDD hexagonal por capacidades (gobierno, catalogos)
+│   ├── pasarela/rutas.go          TODAS las rutas HTTP en un solo lugar (con su permiso)
+│   ├── plataforma/                cáscara: web, identidad (JWT), bcrypt, persistencia pgx
+│   ├── capacidades/               gobierno (RBAC) y catalogos — soberanía por contratos
+│   └── README.md                  endpoints, cómo correr, cómo probar
+├── frontend/                      SPA sin build (la sirve el backend en /)
+│   ├── index.html · estilos.css · aplicacion.js
+│   └── login + panel: usuarios, roles/permisos, minas, empleados, equipos, branding vivo
+├── postman/                       Pruebas con uno o varios clics
+│   ├── coleccion.json             flujo encadenado completo (login → ids → RBAC en vivo)
+│   └── entorno.json               variables (base_url, credenciales, tokens, ids)
 ├── documentacion/                 Sitio HTML del modelo de datos (se despliega en Vercel)
-│   ├── index.html                 portada (9 capacidades)
-│   ├── diagrama-general.html      mapa interactivo de las 50 tablas (clic → capacidad)
+│   ├── index.html                 portada (10 capacidades)
+│   ├── diagrama-general.html      mapa interactivo de las 54 tablas (clic → capacidad)
 │   ├── 01..10-*.html              una página por capacidad (incluye 10-seguridad)
-│   ├── estilos.css · scripts.js   compartidos
-│   ├── vercel.json                config de despliegue
 │   └── README.md                  cómo desplegar en Vercel
 └── infraestructura/
     └── base-de-datos/             Esquema PostgreSQL (fuente de verdad)
         ├── esquema/               00..60 DDL por capacidad + índices + vistas + seguridad RLS
-        ├── semilla/20_seed.sql    datos de ejemplo
+        ├── semilla/20_seed.sql    datos de ejemplo (admin.mina / Mina#2026)
         ├── pruebas/30_tests.sql   42 tests: integración/lógica/gobernanza/aislamiento/RBAC/permisos/seguridad
         ├── pruebas/40_escenario_usuarios.sql   E2E: ciclo de vida real de una empresa y sus usuarios
         ├── pruebas/agentes/       baterías de auditoría senior
         ├── ejecutar.ps1           carga todo en orden
         └── README.md              detalle de la BD
 ```
+
+## Pruébalo en 2 minutos
+
+```powershell
+cd infraestructura/base-de-datos ; ./ejecutar.ps1          # 1) BD local en verde (5433)
+cd ../../backend
+$env:CADENA_POSTGRES = "postgres://postgres:x@127.0.0.1:5433/mina"
+$env:SECRETO_TOKEN   = "secreto-local"
+go run ./cmd/servidor                                       # 2) API + frontend en :8080
+```
+
+Abre **http://localhost:8080** y entra con `MIN` / `admin.mina` / `Mina#2026` — o importa
+la carpeta [`postman/`](postman/) y corre la colección completa con un clic.
 
 > La carpeta `documentacion/` está **separada a propósito** del resto del proyecto para
 > poder desplegarla sola en Vercel sin exponer el esquema ni el backend.

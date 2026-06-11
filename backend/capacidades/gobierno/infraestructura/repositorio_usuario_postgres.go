@@ -20,16 +20,17 @@ func NuevoRepositorioUsuario() RepositorioUsuarioPostgres {
 func (RepositorioUsuarioPostgres) Guardar(ctx context.Context, usuario dominio.Usuario) error {
 	consultas := persistencia.ConsultasDe(ctx)
 	_, err := consultas.Exec(ctx,
-		`INSERT INTO gobierno.usuario (id, id_empresa, usuario, nombre, correo, id_empleado, estado)
-		 VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7)
+		`INSERT INTO gobierno.usuario (id, id_empresa, usuario, nombre, correo, contrasena_hash, id_empleado, estado)
+		 VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, ''), $7, $8)
 		 ON CONFLICT (id) DO UPDATE SET
 		   nombre = EXCLUDED.nombre,
 		   correo = EXCLUDED.correo,
+		   contrasena_hash = COALESCE(EXCLUDED.contrasena_hash, gobierno.usuario.contrasena_hash),
 		   id_empleado = EXCLUDED.id_empleado,
 		   estado = EXCLUDED.estado,
 		   actualizado_en = now()`,
 		usuario.Identificador().Texto(), usuario.Empresa().Texto(), usuario.NombreCorto(),
-		usuario.Nombre(), usuario.Correo(), textoOpcional(usuario.EmpleadoVinculado()), string(usuario.Estado()))
+		usuario.Nombre(), usuario.Correo(), usuario.ContrasenaCifrada(), textoOpcional(usuario.EmpleadoVinculado()), string(usuario.Estado()))
 	return err
 }
 

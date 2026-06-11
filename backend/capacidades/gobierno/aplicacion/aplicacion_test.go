@@ -15,6 +15,16 @@ func (unidadDirecta) EnTransaccion(ctx context.Context, operacion func(context.C
 	return operacion(ctx)
 }
 
+type cifradorSimulado struct{}
+
+func (cifradorSimulado) Cifrar(textoPlano string) (string, error) {
+	return "cifrado:" + textoPlano, nil
+}
+
+func (cifradorSimulado) Verificar(textoPlano, cifrado string) bool {
+	return cifrado == "cifrado:"+textoPlano
+}
+
 type repositorioUsuarioMemoria struct {
 	porIdentificador map[string]dominio.Usuario
 }
@@ -66,7 +76,7 @@ func (repositorio *repositorioAsignacionMemoria) BuscarVigente(_ context.Context
 
 func TestRegistrarUsuarioGuardaYDevuelveIdentificador(t *testing.T) {
 	usuarios := nuevoRepositorioUsuarioMemoria()
-	caso := NuevoRegistrarUsuario(unidadDirecta{}, usuarios)
+	caso := NuevoRegistrarUsuario(unidadDirecta{}, usuarios, cifradorSimulado{})
 	identificadorUsuario, err := caso.Ejecutar(context.Background(), ComandoRegistrarUsuario{
 		IdentificadorEmpresa: identificador.Nuevo().Texto(),
 		NombreCorto:          "op.tres",
@@ -85,7 +95,7 @@ func TestRegistrarUsuarioGuardaYDevuelveIdentificador(t *testing.T) {
 
 func TestRegistrarUsuarioRechazaDuplicadoActivo(t *testing.T) {
 	usuarios := nuevoRepositorioUsuarioMemoria()
-	caso := NuevoRegistrarUsuario(unidadDirecta{}, usuarios)
+	caso := NuevoRegistrarUsuario(unidadDirecta{}, usuarios, cifradorSimulado{})
 	empresa := identificador.Nuevo().Texto()
 	if _, err := caso.Ejecutar(context.Background(), ComandoRegistrarUsuario{IdentificadorEmpresa: empresa, NombreCorto: "op.tres", Nombre: "Operador Tres"}); err != nil {
 		t.Fatalf("primer registro fallido: %v", err)

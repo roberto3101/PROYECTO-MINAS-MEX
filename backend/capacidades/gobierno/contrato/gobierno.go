@@ -15,6 +15,8 @@ type ResumenEmpresa struct {
 	Activa        bool
 	ZonaHoraria   string
 	Moneda        string
+	LogoUrl       string
+	ColorPrimario string
 }
 
 type Gobierno interface {

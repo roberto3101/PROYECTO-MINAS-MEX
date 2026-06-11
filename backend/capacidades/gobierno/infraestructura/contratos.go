@@ -12,5 +12,6 @@ var (
 	_ puertos.RepositorioEmpresa       = RepositorioEmpresaPostgres{}
 	_ puertos.RepositorioPermiso       = RepositorioPermisoPostgres{}
 	_ puertos.LectorDeAcceso           = LectorDeAccesoPostgres{}
+	_ puertos.LectorDeGobierno         = LectorDeGobiernoPostgres{}
 	_ contrato.Gobierno                = ServicioGobiernoPostgres{}
 )
