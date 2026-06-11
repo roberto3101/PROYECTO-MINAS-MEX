@@ -2,6 +2,7 @@ package aplicacion
 
 import (
 	"context"
+	"time"
 
 	"minas/capacidades/catalogos/dominio"
 	"minas/capacidades/catalogos/puertos"
@@ -14,7 +15,14 @@ type ComandoDarDeAltaEquipo struct {
 	IdentificadorTipoEquipo    string
 	IdentificadorModuloTrabajo string
 	Codigo                     string
+	Descripcion                string
+	ModeloPerforadora          string
+	CapacidadLongitud          *float64
 	Fabricante                 string
+	Modelo                     string
+	NumeroSerie                string
+	AnioFabricacion            *int
+	FechaIngresoMina           string
 }
 
 type DarDeAltaEquipo struct {
@@ -43,7 +51,13 @@ func (caso *DarDeAltaEquipo) Ejecutar(ctx context.Context, comando ComandoDarDeA
 	if err != nil {
 		return "", err
 	}
-	equipo, err := dominio.DarDeAltaEquipo(empresa, mina, tipoEquipo, moduloTrabajo, comando.Codigo, comando.Fabricante)
+	fechaIngreso, err := fechaOpcional(comando.FechaIngresoMina)
+	if err != nil {
+		return "", err
+	}
+	equipo, err := dominio.DarDeAltaEquipo(empresa, mina, tipoEquipo, moduloTrabajo,
+		comando.Codigo, comando.Descripcion, comando.ModeloPerforadora, comando.Fabricante,
+		comando.Modelo, comando.NumeroSerie, comando.CapacidadLongitud, comando.AnioFabricacion, fechaIngreso)
 	if err != nil {
 		return "", err
 	}
@@ -54,4 +68,15 @@ func (caso *DarDeAltaEquipo) Ejecutar(ctx context.Context, comando ComandoDarDeA
 		return "", err
 	}
 	return equipo.Identificador().Texto(), nil
+}
+
+func fechaOpcional(texto string) (*time.Time, error) {
+	if texto == "" {
+		return nil, nil
+	}
+	fecha, err := time.Parse("2006-01-02", texto)
+	if err != nil {
+		return nil, dominio.ErrValorFueraDeRango
+	}
+	return &fecha, nil
 }

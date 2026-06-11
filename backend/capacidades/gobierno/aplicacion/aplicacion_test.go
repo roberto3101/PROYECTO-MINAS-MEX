@@ -81,6 +81,7 @@ func TestRegistrarUsuarioGuardaYDevuelveIdentificador(t *testing.T) {
 		IdentificadorEmpresa: identificador.Nuevo().Texto(),
 		NombreCorto:          "op.tres",
 		Nombre:               "Operador Tres",
+		Contrasena:           "Pruebas#2026X",
 	})
 	if err != nil {
 		t.Fatalf("registro fallido: %v", err)
@@ -97,10 +98,10 @@ func TestRegistrarUsuarioRechazaDuplicadoActivo(t *testing.T) {
 	usuarios := nuevoRepositorioUsuarioMemoria()
 	caso := NuevoRegistrarUsuario(unidadDirecta{}, usuarios, cifradorSimulado{})
 	empresa := identificador.Nuevo().Texto()
-	if _, err := caso.Ejecutar(context.Background(), ComandoRegistrarUsuario{IdentificadorEmpresa: empresa, NombreCorto: "op.tres", Nombre: "Operador Tres"}); err != nil {
+	if _, err := caso.Ejecutar(context.Background(), ComandoRegistrarUsuario{IdentificadorEmpresa: empresa, NombreCorto: "op.tres", Nombre: "Operador Tres", Contrasena: "Pruebas#2026X"}); err != nil {
 		t.Fatalf("primer registro fallido: %v", err)
 	}
-	_, err := caso.Ejecutar(context.Background(), ComandoRegistrarUsuario{IdentificadorEmpresa: empresa, NombreCorto: "op.tres", Nombre: "Otro Operador"})
+	_, err := caso.Ejecutar(context.Background(), ComandoRegistrarUsuario{IdentificadorEmpresa: empresa, NombreCorto: "op.tres", Nombre: "Otro Operador", Contrasena: "Pruebas#2026X"})
 	if !errors.Is(err, ErrUsuarioDuplicado) {
 		t.Fatalf("se esperaba ErrUsuarioDuplicado, se obtuvo %v", err)
 	}

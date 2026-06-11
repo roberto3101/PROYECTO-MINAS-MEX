@@ -83,12 +83,12 @@ func (usuario *Usuario) Renombrar(nombre string) error {
 	return nil
 }
 
-func (usuario Usuario) Identificador() identificador.Identificador { return usuario.id }
-func (usuario Usuario) Empresa() identificador.Identificador       { return usuario.idEmpresa }
-func (usuario Usuario) NombreCorto() string                        { return usuario.nombreCorto }
-func (usuario Usuario) Nombre() string                             { return usuario.nombre }
-func (usuario Usuario) Correo() string                             { return usuario.correo }
-func (usuario Usuario) ContrasenaCifrada() string                  { return usuario.contrasenaCifrada }
+func (usuario Usuario) Identificador() identificador.Identificador      { return usuario.id }
+func (usuario Usuario) Empresa() identificador.Identificador            { return usuario.idEmpresa }
+func (usuario Usuario) NombreCorto() string                             { return usuario.nombreCorto }
+func (usuario Usuario) Nombre() string                                  { return usuario.nombre }
+func (usuario Usuario) Correo() string                                  { return usuario.correo }
+func (usuario Usuario) ContrasenaCifrada() string                       { return usuario.contrasenaCifrada }
 func (usuario Usuario) EmpleadoVinculado() *identificador.Identificador { return usuario.idEmpleado }
-func (usuario Usuario) Estado() EstadoUsuario                      { return usuario.estado }
-func (usuario Usuario) EstaActivo() bool                           { return usuario.estado == UsuarioActivo }
+func (usuario Usuario) Estado() EstadoUsuario                           { return usuario.estado }
+func (usuario Usuario) EstaActivo() bool                                { return usuario.estado == UsuarioActivo }

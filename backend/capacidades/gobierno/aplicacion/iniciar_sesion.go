@@ -5,14 +5,17 @@ import (
 	"errors"
 
 	"minas/capacidades/gobierno/puertos"
+	"minas/compartido/reloj"
+	"minas/plataforma/escudo"
 )
 
-var ErrCredencialesInvalidas = errors.New("credenciales invalidas")
+var ErrCredencialesInvalidas = errors.New("usuario o contrasena incorrectos")
 
 type ComandoIniciarSesion struct {
-	CodigoEmpresa string
-	NombreCorto   string
-	Contrasena    string
+	CodigoEmpresa     string
+	NombreCorto       string
+	Contrasena        string
+	ClaveDeLimitacion string
 }
 
 type SesionAutenticada struct {
@@ -23,16 +26,22 @@ type SesionAutenticada struct {
 }
 
 type IniciarSesion struct {
-	unidad   puertos.UnidadDeTrabajoDePlataforma
-	lector   puertos.LectorDeAcceso
-	cifrador puertos.CifradorDeContrasena
+	unidad    puertos.UnidadDeTrabajoDePlataforma
+	lector    puertos.LectorDeAcceso
+	cifrador  puertos.CifradorDeContrasena
+	limitador *escudo.LimitadorDeIntentos
+	reloj     reloj.Reloj
 }
 
-func NuevoIniciarSesion(unidad puertos.UnidadDeTrabajoDePlataforma, lector puertos.LectorDeAcceso, cifrador puertos.CifradorDeContrasena) *IniciarSesion {
-	return &IniciarSesion{unidad: unidad, lector: lector, cifrador: cifrador}
+func NuevoIniciarSesion(unidad puertos.UnidadDeTrabajoDePlataforma, lector puertos.LectorDeAcceso, cifrador puertos.CifradorDeContrasena, limitador *escudo.LimitadorDeIntentos, relojDelSistema reloj.Reloj) *IniciarSesion {
+	return &IniciarSesion{unidad: unidad, lector: lector, cifrador: cifrador, limitador: limitador, reloj: relojDelSistema}
 }
 
 func (caso *IniciarSesion) Ejecutar(ctx context.Context, comando ComandoIniciarSesion) (SesionAutenticada, error) {
+	ahora := caso.reloj.Ahora()
+	if espera, permitido := caso.limitador.Permitir(comando.ClaveDeLimitacion, ahora); !permitido {
+		return SesionAutenticada{}, &ErrDemasiadosIntentos{EsperaSegundos: espera}
+	}
 	var sesion SesionAutenticada
 	err := caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
 		credencial, encontrada, err := caso.lector.BuscarCredencial(ctx, comando.CodigoEmpresa, comando.NombreCorto)
@@ -55,7 +64,11 @@ func (caso *IniciarSesion) Ejecutar(ctx context.Context, comando ComandoIniciarS
 		return nil
 	})
 	if err != nil {
+		if errors.Is(err, ErrCredencialesInvalidas) {
+			caso.limitador.RegistrarFallo(comando.ClaveDeLimitacion, ahora)
+		}
 		return SesionAutenticada{}, err
 	}
+	caso.limitador.RegistrarExito(comando.ClaveDeLimitacion)
 	return sesion, nil
 }

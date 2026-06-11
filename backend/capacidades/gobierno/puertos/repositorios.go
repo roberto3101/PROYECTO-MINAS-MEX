@@ -11,10 +11,11 @@ type RepositorioEmpresa interface {
 	BuscarPorIdentificador(ctx context.Context, id identificador.Identificador) (dominio.Empresa, bool, error)
 	Guardar(ctx context.Context, empresa dominio.Empresa) error
 	Crear(ctx context.Context, empresa dominio.Empresa) error
+	CambiarEstado(ctx context.Context, id identificador.Identificador, estado string) error
 }
 
 type AprovisionadorDeAccesos interface {
-	SembrarRolesDeSistema(ctx context.Context, idEmpresa identificador.Identificador, definiciones []dominio.DefinicionDeRolDeSistema) error
+	SembrarRolesDeSistema(ctx context.Context, idEmpresa identificador.Identificador, definiciones []dominio.DefinicionDeRolDeSistema) (map[string]identificador.Identificador, error)
 }
 
 type RepositorioUsuario interface {

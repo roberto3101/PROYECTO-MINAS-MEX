@@ -44,7 +44,7 @@ func (caso *EditarUsuario) Ejecutar(ctx context.Context, comando ComandoEditarUs
 			return err
 		}
 		if comando.Correo != "" {
-			correo, err := dominio.NuevoCorreo(comando.Correo)
+			correo, err := dominio.CorreoDesde(comando.Correo)
 			if err != nil {
 				return err
 			}

@@ -31,18 +31,13 @@ func (caso *CambiarEstadoDeEmpresa) Ejecutar(ctx context.Context, comando Comand
 		return dominio.ErrEstadoNoReconocido
 	}
 	return caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
-		empresa, encontrada, err := caso.empresas.BuscarPorIdentificador(ctx, idEmpresa)
+		_, encontrada, err := caso.empresas.BuscarPorIdentificador(ctx, idEmpresa)
 		if err != nil {
 			return err
 		}
 		if !encontrada {
 			return ErrEmpresaNoEncontrada
 		}
-		if comando.Estado == string(dominio.EmpresaActiva) {
-			empresa.Activar()
-		} else {
-			empresa.Desactivar()
-		}
-		return caso.empresas.Guardar(ctx, empresa)
+		return caso.empresas.CambiarEstado(ctx, idEmpresa, comando.Estado)
 	})
 }

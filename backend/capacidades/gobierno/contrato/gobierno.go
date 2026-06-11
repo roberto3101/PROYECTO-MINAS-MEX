@@ -9,14 +9,14 @@ type PermisoVigente struct {
 }
 
 type ResumenEmpresa struct {
-	Identificador string
-	Codigo        string
-	RazonSocial   string
-	Activa        bool
-	ZonaHoraria   string
-	Moneda        string
-	LogoUrl       string
-	ColorPrimario string
+	Identificador        string
+	Codigo               string
+	RazonSocial          string
+	Activa               bool
+	ZonaHoraria          string
+	Moneda               string
+	LogoUrl              string
+	ColorPrimario        string
 	IdentificacionFiscal string
 	CorreoContacto       string
 	Telefono             string

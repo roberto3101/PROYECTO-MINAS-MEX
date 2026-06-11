@@ -10,7 +10,9 @@ import (
 	"minas/capacidades/gobierno/aplicacion"
 	"minas/capacidades/gobierno/infraestructura"
 	"minas/compartido/identificador"
+	"minas/compartido/reloj"
 	"minas/plataforma/contexto"
+	"minas/plataforma/escudo"
 	"minas/plataforma/persistencia"
 	"minas/plataforma/seguridad"
 )
@@ -56,11 +58,12 @@ func TestFlujoGobiernoContraPostgres(t *testing.T) {
 	repositorioUsuario := infraestructura.NuevoRepositorioUsuario()
 	lectorDeAcceso := infraestructura.NuevoLectorDeAcceso()
 
-	iniciarSesion := aplicacion.NuevoIniciarSesion(unidadDePlataforma, lectorDeAcceso, cifrador)
+	iniciarSesion := aplicacion.NuevoIniciarSesion(unidadDePlataforma, lectorDeAcceso, cifrador, escudo.NuevoLimitadorDeIntentos(), reloj.DelSistema())
 	sesion, err := iniciarSesion.Ejecutar(ctx, aplicacion.ComandoIniciarSesion{
-		CodigoEmpresa: "MIN",
-		NombreCorto:   "admin.mina",
-		Contrasena:    "clave-admin",
+		CodigoEmpresa:     "MIN",
+		NombreCorto:       "admin.mina",
+		Contrasena:        "clave-admin",
+		ClaveDeLimitacion: "integracion|local",
 	})
 	if err != nil {
 		t.Fatalf("inicio de sesion fallido: %v", err)
@@ -84,6 +87,7 @@ func TestFlujoGobiernoContraPostgres(t *testing.T) {
 		IdentificadorEmpresa: empresa.Texto(),
 		NombreCorto:          "op.integracion",
 		Nombre:               "Operador De Integracion",
+		Contrasena:           "Integracion#2026",
 	})
 	if err != nil {
 		t.Fatalf("registro de usuario fallido: %v", err)

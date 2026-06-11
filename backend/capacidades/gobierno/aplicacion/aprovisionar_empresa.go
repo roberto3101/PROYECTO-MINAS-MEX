@@ -41,7 +41,6 @@ type AprovisionarEmpresa struct {
 	empresas           puertos.RepositorioEmpresa
 	usuarios           puertos.RepositorioUsuario
 	asignaciones       puertos.RepositorioAsignacionRol
-	roles              puertos.RepositorioRol
 	accesos            puertos.AprovisionadorDeAccesos
 	cifrador           puertos.CifradorDeContrasena
 	catalogos          contratoCatalogos.Catalogos
@@ -54,7 +53,6 @@ func NuevoAprovisionarEmpresa(
 	empresas puertos.RepositorioEmpresa,
 	usuarios puertos.RepositorioUsuario,
 	asignaciones puertos.RepositorioAsignacionRol,
-	roles puertos.RepositorioRol,
 	accesos puertos.AprovisionadorDeAccesos,
 	cifrador puertos.CifradorDeContrasena,
 	catalogos contratoCatalogos.Catalogos,
@@ -62,7 +60,7 @@ func NuevoAprovisionarEmpresa(
 	return &AprovisionarEmpresa{
 		unidadDePlataforma: unidadDePlataforma, unidadDeTenant: unidadDeTenant,
 		lector: lector, empresas: empresas, usuarios: usuarios, asignaciones: asignaciones,
-		roles: roles, accesos: accesos, cifrador: cifrador, catalogos: catalogos,
+		accesos: accesos, cifrador: cifrador, catalogos: catalogos,
 	}
 }
 
@@ -99,7 +97,7 @@ func (caso *AprovisionarEmpresa) Ejecutar(ctx context.Context, comando ComandoAp
 		return EmpresaAprovisionada{}, err
 	}
 	if comando.AdminCorreo != "" {
-		correo, err := dominio.NuevoCorreo(comando.AdminCorreo)
+		correo, err := dominio.CorreoDesde(comando.AdminCorreo)
 		if err != nil {
 			return EmpresaAprovisionada{}, err
 		}
@@ -125,17 +123,15 @@ func (caso *AprovisionarEmpresa) Ejecutar(ctx context.Context, comando ComandoAp
 		if err := caso.usuarios.Guardar(ctx, admin); err != nil {
 			return err
 		}
-		if err := caso.accesos.SembrarRolesDeSistema(ctx, empresa.Identificador(), dominio.RolesDeSistema()); err != nil {
-			return err
-		}
-		rolAdmin, encontrado, err := caso.roles.BuscarPorCodigo(ctx, "ADMIN_EMPRESA")
+		rolesSembrados, err := caso.accesos.SembrarRolesDeSistema(ctx, empresa.Identificador(), dominio.RolesDeSistema())
 		if err != nil {
 			return err
 		}
-		if !encontrado {
+		idRolAdmin, sembrado := rolesSembrados["ADMIN_EMPRESA"]
+		if !sembrado {
 			return ErrRolNoEncontrado
 		}
-		asignacion := dominio.AsignarRol(empresa.Identificador(), admin.Identificador(), rolAdmin.Identificador(), nil)
+		asignacion := dominio.AsignarRol(empresa.Identificador(), admin.Identificador(), idRolAdmin, nil)
 		return caso.asignaciones.Guardar(ctx, asignacion)
 	})
 	if err != nil {

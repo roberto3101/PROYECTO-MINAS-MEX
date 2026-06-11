@@ -14,32 +14,38 @@ func NuevoAprovisionadorDeAccesos() AprovisionadorDeAccesosPostgres {
 	return AprovisionadorDeAccesosPostgres{}
 }
 
-func (AprovisionadorDeAccesosPostgres) SembrarRolesDeSistema(ctx context.Context, idEmpresa identificador.Identificador, definiciones []dominio.DefinicionDeRolDeSistema) error {
+func (AprovisionadorDeAccesosPostgres) SembrarRolesDeSistema(ctx context.Context, idEmpresa identificador.Identificador, definiciones []dominio.DefinicionDeRolDeSistema) (map[string]identificador.Identificador, error) {
 	consultas := persistencia.ConsultasDe(ctx)
+	rolesSembrados := make(map[string]identificador.Identificador, len(definiciones))
 	for _, definicion := range definiciones {
-		var idRol string
+		var crudoIdRol string
 		err := consultas.QueryRow(ctx,
 			`INSERT INTO gobierno.rol (id_empresa, codigo, descripcion, es_sistema)
 			 VALUES ($1, $2, $3, true) RETURNING id`,
-			idEmpresa.Texto(), definicion.Codigo, definicion.Descripcion).Scan(&idRol)
+			idEmpresa.Texto(), definicion.Codigo, definicion.Descripcion).Scan(&crudoIdRol)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		idRol, err := identificador.Desde(crudoIdRol)
+		if err != nil {
+			return nil, err
+		}
+		rolesSembrados[definicion.Codigo] = idRol
 		if len(definicion.Permisos) == 1 && definicion.Permisos[0] == dominio.TodosLosPermisos {
 			if _, err := consultas.Exec(ctx,
 				`INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
 				 SELECT $1, $2, p.id FROM gobierno.permiso p WHERE p.eliminado_en IS NULL AND p.estado = 'ACTIVO'`,
-				idEmpresa.Texto(), idRol); err != nil {
-				return err
+				idEmpresa.Texto(), crudoIdRol); err != nil {
+				return nil, err
 			}
 			continue
 		}
 		if _, err := consultas.Exec(ctx,
 			`INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
 			 SELECT $1, $2, p.id FROM gobierno.permiso p WHERE p.codigo = ANY($3)`,
-			idEmpresa.Texto(), idRol, definicion.Permisos); err != nil {
-			return err
+			idEmpresa.Texto(), crudoIdRol, definicion.Permisos); err != nil {
+			return nil, err
 		}
 	}
-	return nil
+	return rolesSembrados, nil
 }

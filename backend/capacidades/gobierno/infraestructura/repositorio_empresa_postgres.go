@@ -51,12 +51,19 @@ func (RepositorioEmpresaPostgres) Guardar(ctx context.Context, empresa dominio.E
 		`UPDATE gobierno.empresa SET
 		   razon_social = $2, identificacion_fiscal = NULLIF($3,''), correo_contacto = NULLIF($4,''),
 		   telefono = NULLIF($5,''), logo_url = NULLIF($6,''), color_primario = NULLIF($7,''),
-		   zona_horaria = $8, moneda_defecto = $9, estado = $10, actualizado_en = now()
+		   zona_horaria = $8, moneda_defecto = $9, actualizado_en = now()
 		 WHERE id = $1`,
 		empresa.Identificador().Texto(), empresa.RazonSocial(),
 		perfil.IdentificacionFiscal, perfil.CorreoContacto, perfil.Telefono,
-		branding.LogoUrl(), branding.ColorPrimario(), branding.ZonaHoraria(), branding.Moneda(),
-		string(empresa.Estado()))
+		branding.LogoUrl(), branding.ColorPrimario(), branding.ZonaHoraria(), branding.Moneda())
+	return err
+}
+
+func (RepositorioEmpresaPostgres) CambiarEstado(ctx context.Context, id identificador.Identificador, estado string) error {
+	consultas := persistencia.ConsultasDe(ctx)
+	_, err := consultas.Exec(ctx,
+		`UPDATE gobierno.empresa SET estado = $2, actualizado_en = now() WHERE id = $1`,
+		id.Texto(), estado)
 	return err
 }
 
