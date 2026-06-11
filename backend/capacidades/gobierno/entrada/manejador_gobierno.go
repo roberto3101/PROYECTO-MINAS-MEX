@@ -3,6 +3,7 @@ package entrada
 import (
 	"errors"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -530,7 +531,12 @@ func responderErrorDeSesion(escritor http.ResponseWriter, err error) {
 		})
 		return
 	}
-	web.ResponderError(escritor, codigoHttp(err), err.Error())
+	if errors.Is(err, aplicacion.ErrCredencialesInvalidas) {
+		web.ResponderError(escritor, http.StatusUnauthorized, err.Error())
+		return
+	}
+	log.Printf("error interno al iniciar sesion: %v", err)
+	web.ResponderError(escritor, http.StatusServiceUnavailable, "no pudimos conectar con el servidor. Intenta de nuevo en un momento.")
 }
 
 func direccionRemota(peticion *http.Request) string {

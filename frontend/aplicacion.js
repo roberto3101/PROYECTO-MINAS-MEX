@@ -25,11 +25,19 @@ const formatearFecha = (iso) => {
 };
 const oVacio = (valor) => (valor === "" || valor == null ? "—" : valor);
 
+async function pedir(ruta, opciones) {
+  try {
+    return await fetch(ruta, opciones);
+  } catch {
+    throw new Error("No hay conexión con el servidor. Verifica tu red e intenta de nuevo.");
+  }
+}
+
 async function llamarApi(ruta, opciones = {}) {
   const cabeceras = { ...opciones.cabeceras };
   if (opciones.cuerpo !== undefined) cabeceras["Content-Type"] = "application/json";
   if (estado.sesion) cabeceras.Authorization = `Bearer ${estado.sesion.token}`;
-  const respuesta = await fetch(ruta, {
+  const respuesta = await pedir(ruta, {
     method: opciones.metodo ?? "GET",
     headers: cabeceras,
     body: opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
@@ -38,7 +46,7 @@ async function llamarApi(ruta, opciones = {}) {
 }
 
 async function llamarApiArchivo(ruta, formulario) {
-  const respuesta = await fetch(ruta, {
+  const respuesta = await pedir(ruta, {
     method: "POST",
     headers: estado.sesion ? { Authorization: `Bearer ${estado.sesion.token}` } : {},
     body: formulario,
