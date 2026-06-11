@@ -2,12 +2,26 @@ package puertos
 
 import "context"
 
+type FiltroDeUsuarios struct {
+	Busqueda string
+	Estado   string
+	Cursor   string
+	Limite   int
+}
+
 type ResumenUsuario struct {
-	Identificador string
-	NombreCorto   string
-	Nombre        string
-	Correo        string
-	Estado        string
+	Identificador  string
+	NombreCorto    string
+	Nombre         string
+	Correo         string
+	Estado         string
+	UltimoAccesoEn string
+}
+
+type DetalleUsuario struct {
+	ResumenUsuario
+	CreadoEn              string
+	IdentificadorEmpleado string
 }
 
 type ResumenRol struct {
@@ -34,7 +48,8 @@ type ResumenAsignacion struct {
 }
 
 type LectorDeGobierno interface {
-	ListarUsuarios(ctx context.Context) ([]ResumenUsuario, error)
+	ListarUsuarios(ctx context.Context, filtro FiltroDeUsuarios) ([]ResumenUsuario, string, error)
+	DetalleDeUsuario(ctx context.Context, identificadorUsuario string) (DetalleUsuario, bool, error)
 	ListarRoles(ctx context.Context) ([]ResumenRol, error)
 	CatalogoDePermisos(ctx context.Context) ([]ResumenPermiso, error)
 	AsignacionesDe(ctx context.Context, identificadorUsuario string) ([]ResumenAsignacion, error)

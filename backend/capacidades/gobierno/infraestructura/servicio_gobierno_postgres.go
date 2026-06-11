@@ -52,10 +52,12 @@ func (servicio ServicioGobiernoPostgres) EmpresaActual(ctx context.Context) (con
 		consultas := persistencia.ConsultasDe(ctx)
 		fila := consultas.QueryRow(ctx,
 			`SELECT id, codigo, razon_social, (estado = 'ACTIVA'), zona_horaria, moneda_defecto,
-			        COALESCE(logo_url, ''), COALESCE(color_primario, '')
+			        COALESCE(logo_url, ''), COALESCE(color_primario, ''),
+			        COALESCE(identificacion_fiscal, ''), COALESCE(correo_contacto, ''), COALESCE(telefono, '')
 			 FROM gobierno.empresa LIMIT 1`)
 		err := fila.Scan(&resumen.Identificador, &resumen.Codigo, &resumen.RazonSocial, &resumen.Activa,
-			&resumen.ZonaHoraria, &resumen.Moneda, &resumen.LogoUrl, &resumen.ColorPrimario)
+			&resumen.ZonaHoraria, &resumen.Moneda, &resumen.LogoUrl, &resumen.ColorPrimario,
+			&resumen.IdentificacionFiscal, &resumen.CorreoContacto, &resumen.Telefono)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}

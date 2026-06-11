@@ -66,6 +66,23 @@ func (usuario *Usuario) Desactivar() error {
 	return nil
 }
 
+func (usuario *Usuario) Reactivar() error {
+	if usuario.estado == UsuarioActivo {
+		return ErrUsuarioYaActivo
+	}
+	usuario.estado = UsuarioActivo
+	return nil
+}
+
+func (usuario *Usuario) Renombrar(nombre string) error {
+	limpio := strings.ToUpper(strings.TrimSpace(nombre))
+	if limpio == "" {
+		return ErrNombreObligatorio
+	}
+	usuario.nombre = limpio
+	return nil
+}
+
 func (usuario Usuario) Identificador() identificador.Identificador { return usuario.id }
 func (usuario Usuario) Empresa() identificador.Identificador       { return usuario.idEmpresa }
 func (usuario Usuario) NombreCorto() string                        { return usuario.nombreCorto }

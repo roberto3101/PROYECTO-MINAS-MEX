@@ -3,6 +3,8 @@ package aplicacion
 import (
 	"context"
 
+	"minas/plataforma/escudo"
+
 	"minas/capacidades/gobierno/dominio"
 	"minas/capacidades/gobierno/puertos"
 	"minas/compartido/identificador"
@@ -28,6 +30,15 @@ func NuevoRegistrarUsuario(unidad puertos.UnidadDeTrabajo, usuarios puertos.Repo
 }
 
 func (caso *RegistrarUsuario) Ejecutar(ctx context.Context, comando ComandoRegistrarUsuario) (string, error) {
+	if err := escudo.ValidarNombreDeUsuario(comando.NombreCorto); err != nil {
+		return "", err
+	}
+	if err := escudo.ValidarContrasena(comando.Contrasena); err != nil {
+		return "", err
+	}
+	if err := escudo.ValidarCorreo(comando.Correo); err != nil {
+		return "", err
+	}
 	empresa, err := identificador.Desde(comando.IdentificadorEmpresa)
 	if err != nil {
 		return "", err

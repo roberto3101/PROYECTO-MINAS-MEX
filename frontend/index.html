@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plataforma Minera · Operación</title>
 <link rel="stylesheet" href="estilos.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230d1117'/%3E%3Cpath d='M6 22 L13 9 L19 17 L23 12 L26 22 Z' fill='%23d9a440'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0f14'/%3E%3Cpath d='M6 22 L13 9 L19 17 L23 12 L26 22 Z' fill='%23d9a440'/%3E%3C/svg%3E">
 </head>
 <body>
 
@@ -20,11 +20,11 @@
       <span>Plataforma <b>Minera</b></span>
     </div>
     <svg class="estratos" viewBox="0 0 520 640" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <path class="estrato" d="M0,170 C120,150 200,200 320,180 C420,164 470,190 520,176 L520,640 L0,640 Z" fill="rgba(255,255,255,.03)"/>
-      <path class="estrato" d="M0,300 C140,278 240,330 360,306 C440,290 480,316 520,302 L520,640 L0,640 Z" fill="rgba(255,255,255,.05)"/>
-      <path class="estrato" d="M0,440 C120,420 260,470 380,446 C460,430 490,452 520,442 L520,640 L0,640 Z" fill="rgba(255,255,255,.07)"/>
+      <path d="M0,170 C120,150 200,200 320,180 C420,164 470,190 520,176 L520,640 L0,640 Z" fill="rgba(255,255,255,.03)"/>
+      <path d="M0,300 C140,278 240,330 360,306 C440,290 480,316 520,302 L520,640 L0,640 Z" fill="rgba(255,255,255,.05)"/>
+      <path d="M0,440 C120,420 260,470 380,446 C460,430 490,452 520,442 L520,640 L0,640 Z" fill="rgba(255,255,255,.07)"/>
       <path class="veta" d="M-10,520 C90,470 150,540 250,488 C340,442 400,500 530,430" fill="none" stroke="var(--acento)" stroke-width="3.5" stroke-linecap="round"/>
-      <path class="veta veta-fina" d="M-10,560 C110,520 180,575 290,530 C380,494 430,540 530,485" fill="none" stroke="var(--acento)" stroke-width="1.5" stroke-linecap="round" opacity=".45"/>
+      <path class="veta" d="M-10,560 C110,520 180,575 290,530 C380,494 430,540 530,485" fill="none" stroke="var(--acento)" stroke-width="1.5" stroke-linecap="round" opacity=".45"/>
     </svg>
     <div class="lema">
       <h1>El plan y el real,<br>en una sola fuente de verdad.</h1>
@@ -33,72 +33,135 @@
   </aside>
 
   <main class="panel-acceso">
-    <form id="formulario-login" class="formulario-login" autocomplete="on">
+    <div class="caja-acceso">
       <p class="saludo">Bienvenido de vuelta</p>
-      <h2>Iniciar sesión</h2>
-      <label class="campo">
-        <span>Empresa</span>
-        <input id="campo-empresa" name="empresa" value="MIN" required autocapitalize="characters" spellcheck="false">
-      </label>
-      <label class="campo">
-        <span>Usuario</span>
-        <input id="campo-usuario" name="usuario" placeholder="admin.mina" required spellcheck="false">
-      </label>
-      <label class="campo">
-        <span>Contraseña</span>
-        <input id="campo-contrasena" name="contrasena" type="password" placeholder="••••••••" required>
-      </label>
-      <p id="error-login" class="error-login" hidden></p>
-      <button id="boton-entrar" class="boton-primario" type="submit">
-        <span class="texto">Entrar a la operación</span>
-        <span class="cargando" aria-hidden="true"></span>
-      </button>
-      <button type="button" id="usar-demo" class="chip-demo">Usar credenciales demo · admin.mina / Mina#2026</button>
-    </form>
-    <p class="pie-acceso">El acceso lo otorga el administrador de tu empresa. Sin auto-registro.</p>
+      <h1>Iniciar sesión</h1>
+
+      <div class="selector-segmentado" role="tablist" aria-label="Ámbito de acceso">
+        <button type="button" id="pestana-empresa" class="segmento activo" role="tab" aria-selected="true">Empresa</button>
+        <button type="button" id="pestana-plataforma" class="segmento" role="tab" aria-selected="false">Plataforma</button>
+      </div>
+
+      <form id="formulario-empresa" autocomplete="on" novalidate>
+        <label class="campo">
+          <span>Código de empresa</span>
+          <input id="entrada-codigo-empresa" name="organization" maxlength="20" placeholder="MIN" required autocapitalize="characters" spellcheck="false">
+        </label>
+        <label class="campo">
+          <span>Nombre de usuario</span>
+          <input id="entrada-usuario-empresa" name="username" maxlength="60" placeholder="admin.mina" required spellcheck="false" autocomplete="username">
+        </label>
+        <label class="campo">
+          <span>Contraseña</span>
+          <span class="campo-contrasena">
+            <input id="entrada-contrasena-empresa" name="password" type="password" maxlength="120" placeholder="••••••••••" required autocomplete="current-password">
+            <button type="button" class="boton-ojo" data-objetivo="entrada-contrasena-empresa" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+              <svg class="icono-ojo-abierto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icono-ojo-cerrado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.5 10.5 0 0 1 12 19c-7 0-11-7-11-7a19.8 19.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.9 10.9 0 0 1 12 4c7 0 11 7 11 7a19.9 19.9 0 0 1-3.22 4.31"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </span>
+        </label>
+        <p id="error-empresa" class="mensaje-error-acceso" role="alert" hidden></p>
+        <button id="boton-entrar-empresa" class="boton-primario boton-acceso" type="submit"><span class="texto-boton">Entrar a la operación</span></button>
+        <button type="button" id="demo-empresa" class="chip-demo">Demo · MIN / admin.mina / Mina#2026</button>
+      </form>
+
+      <form id="formulario-plataforma" autocomplete="on" novalidate hidden>
+        <label class="campo">
+          <span>Nombre de usuario</span>
+          <input id="entrada-usuario-plataforma" maxlength="60" placeholder="plataforma" required spellcheck="false" autocomplete="username">
+        </label>
+        <label class="campo">
+          <span>Contraseña</span>
+          <span class="campo-contrasena">
+            <input id="entrada-contrasena-plataforma" type="password" maxlength="120" placeholder="••••••••••" required autocomplete="current-password">
+            <button type="button" class="boton-ojo" data-objetivo="entrada-contrasena-plataforma" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+              <svg class="icono-ojo-abierto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icono-ojo-cerrado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><path d="M17.94 17.94A10.5 10.5 0 0 1 12 19c-7 0-11-7-11-7a19.8 19.8 0 0 1 5.06-5.94"/><path d="M9.9 4.24A10.9 10.9 0 0 1 12 4c7 0 11 7 11 7a19.9 19.9 0 0 1-3.22 4.31"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </span>
+        </label>
+        <p id="error-plataforma" class="mensaje-error-acceso" role="alert" hidden></p>
+        <button id="boton-entrar-plataforma" class="boton-primario boton-acceso" type="submit"><span class="texto-boton">Entrar al panel</span></button>
+        <button type="button" id="demo-plataforma" class="chip-demo">Demo · plataforma / Plataforma#2026</button>
+      </form>
+
+      <p class="pie-acceso">El acceso lo otorga un administrador. Sin auto-registro.</p>
+    </div>
   </main>
 </div>
 
 <div id="aplicacion" class="aplicacion" hidden>
-  <aside class="lateral">
+  <aside id="lateral" class="lateral">
     <div class="identidad-empresa">
-      <img id="logo-empresa" alt="" hidden>
-      <svg id="logo-generico" viewBox="0 0 48 48" aria-hidden="true">
-        <rect width="48" height="48" rx="12" fill="rgba(255,255,255,.07)"/>
-        <path d="M9 33 L19 13 L27 24 L33 17 L39 33 Z" fill="var(--acento)"/>
-      </svg>
-      <div>
-        <strong id="nombre-empresa">—</strong>
-        <small id="codigo-empresa">—</small>
-      </div>
+      <img id="logo-empresa" class="logo-empresa" alt="Logotipo de la empresa" hidden>
+      <span id="logo-generico" class="logo-generico" aria-hidden="true">
+        <svg viewBox="0 0 48 48"><rect width="48" height="48" rx="12" fill="rgba(255,255,255,.07)"/><path d="M9 33 L19 13 L27 24 L33 17 L39 33 Z" fill="var(--acento)"/></svg>
+      </span>
+      <span class="datos-identidad">
+        <strong id="nombre-identidad">—</strong>
+        <small id="detalle-identidad">—</small>
+      </span>
     </div>
-    <nav class="navegacion" id="navegacion"></nav>
-    <div class="sesion-lateral">
-      <div class="avatar" id="avatar-usuario">A</div>
-      <div class="quien">
-        <strong id="nombre-sesion">—</strong>
-        <small id="permisos-sesion">—</small>
-      </div>
-      <button id="boton-salir" class="boton-fantasma" title="Cerrar sesión">⎋</button>
+    <nav id="navegacion" class="navegacion" aria-label="Secciones"></nav>
+    <div class="pie-lateral">
+      <span class="avatar" id="avatar-sesion">·</span>
+      <span class="datos-sesion">
+        <strong id="usuario-sesion">—</strong>
+        <small id="ambito-sesion">—</small>
+      </span>
+      <button id="boton-salir" class="boton-icono" title="Cerrar sesión" aria-label="Cerrar sesión">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
     </div>
+    <button id="boton-riel" class="boton-riel" title="Encoger menú" aria-label="Encoger o expandir el menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+    </button>
   </aside>
 
   <main class="contenido">
-    <header class="cabecera">
-      <div>
-        <h2 id="titulo-vista">Panel</h2>
-        <p id="subtitulo-vista" class="subtitulo"></p>
+    <header class="cabecera-vista">
+      <div class="titulos-vista">
+        <h1 id="titulo-vista">—</h1>
+        <p id="subtitulo-vista"></p>
       </div>
-      <div id="acciones-vista" class="acciones"></div>
+      <div id="acciones-vista" class="acciones-vista"></div>
     </header>
     <section id="vista" class="vista"></section>
   </main>
 </div>
 
+<div id="fondo-panel" class="fondo-panel" hidden></div>
+<aside id="panel-detalle" class="panel-detalle" role="dialog" aria-modal="true" aria-labelledby="titulo-panel" hidden>
+  <header class="cabecera-panel">
+    <h2 id="titulo-panel">—</h2>
+    <button id="cerrar-panel" class="boton-icono" title="Cerrar" aria-label="Cerrar panel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </header>
+  <div id="cuerpo-panel" class="cuerpo-panel"></div>
+</aside>
+
 <div id="capa-modal" class="capa-modal" hidden>
-  <div class="modal" role="dialog" aria-modal="true">
-    <header><h3 id="titulo-modal"></h3><button id="cerrar-modal" class="boton-fantasma">✕</button></header>
-    <div id="cuerpo-modal"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="titulo-modal">
+    <header class="cabecera-modal">
+      <h2 id="titulo-modal">—</h2>
+      <button id="cerrar-modal" class="boton-icono" title="Cerrar" aria-label="Cerrar ventana">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+    <div id="cuerpo-modal" class="cuerpo-modal"></div>
+  </div>
+</div>
+
+<div id="capa-confirmacion" class="capa-modal capa-confirmacion" hidden>
+  <div class="modal modal-confirmacion" role="alertdialog" aria-modal="true" aria-labelledby="titulo-confirmacion">
+    <h2 id="titulo-confirmacion">—</h2>
+    <p id="mensaje-confirmacion"></p>
+    <div class="acciones-confirmacion">
+      <button id="boton-cancelar-confirmacion" class="boton-secundario" type="button">Cancelar</button>
+      <button id="boton-aceptar-confirmacion" class="boton-primario" type="button">Confirmar</button>
+    </div>
   </div>
 </div>
 

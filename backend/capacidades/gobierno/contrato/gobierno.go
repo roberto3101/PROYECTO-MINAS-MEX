@@ -17,6 +17,9 @@ type ResumenEmpresa struct {
 	Moneda        string
 	LogoUrl       string
 	ColorPrimario string
+	IdentificacionFiscal string
+	CorreoContacto       string
+	Telefono             string
 }
 
 type Gobierno interface {

@@ -28,6 +28,7 @@ type cuerpoDeToken struct {
 	Sujeto   string   `json:"sub"`
 	Empresa  string   `json:"emp"`
 	Nombre   string   `json:"nom"`
+	Ambito   string   `json:"amb"`
 	Permisos []string `json:"per"`
 	Expira   int64    `json:"exp"`
 }
@@ -38,6 +39,7 @@ func (emisor EmisorDeToken) Emitir(sesion Sesion, emitidoEn time.Time) (string, 
 		Sujeto:   sesion.IdentificadorUsuario,
 		Empresa:  sesion.IdentificadorEmpresa,
 		Nombre:   sesion.NombreCorto,
+		Ambito:   sesion.Ambito,
 		Permisos: sesion.Permisos,
 		Expira:   emitidoEn.Add(emisor.duracion).Unix(),
 	}
@@ -73,6 +75,7 @@ func (emisor EmisorDeToken) Verificar(token string, ahora time.Time) (Sesion, er
 		IdentificadorUsuario: cuerpo.Sujeto,
 		IdentificadorEmpresa: cuerpo.Empresa,
 		NombreCorto:          cuerpo.Nombre,
+		Ambito:               cuerpo.Ambito,
 		Permisos:             cuerpo.Permisos,
 	}, nil
 }

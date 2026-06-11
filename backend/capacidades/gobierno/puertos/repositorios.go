@@ -10,6 +10,11 @@ import (
 type RepositorioEmpresa interface {
 	BuscarPorIdentificador(ctx context.Context, id identificador.Identificador) (dominio.Empresa, bool, error)
 	Guardar(ctx context.Context, empresa dominio.Empresa) error
+	Crear(ctx context.Context, empresa dominio.Empresa) error
+}
+
+type AprovisionadorDeAccesos interface {
+	SembrarRolesDeSistema(ctx context.Context, idEmpresa identificador.Identificador, definiciones []dominio.DefinicionDeRolDeSistema) error
 }
 
 type RepositorioUsuario interface {
