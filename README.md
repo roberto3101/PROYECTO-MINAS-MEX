@@ -11,7 +11,7 @@ PROYECTO-MINAS-MEX/
 ├── documentacion/                 Sitio HTML del modelo de datos (se despliega en Vercel)
 │   ├── index.html                 portada (9 capacidades)
 │   ├── diagrama-general.html      mapa interactivo de las 50 tablas (clic → capacidad)
-│   ├── 01..09-*.html              una página por capacidad
+│   ├── 01..10-*.html              una página por capacidad (incluye 10-seguridad)
 │   ├── estilos.css · scripts.js   compartidos
 │   ├── vercel.json                config de despliegue
 │   └── README.md                  cómo desplegar en Vercel
@@ -19,7 +19,7 @@ PROYECTO-MINAS-MEX/
     └── base-de-datos/             Esquema PostgreSQL (fuente de verdad)
         ├── esquema/               00..60 DDL por capacidad + índices + vistas + seguridad RLS
         ├── semilla/20_seed.sql    datos de ejemplo
-        ├── pruebas/30_tests.sql   38 tests: integración/lógica/gobernanza/aislamiento/RBAC/permisos
+        ├── pruebas/30_tests.sql   42 tests: integración/lógica/gobernanza/aislamiento/RBAC/permisos/seguridad
         ├── pruebas/40_escenario_usuarios.sql   E2E: ciclo de vida real de una empresa y sus usuarios
         ├── pruebas/agentes/       baterías de auditoría senior
         ├── ejecutar.ps1           carga todo en orden
@@ -30,9 +30,15 @@ PROYECTO-MINAS-MEX/
 > poder desplegarla sola en Vercel sin exponer el esquema ni el backend.
 
 ## Base de datos
-PostgreSQL 17. **52 tablas** en 9 capacidades (schemas: gobierno, catalogos, produccion,
-planeacion, reconciliacion, beneficio, estandares, costos, inversiones), **19 vistas**
-(+1 materializada) y **38 tests + escenario E2E** que pasan en local.
+PostgreSQL 17. **54 tablas** en 10 capacidades (schemas: gobierno, catalogos, produccion,
+planeacion, reconciliacion, beneficio, estandares, costos, inversiones, seguridad), **19 vistas**
+(+1 materializada) y **42 tests + escenario E2E** que pasan en local.
+
+**Seguridad** (capa nueva, datos puros): `tipo_incidente` (catálogo por empresa) e
+`incidente` (evento append-only) capturan incidentes y casi-pérdidas en mina —
+complementa las demoras de producción sin depender de hardware. **Roadmap documentado,
+no implementado:** mantenimiento/órdenes de trabajo y muestreo/grade control. El modelado
+geológico 3D queda fuera de alcance a propósito (otra categoría de producto).
 
 **Modelo de administración** (estándar B2B enterprise): la **plataforma** (superadmin)
 crea las empresas — con su branding (logo, color, zona horaria, moneda) —; el

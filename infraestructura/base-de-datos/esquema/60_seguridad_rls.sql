@@ -29,7 +29,7 @@ BEGIN
 END $$;
 
 GRANT USAGE ON SCHEMA gobierno, catalogos, produccion, planeacion, reconciliacion,
-                      beneficio, estandares, costos, inversiones, reportes TO aplicacion;
+                      beneficio, estandares, costos, inversiones, seguridad, reportes TO aplicacion;
 
 -- ---------- (3) Privilegios por tipo de tabla ----------
 -- Mutables (tienen actualizado_en): SELECT, INSERT, UPDATE (el "borrado" es UPDATE de eliminado_en).
@@ -45,7 +45,7 @@ BEGIN
                      AND c.column_name = 'actualizado_en') AS es_mutable
     FROM information_schema.tables tb
     WHERE tb.table_type = 'BASE TABLE'
-      AND tb.table_schema IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
+      AND tb.table_schema IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
   LOOP
     IF t.es_mutable THEN
       EXECUTE format('GRANT SELECT, INSERT, UPDATE ON %I.%I TO aplicacion', t.s, t.n);
@@ -89,7 +89,7 @@ BEGIN
     JOIN information_schema.tables tb
       ON tb.table_schema = c.table_schema AND tb.table_name = c.table_name AND tb.table_type = 'BASE TABLE'
     WHERE c.column_name = 'id_empresa'
-      AND c.table_schema IN ('gobierno','catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
+      AND c.table_schema IN ('gobierno','catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
   LOOP
     EXECUTE format('ALTER TABLE %I.%I ENABLE ROW LEVEL SECURITY', t.s, t.n);
     EXECUTE format('ALTER TABLE %I.%I FORCE ROW LEVEL SECURITY', t.s, t.n);

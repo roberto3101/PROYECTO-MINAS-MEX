@@ -8,6 +8,7 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;   -- gen_random_uuid()
 
 DROP SCHEMA IF EXISTS reportes       CASCADE;
+DROP SCHEMA IF EXISTS seguridad      CASCADE;
 DROP SCHEMA IF EXISTS inversiones    CASCADE;
 DROP SCHEMA IF EXISTS estandares     CASCADE;
 DROP SCHEMA IF EXISTS beneficio      CASCADE;
@@ -27,6 +28,7 @@ CREATE SCHEMA beneficio;       -- planta de beneficio: recepción, molienda, ley
 CREATE SCHEMA estandares;      -- metas de tiempos/movimientos y productividades
 CREATE SCHEMA costos;          -- estimaciones, costos unitarios, cut-off, presupuesto
 CREATE SCHEMA inversiones;     -- inversión por obra/periodo, activos, acero
+CREATE SCHEMA seguridad;       -- incidentes y casi-pérdidas de seguridad (datos puros)
 CREATE SCHEMA reportes;        -- vistas/materializadas de entregables (derivados)
 
 COMMENT ON SCHEMA produccion IS 'Captura del Real. Cabecera (parte_*) = Raiz; detalle (viaje/ciclo/avance) = Evento append-only.';

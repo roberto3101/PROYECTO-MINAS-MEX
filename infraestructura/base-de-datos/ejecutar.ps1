@@ -27,8 +27,9 @@ $esquema = @(
   'esquema\00_reset_y_esquemas.sql','esquema\01_gobierno.sql','esquema\02_catalogos.sql',
   'esquema\03_produccion.sql','esquema\04_planeacion.sql','esquema\05_reconciliacion.sql',
   'esquema\06_costos.sql','esquema\07_explosivo.sql','esquema\08_beneficio.sql',
-  'esquema\09_estandares.sql','esquema\10_inversiones.sql','esquema\11_indices.sql',
-  'esquema\12_integridad_tenant.sql','esquema\50_vistas.sql','esquema\60_seguridad_rls.sql'
+  'esquema\09_estandares.sql','esquema\10_inversiones.sql','esquema\10_seguridad.sql',
+  'esquema\11_indices.sql','esquema\12_integridad_tenant.sql','esquema\50_vistas.sql',
+  'esquema\60_seguridad_rls.sql'
 )
 $datos  = @('semilla\20_seed.sql')
 $tests  = @('pruebas\30_tests.sql','pruebas\40_escenario_usuarios.sql')

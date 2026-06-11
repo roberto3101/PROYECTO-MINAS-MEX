@@ -27,8 +27,8 @@ BEGIN
     JOIN pg_class cc      ON cc.oid = c.conrelid
     JOIN pg_namespace cn  ON cn.oid = cc.relnamespace
     WHERE c.contype = 'f'
-      AND cn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
-      AND pn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
+      AND cn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
+      AND pn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
       AND EXISTS (SELECT 1 FROM pg_attribute a
                   WHERE a.attrelid = c.confrelid AND a.attname = 'id_empresa'
                     AND a.attnum > 0 AND NOT a.attisdropped)
@@ -56,8 +56,8 @@ BEGIN
     WHERE c.contype = 'f'
       AND array_length(c.conkey, 1) = 1
       AND a.attname <> 'id_empresa'
-      AND cn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
-      AND pn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
+      AND cn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
+      AND pn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
       AND EXISTS (SELECT 1 FROM pg_attribute x
                   WHERE x.attrelid = c.conrelid AND x.attname = 'id_empresa'
                     AND x.attnum > 0 AND NOT x.attisdropped)
@@ -93,8 +93,8 @@ BEGIN
   JOIN pg_attribute a   ON a.attrelid = c.conrelid AND a.attnum = c.conkey[1]
   WHERE c.contype = 'f' AND array_length(c.conkey,1) = 1
     AND a.attname <> 'id_empresa'
-    AND cn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones')
-    AND pn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones');
+    AND cn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad')
+    AND pn.nspname IN ('catalogos','produccion','planeacion','reconciliacion','beneficio','estandares','costos','inversiones','seguridad');
   IF v_rest <> 0 THEN
     RAISE EXCEPTION 'Blindaje tenant INCOMPLETO: quedan % FKs simples de negocio', v_rest;
   END IF;

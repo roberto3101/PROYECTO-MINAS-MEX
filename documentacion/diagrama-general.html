@@ -12,7 +12,7 @@
   <div class="wrap">
     <p class="eyebrow">Mapa completo del modelo de datos</p>
     <h1>Diagrama general interactivo</h1>
-    <p class="sub">Las <b>52 tablas</b> del sistema en un solo mapa, agrupadas por <b>capacidad</b> y coloreadas por su tipo DDD. <b>Haz clic en cualquier tabla</b> para ir a la página de su capacidad. Usa los controles para ampliar, reducir o ver en pantalla completa.</p>
+    <p class="sub">Las <b>54 tablas</b> del sistema en un solo mapa, agrupadas por <b>capacidad</b> y coloreadas por su tipo DDD. <b>Haz clic en cualquier tabla</b> para ir a la página de su capacidad. Usa los controles para ampliar, reducir o ver en pantalla completa.</p>
     <nav class="nav">
       <a href="index.html">Índice</a>
       <a href="diagrama-general.html" class="activo">Diagrama</a>
@@ -25,6 +25,7 @@
       <a href="07-estandares.html">7 · Estándares</a>
       <a href="08-costos.html">8 · Costos</a>
       <a href="09-inversiones.html">9 · Inversiones</a>
+      <a href="10-seguridad.html">10 &middot; Seguridad</a>
     </nav>
   </div>
 </header>
@@ -44,7 +45,7 @@
     </div>
 
     <div class="dgrm">
-      <div class="dgrm-bar"><span class="ttl">sistema completo</span><span class="cap">52 tablas · 9 capacidades · clic para navegar</span>
+      <div class="dgrm-bar"><span class="ttl">sistema completo</span><span class="cap">54 tablas · 10 capacidades · clic para navegar</span>
         <span class="ctrls"><button data-z="out">−</button><button data-z="in">+</button><button data-z="reset">Reset</button><button data-z="full">Expandir</button></span></div>
       <div class="dgrm-view" style="max-height:78vh"><div class="dgrm-scale"><pre class="mermaid">
 flowchart TB
@@ -142,6 +143,12 @@ direction LR
   i_ace["consumo_acero"]:::evento
 end
 
+subgraph G10["10 · seguridad"]
+direction LR
+  s_ti["tipo_incidente"]:::catalogo
+  s_inc["incidente"]:::evento
+end
+
 rep["capa reportes · 19 vistas + 1 materializada\n(plan vs real · balance de cargas · tiempos vs estándar · reconciliación ...)"]:::vistas
 
 g_sa -.->|crea tenants| g_emp
@@ -194,6 +201,10 @@ pl_rebaje -.-> co_cut
 
 c_obra -.-> i_inv
 c_obra -.-> i_ace
+
+c_mina -.-> s_inc
+c_obra -.-> s_inc
+s_ti --> s_inc
 
 p_av -.->|REAL| rep
 pl_meta -.->|PLAN| rep
@@ -251,6 +262,8 @@ click co_cut "08-costos.html" "Costos"
 click i_act "09-inversiones.html" "Inversiones"
 click i_inv "09-inversiones.html" "Inversiones"
 click i_ace "09-inversiones.html" "Inversiones"
+click s_ti "10-seguridad.html" "Seguridad"
+click s_inc "10-seguridad.html" "Seguridad"
 </pre></div></div>
     </div>
 
@@ -260,7 +273,7 @@ click i_ace "09-inversiones.html" "Inversiones"
 
 <footer>
   <div class="wrap">
-    <p><b>Diagrama general</b> · 52 tablas · 9 capacidades · PostgreSQL 17. <a href="index.html">Volver al índice</a></p>
+    <p><b>Diagrama general</b> · 54 tablas · 10 capacidades · PostgreSQL 17. <a href="index.html">Volver al índice</a></p>
   </div>
 </footer>
 

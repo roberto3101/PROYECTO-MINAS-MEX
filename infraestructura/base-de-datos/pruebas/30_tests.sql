@@ -486,6 +486,67 @@ DO $$ DECLARE v int; BEGIN
 END $$;
 RESET ROLE;
 
+-- ===== Capa seguridad (incidentes) =====
+SELECT set_config('app.t_emp_a', :'emp_a', false);
+SELECT set_config('app.t_mina_b', :'mina_b', false);
+
+-- T39: catálogo de tipos de incidente sembrado y aislado por tenant
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM seguridad.tipo_incidente WHERE eliminado_en IS NULL;
+  IF v <> 7 THEN RAISE EXCEPTION 'T39 FALLO: MIN debe ver 7 tipos de incidente, ve %', v; END IF;
+  RAISE NOTICE 'OK  T39: catalogo de 7 tipos de incidente, aislado por tenant';
+END $$;
+RESET ROLE;
+
+-- T40: incidente es evento append-only (aplicacion no tiene UPDATE)
+SET ROLE aplicacion;
+DO $$ BEGIN
+  BEGIN
+    UPDATE seguridad.incidente SET severidad = 'CRITICA' WHERE true;
+    RAISE EXCEPTION 'T40 FALLO: se pudo UPDATE un evento append-only';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  RAISE NOTICE 'OK  T40: incidente append-only (sin UPDATE para aplicacion)';
+END $$;
+RESET ROLE;
+
+-- T41: FK compuesta impide referenciar la mina de otra empresa
+DO $$ DECLARE v_tipo uuid; v_emp uuid; v_minab uuid; BEGIN
+  v_emp   := current_setting('app.t_emp_a')::uuid;
+  v_minab := current_setting('app.t_mina_b')::uuid;
+  SELECT id INTO v_tipo FROM seguridad.tipo_incidente WHERE id_empresa = v_emp AND codigo = 'CASIPERDIDA';
+  BEGIN
+    INSERT INTO seguridad.incidente (id_empresa, id_mina, id_tipo_incidente, fecha, turno, severidad, descripcion)
+    VALUES (v_emp, v_minab, v_tipo, '2026-06-10','M','BAJA','cruzado');
+    RAISE EXCEPTION 'T41 FALLO: se inserto incidente con mina de otro tenant';
+  EXCEPTION WHEN foreign_key_violation THEN NULL;
+  END;
+  RAISE NOTICE 'OK  T41: FK compuesta impide incidente con mina de otra empresa';
+END $$;
+
+-- T42: captura de incidente por aplicacion + RLS fail-closed
+SELECT set_config('app.empresa_actual', :'emp_a', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v_tipo uuid; v_mina uuid; v_n int; BEGIN
+  SELECT id INTO v_tipo FROM seguridad.tipo_incidente WHERE codigo = 'LESION';
+  SELECT id INTO v_mina FROM catalogos.mina LIMIT 1;
+  INSERT INTO seguridad.incidente (id_empresa, id_mina, id_tipo_incidente, fecha, turno, severidad, descripcion)
+  VALUES (current_setting('app.empresa_actual')::uuid, v_mina, v_tipo, '2026-06-10','N','ALTA','Prueba de captura de incidente.');
+  SELECT count(*) INTO v_n FROM seguridad.incidente;
+  IF v_n < 3 THEN RAISE EXCEPTION 'T42 FALLO: no se capturo el incidente (visibles=%)', v_n; END IF;
+END $$;
+RESET ROLE;
+SELECT set_config('app.empresa_actual', '', false);
+SET ROLE aplicacion;
+DO $$ DECLARE v int; BEGIN
+  SELECT count(*) INTO v FROM seguridad.incidente;
+  IF v <> 0 THEN RAISE EXCEPTION 'T42 FALLO: fail-closed roto, % filas sin tenant', v; END IF;
+  RAISE NOTICE 'OK  T42: captura de incidente por aplicacion + RLS fail-closed (0 sin tenant)';
+END $$;
+RESET ROLE;
+
 SELECT set_config('app.empresa_actual', '', false);
 
 DO $$ BEGIN RAISE NOTICE '========================================'; RAISE NOTICE 'TODOS LOS TESTS PASARON'; RAISE NOTICE '========================================'; END $$;

@@ -293,5 +293,32 @@ INSERT INTO inversiones.consumo_acero (id_empresa, id_mina, id_obra, fecha, tipo
  (:'emp', :'m_cien', :'obra_reb','2026-06-01','Split set',120,'pza'),
  (:'emp', :'m_cien', :'obra_reb','2026-06-01','Malla electrosoldada',45,'m2');
 
+-- ---- Seguridad: catálogo de tipos de incidente (por CADA empresa) ----
+INSERT INTO seguridad.tipo_incidente (id_empresa, codigo, descripcion, requiere_paro)
+SELECT e.id, t.codigo, t.descripcion, t.requiere_paro
+FROM gobierno.empresa e
+CROSS JOIN (VALUES
+  ('CASIPERDIDA','Casi-perdida sin lesion ni dano', false),
+  ('LESION','Lesion a una persona', true),
+  ('CAIDA_ROCA','Caida de roca / desprendimiento', true),
+  ('DERRAME','Derrame de hidrocarburo o reactivo', false),
+  ('ELECTRICO','Evento electrico', true),
+  ('INCENDIO','Amago o incendio', true),
+  ('VEHICULO','Incidente de equipo movil', true)
+) AS t(codigo, descripcion, requiere_paro)
+WHERE e.eliminado_en IS NULL;
+
+-- ---- Seguridad: incidentes de ejemplo (empresa MIN) ----
+INSERT INTO seguridad.incidente (id_empresa, id_mina, id_obra, id_tipo_incidente, id_reportado_por, fecha, turno, severidad, descripcion, accion_inmediata)
+SELECT :'emp', :'m_cien', :'obra_reb', ti.id, :'e_juan', '2026-06-08','M','BAJA',
+       'Casi-perdida: roca suelta detectada en el tope antes de iniciar barrenacion.',
+       'Se acuno la zona y se reviso el sostenimiento antes de continuar.'
+FROM seguridad.tipo_incidente ti WHERE ti.id_empresa = :'emp' AND ti.codigo = 'CASIPERDIDA';
+INSERT INTO seguridad.incidente (id_empresa, id_mina, id_obra, id_tipo_incidente, id_reportado_por, fecha, turno, severidad, descripcion, accion_inmediata)
+SELECT :'emp', :'m_cien', :'obra_rpa', ti.id, :'e_cesar', '2026-06-09','V','MEDIA',
+       'Derrame menor de aceite hidraulico del scooptram en la rampa.',
+       'Se contuvo con material absorbente y se reporto a mantenimiento.'
+FROM seguridad.tipo_incidente ti WHERE ti.id_empresa = :'emp' AND ti.codigo = 'DERRAME';
+
 -- Estadísticas para el planificador (tras cargar datos)
 ANALYZE;

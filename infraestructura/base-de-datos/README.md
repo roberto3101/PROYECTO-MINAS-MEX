@@ -4,7 +4,7 @@ Esquema **PostgreSQL 17**, organizado por **capacidades** (schemas), con DDD lig
 UUID, multi-tenant, auditoría inline, eventos append-only, índices únicos parciales y
 vistas de reportes. El **aislamiento multi-tenant vive en la base** (RLS + FK compuestas
 + privilegios), no en el código de la aplicación. Todo el pipeline (esquema → vistas →
-seed → tests) se ejecuta y **pasa en local** (38 pruebas + un escenario E2E de usuarios
+seed → tests) se ejecuta y **pasa en local** (42 pruebas + un escenario E2E de usuarios
 reales, auditada además por subagentes senior).
 
 ## Cómo ejecutar
@@ -26,7 +26,7 @@ cd C:\Users\user\Desktop\MinasSali\infraestructura\base-de-datos
 ```
 Imprime `TODOS LOS TESTS PASARON` al final si todo está correcto.
 
-## Páginas (capacidades) — 52 tablas
+## Páginas (capacidades) — 54 tablas
 ```
 infraestructura/base-de-datos/esquema/
 ├── 00_reset_y_esquemas.sql   schemas por capacidad (idempotente)
@@ -44,12 +44,13 @@ infraestructura/base-de-datos/esquema/
 ├── 08_beneficio.sql          (3)  lote_molienda, ley_metalurgica (cabeza/conc/cola), recuperacion
 ├── 09_estandares.sql         (2)  estandar_tiempo, estandar_productividad
 ├── 10_inversiones.sql        (3)  activo, inversion, consumo_acero
+├── 10_seguridad.sql          (2)  tipo_incidente (catálogo), incidente (evento append-only)
 ├── 11_indices.sql            índices de FK + parciales para escala (rendimiento)
 ├── 12_integridad_tenant.sql  FKs COMPUESTAS (id_empresa, id): imposible referenciar otro tenant
 ├── 50_vistas.sql             19 vistas + 1 materializada (capa reportes)
 └── 60_seguridad_rls.sql      rol `aplicacion`, RLS fail-closed, security_invoker, privilegios
 semilla/20_seed.sql           datos de ejemplo (Excel real + tenant B mínimo para aislamiento)
-pruebas/30_tests.sql          38 tests: integración, lógica, gobernanza, aislamiento, RBAC y permisos
+pruebas/30_tests.sql          42 tests: integración, lógica, gobernanza, aislamiento, RBAC, permisos y seguridad
 pruebas/40_escenario_usuarios.sql  E2E de usuarios reales: plataforma aprovisiona empresa con branding →
                                    admin configura y da de alta operador (alcance por mina) → operador
                                    captura → aislamiento → permisos efectivos → revocación y baja

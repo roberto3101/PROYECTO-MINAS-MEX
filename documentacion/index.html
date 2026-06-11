@@ -12,10 +12,10 @@
   <div class="wrap">
     <p class="eyebrow">Sistema de Planeación y Producción Minera</p>
     <h1>Modelo de datos · Lenguaje ubicuo &amp; DDD</h1>
-    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 52 tablas · 19 vistas (con 1 materializada) · 38 pruebas en verde.</p>
+    <p class="sub">El modelo completo en <b>PostgreSQL</b>, organizado por <b>capacidades</b>. Una página por capacidad: su dominio, los cuatro tipos DDD, el diagrama, las tablas y el DDL real. 54 tablas · 19 vistas (con 1 materializada) · 42 pruebas en verde.</p>
     <div class="chips">
       <span class="chip">PostgreSQL 17</span>
-      <span class="chip">9 capacidades</span>
+      <span class="chip">10 capacidades</span>
       <span class="chip">UUID · multi-tenant · append-only</span>
       <span class="chip">Aislamiento RLS en la BD</span>
       <span class="chip">Auditoría inline + borrado lógico</span>
@@ -41,7 +41,8 @@
 <section style="padding-top:0">
   <div class="wrap">
     <p class="eyebrow">Capacidades</p>
-    <h2>Las 9 capacidades del modelo</h2>
+    <h2>Las 10 capacidades del modelo</h2>
+    <p class="lead" style="margin-top:0;color:#7a8499;font-size:13px">9 capacidades del núcleo + <b>seguridad</b> (capa nueva). La capa transversal <span class="mono">gobierno</span> cuenta como capacidad 1.</p>
     <p class="lead">Una página por capacidad para mantener cada documento enfocado y con su propio diagrama.</p>
     <div class="paginas">
 
@@ -49,8 +50,8 @@
         <span class="pgnum">◈</span>
         <div class="pgcap">mapa completo</div>
         <h3>Diagrama general interactivo</h3>
-        <p>Las <b>52 tablas</b> y sus relaciones en un solo mapa, agrupadas por capacidad y coloreadas por tipo DDD. Haz clic en cualquier tabla para ir a su página.</p>
-        <div class="pgmeta">52 tablas · 9 capacidades · clic para navegar</div>
+        <p>Las <b>54 tablas</b> y sus relaciones en un solo mapa, agrupadas por capacidad y coloreadas por tipo DDD. Haz clic en cualquier tabla para ir a su página.</p>
+        <div class="pgmeta">54 tablas · 10 capacidades · clic para navegar</div>
       </a>
 
       <a class="pgcard" href="01-gobierno.html">
@@ -125,7 +126,40 @@
         <div class="pgmeta">3 tablas · control de inversiones</div>
       </a>
 
+      <a class="pgcard" href="10-seguridad.html">
+        <span class="pgnum">10</span>
+        <div class="pgcap">seguridad</div>
+        <h3>Seguridad</h3>
+        <p>Incidentes y casi-pérdidas en mina: catálogo de tipos y evento append-only. Datos puros (sin hardware), complementa las demoras de producción.</p>
+        <div class="pgmeta">2 tablas · incidentes (append-only)</div>
+      </a>
+
     </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <p class="eyebrow">Roadmap</p>
+    <h2>Mejoras futuras — analizadas, aún no implementadas</h2>
+    <p class="lead">Tras comparar con los sistemas mineros líderes (Hexagon, Pitram, Datamine), estas dos capacidades son <b>datos puros</b> que encajarían en el modelo. Quedan documentadas como roadmap; <b>todavía no forman parte del esquema</b> y se agregarán con sus pruebas correspondientes cuando se prioricen.</p>
+    <div class="paginas">
+      <div class="pgcard" style="cursor:default;border-style:dashed;background:#fbfbfd">
+        <span class="pgnum" style="color:#b4b2a9">+</span>
+        <div class="pgcap">mantenimiento</div>
+        <h3>Mantenimiento y activos <span class="nuevo" style="background:#eef0f4;color:#7a8499">no implementado</span></h3>
+        <p>Órdenes de trabajo (correctivo/preventivo) sobre <span class="mono">equipo</span> y <span class="mono">activo</span>: costo, paro y vida útil. Complementa las demoras y el módulo de inversiones.</p>
+        <div class="pgmeta">roadmap · datos puros</div>
+      </div>
+      <div class="pgcard" style="cursor:default;border-style:dashed;background:#fbfbfd">
+        <span class="pgnum" style="color:#b4b2a9">+</span>
+        <div class="pgcap">geología</div>
+        <h3>Muestreo y grade control <span class="nuevo" style="background:#eef0f4;color:#7a8499">no implementado</span></h3>
+        <p>Captura de ensayes y muestras de canal que alimentan la <b>ley</b> antes del block model. Hoy consumimos la ley ya estimada; esto registraría su origen.</p>
+        <div class="pgmeta">roadmap · datos puros</div>
+      </div>
+    </div>
+    <p class="nota" style="margin-top:14px">El <b>modelado geológico 3D</b> (block model, diseño de mina, optimización de pits) es otra categoría de producto (CAD geológico tipo Vulcan/Datamine/Deswik), <b>fuera de alcance</b> a propósito: nuestro sistema consume su salida (la ley), no la produce.</p>
   </div>
 </section>
 
