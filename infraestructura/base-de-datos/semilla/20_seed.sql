@@ -99,18 +99,10 @@ INSERT INTO catalogos.empleado (id, id_empresa, id_mina, numero_nomina, nombre_c
  (:'e_maria',:'emp', :'m_sat', 'EMP004','MARIA LOPEZ RUIZ',      (SELECT id FROM catalogos.departamento WHERE id_empresa=:'emp' AND codigo='MINA'),     (SELECT id FROM catalogos.puesto WHERE id_empresa=:'emp' AND codigo='OP_CAMION'),'007-0004'),
  (:'e_rey',  :'emp', :'m_cien','EMP005','REYNALDO JIMENEZ',      (SELECT id FROM catalogos.departamento WHERE id_empresa=:'emp' AND codigo='GERENCIA'), (SELECT id FROM catalogos.puesto WHERE id_empresa=:'emp' AND codigo='GERENTE'),'001-0001');
 
--- ---- RBAC: roles de sistema (semilla por CADA empresa), admin de empresa y superadmin ----
+-- ---- RBAC: unico rol de sistema por empresa = Administrador (resto los crea cada empresa) ----
 INSERT INTO gobierno.rol (id_empresa, codigo, descripcion, es_sistema)
-SELECT e.id, r.codigo, r.descripcion, true
-FROM gobierno.empresa e
-CROSS JOIN (VALUES
-  ('ADMIN_EMPRESA','Administra usuarios, roles y catalogos de su empresa'),
-  ('JEFE_TURNO','Supervisa la operacion del turno y valida partes'),
-  ('CAPITAN_MINA','Captura y valida partes de su mina'),
-  ('OPERADOR','Captura sus propios partes de operacion'),
-  ('PLANEACION','Gestiona plan de bloques, metas y reportes'),
-  ('LECTURA','Solo consulta tableros y reportes')
-) AS r(codigo, descripcion);
+SELECT e.id, 'ADMIN_EMPRESA', 'Administrador de la empresa: acceso total a todas las minas', true
+FROM gobierno.empresa e;
 
 \set usr_admin '22222222-2222-2222-2222-222222222223'
 -- contraseña de pruebas: Mina#2026 (bcrypt)
@@ -158,29 +150,12 @@ INSERT INTO gobierno.permiso (codigo, descripcion, modulo) VALUES
  ('reportes.ver','Consultar tableros y reportes','reportes'),
  ('reportes.exportar','Exportar reportes','reportes');
 
--- ---- Matriz de permisos de los roles de SISTEMA (por cada empresa) ----
--- ADMIN_EMPRESA: todos los permisos del catalogo.
+-- ---- Matriz de permisos del rol Administrador (todos los permisos del catalogo) ----
+-- Los demas roles los crea cada empresa eligiendo permisos del catalogo global.
 INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
 SELECT r.id_empresa, r.id, p.id
 FROM gobierno.rol r CROSS JOIN gobierno.permiso p
 WHERE r.codigo = 'ADMIN_EMPRESA' AND r.es_sistema;
--- Resto de roles: matriz minima profesional.
-INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
-SELECT r.id_empresa, r.id, p.id
-FROM gobierno.rol r
-JOIN (VALUES
-  ('JEFE_TURNO','produccion.ver'),('JEFE_TURNO','produccion.capturar'),('JEFE_TURNO','produccion.editar'),
-  ('JEFE_TURNO','catalogos.ver'),('JEFE_TURNO','planeacion.ver'),('JEFE_TURNO','estandares.ver'),('JEFE_TURNO','reportes.ver'),
-  ('CAPITAN_MINA','produccion.ver'),('CAPITAN_MINA','produccion.capturar'),('CAPITAN_MINA','catalogos.ver'),('CAPITAN_MINA','reportes.ver'),
-  ('OPERADOR','produccion.ver'),('OPERADOR','produccion.capturar'),
-  ('PLANEACION','planeacion.ver'),('PLANEACION','planeacion.editar'),('PLANEACION','reconciliacion.ver'),('PLANEACION','reconciliacion.capturar'),
-  ('PLANEACION','costos.ver'),('PLANEACION','costos.editar'),('PLANEACION','estandares.ver'),('PLANEACION','estandares.editar'),
-  ('PLANEACION','catalogos.ver'),('PLANEACION','reportes.ver'),('PLANEACION','reportes.exportar'),
-  ('LECTURA','catalogos.ver'),('LECTURA','produccion.ver'),('LECTURA','planeacion.ver'),('LECTURA','reconciliacion.ver'),
-  ('LECTURA','beneficio.ver'),('LECTURA','estandares.ver'),('LECTURA','costos.ver'),('LECTURA','inversiones.ver'),('LECTURA','reportes.ver')
-) AS m(rol_codigo, permiso_codigo)
-  ON m.rol_codigo = r.codigo AND r.es_sistema
-JOIN gobierno.permiso p ON p.codigo = m.permiso_codigo;
 
 -- ---- Minerales ----
 INSERT INTO catalogos.mineral (id_empresa, id_mina, id_tipo_mineral, nombre, unidad_medida, ley) VALUES

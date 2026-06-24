@@ -337,12 +337,12 @@ SELECT set_config('app.empresa_actual', :'emp_a', false);
 SET ROLE aplicacion;
 DO $$ DECLARE v int; BEGIN
   SELECT count(*) INTO v FROM gobierno.rol;
-  IF v <> 6 THEN RAISE EXCEPTION 'T30 FALLO: tenant A debe ver 6 roles de sistema, ve %', v; END IF;
+  IF v <> 1 THEN RAISE EXCEPTION 'T30 FALLO: tenant A debe ver 1 rol de sistema (Administrador), ve %', v; END IF;
   SELECT count(*) INTO v FROM gobierno.usuario_rol ur
     JOIN gobierno.usuario u ON u.id = ur.id_usuario
     WHERE u.usuario = 'admin.mina' AND ur.eliminado_en IS NULL;
   IF v <> 1 THEN RAISE EXCEPTION 'T30 FALLO: admin.mina debe tener 1 rol vigente, tiene %', v; END IF;
-  RAISE NOTICE 'OK  T30: RBAC por tenant (6 roles sistema; admin.mina con ADMIN_EMPRESA vigente)';
+  RAISE NOTICE 'OK  T30: RBAC por tenant (solo Administrador sembrado; admin.mina con ADMIN_EMPRESA vigente)';
 END $$;
 RESET ROLE;
 
@@ -413,13 +413,13 @@ RESET ROLE;
 -- T35: roles de SISTEMA protegidos; roles propios personalizables
 SET ROLE aplicacion;
 DO $$ DECLARE v int; v_rol uuid; BEGIN
-  UPDATE gobierno.rol SET descripcion = 'hackeado' WHERE codigo='OPERADOR';
+  UPDATE gobierno.rol SET descripcion = 'hackeado' WHERE codigo='ADMIN_EMPRESA';
   GET DIAGNOSTICS v = ROW_COUNT;
   IF v <> 0 THEN RAISE EXCEPTION 'T35 FALLO: se pudo editar un rol de sistema (% filas)', v; END IF;
   BEGIN
     INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
     SELECT r.id_empresa, r.id, p.id FROM gobierno.rol r, gobierno.permiso p
-    WHERE r.codigo='OPERADOR' AND p.codigo='auditoria.ver';
+    WHERE r.codigo='ADMIN_EMPRESA' AND p.codigo='auditoria.ver';
     RAISE EXCEPTION 'T35 FALLO: se pudo alterar la matriz de un rol de sistema';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;

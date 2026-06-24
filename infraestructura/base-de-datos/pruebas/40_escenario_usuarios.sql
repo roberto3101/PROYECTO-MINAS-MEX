@@ -48,25 +48,14 @@ VALUES (:'c_emp', 'MIN3', 'Minera Tres SA de CV', 'MTR240101XX1', 'contacto@mine
 INSERT INTO gobierno.usuario (id, id_empresa, usuario, nombre, correo)
 VALUES (:'c_adm', :'c_emp', 'admin.tres', 'ADMIN MINERA TRES', 'admin@mineratres.mx');
 INSERT INTO gobierno.rol (id_empresa, codigo, descripcion, es_sistema)
-SELECT :'c_emp', r.codigo, r.descripcion, true
-FROM (VALUES
-  ('ADMIN_EMPRESA','Administra usuarios, roles y catalogos de su empresa'),
-  ('JEFE_TURNO','Supervisa la operacion del turno y valida partes'),
-  ('CAPITAN_MINA','Captura y valida partes de su mina'),
-  ('OPERADOR','Captura sus propios partes de operacion'),
-  ('PLANEACION','Gestiona plan de bloques, metas y reportes'),
-  ('LECTURA','Solo consulta tableros y reportes')
-) AS r(codigo, descripcion);
-INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)      -- ADMIN: todo el catalogo
+VALUES (:'c_emp', 'ADMIN_EMPRESA', 'Administrador de la empresa: acceso total a todas las minas', true);
+INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)      -- Administrador: todo el catalogo
 SELECT :'c_emp', r.id, p.id FROM gobierno.rol r CROSS JOIN gobierno.permiso p
 WHERE r.id_empresa = :'c_emp' AND r.codigo='ADMIN_EMPRESA';
-INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)      -- OPERADOR: capturar y ver
-SELECT :'c_emp', r.id, p.id FROM gobierno.rol r JOIN gobierno.permiso p ON p.codigo IN ('produccion.ver','produccion.capturar')
-WHERE r.id_empresa = :'c_emp' AND r.codigo='OPERADOR';
-INSERT INTO gobierno.usuario_rol (id_empresa, id_usuario, id_rol)      -- el primer admin
+INSERT INTO gobierno.usuario_rol (id_empresa, id_usuario, id_rol)      -- el primer admin, alcance global
 SELECT :'c_emp', :'c_adm', r.id FROM gobierno.rol r WHERE r.id_empresa = :'c_emp' AND r.codigo='ADMIN_EMPRESA';
 RESET ROLE;
-DO $$ BEGIN RAISE NOTICE 'OK  E1: plataforma aprovisiono MIN3 (branding+admin+6 roles+matriz) SIN tocar datos operativos'; END $$;
+DO $$ BEGIN RAISE NOTICE 'OK  E1: plataforma aprovisiono MIN3 (branding + admin + rol Administrador) SIN tocar datos operativos'; END $$;
 
 -- ===== E2 (admin de MIN3 en la app): configura catálogos y su equipo de trabajo =====
 SELECT set_config('app.empresa_actual', :'c_emp', false);
@@ -84,10 +73,16 @@ INSERT INTO catalogos.empleado (id, id_empresa, id_mina, numero_nomina, nombre_c
 VALUES (:'c_emple', :'c_emp', :'c_mina', 'C3-001','OPERADOR DEMO TRES');
 INSERT INTO gobierno.usuario (id, id_empresa, id_empleado, usuario, nombre)
 VALUES (:'c_opu', :'c_emp', :'c_emple', 'op.tres', 'OPERADOR DEMO TRES');
-INSERT INTO gobierno.usuario_rol (id, id_empresa, id_usuario, id_rol, id_mina)   -- rol con ALCANCE a su mina
+-- el admin crea un rol PROPIO (no de sistema) eligiendo permisos del catalogo
+INSERT INTO gobierno.rol (id_empresa, codigo, descripcion, es_sistema)
+VALUES (:'c_emp', 'OPERADOR', 'Captura sus propios partes de operacion', false);
+INSERT INTO gobierno.rol_permiso (id_empresa, id_rol, id_permiso)
+SELECT :'c_emp', r.id, p.id FROM gobierno.rol r JOIN gobierno.permiso p ON p.codigo IN ('produccion.ver','produccion.capturar')
+WHERE r.id_empresa = :'c_emp' AND r.codigo='OPERADOR';
+INSERT INTO gobierno.usuario_rol (id, id_empresa, id_usuario, id_rol, id_mina)   -- rol propio con ALCANCE a su mina
 SELECT :'c_ur', :'c_emp', :'c_opu', r.id, :'c_mina'
 FROM gobierno.rol r WHERE r.id_empresa = :'c_emp' AND r.codigo='OPERADOR';
-DO $$ BEGIN RAISE NOTICE 'OK  E2: admin configuro catalogos minimos y dio de alta a op.tres con rol OPERADOR alcance Mina Tres Norte'; END $$;
+DO $$ BEGIN RAISE NOTICE 'OK  E2: admin creo rol propio OPERADOR y dio de alta a op.tres con alcance Mina Tres Norte'; END $$;
 
 -- ===== E3 (op.tres captura su turno): parte + viajes con observaciones =====
 INSERT INTO produccion.parte_acarreo (id, id_empresa, id_mina, id_obra, id_equipo, id_operador,
