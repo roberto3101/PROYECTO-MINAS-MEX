@@ -51,3 +51,38 @@ func (LectorDeAccesoPostgres) PermisosDe(ctx context.Context, identificadorUsuar
 	}
 	return permisos, filas.Err()
 }
+
+func (LectorDeAccesoPostgres) AlcanceDeMinas(ctx context.Context, identificadorUsuario string) (bool, []string, error) {
+	consultas := persistencia.ConsultasDe(ctx)
+	var esGlobal bool
+	err := consultas.QueryRow(ctx,
+		`SELECT EXISTS (
+		   SELECT 1 FROM gobierno.usuario_rol ur
+		   JOIN gobierno.rol r ON r.id = ur.id_rol AND r.eliminado_en IS NULL AND r.estado = 'ACTIVO'
+		   WHERE ur.id_usuario = $1 AND ur.eliminado_en IS NULL AND ur.id_mina IS NULL)`,
+		identificadorUsuario).Scan(&esGlobal)
+	if err != nil {
+		return false, nil, err
+	}
+	if esGlobal {
+		return true, nil, nil
+	}
+	filas, err := consultas.Query(ctx,
+		`SELECT DISTINCT ur.id_mina::text FROM gobierno.usuario_rol ur
+		 JOIN gobierno.rol r ON r.id = ur.id_rol AND r.eliminado_en IS NULL AND r.estado = 'ACTIVO'
+		 WHERE ur.id_usuario = $1 AND ur.eliminado_en IS NULL AND ur.id_mina IS NOT NULL`,
+		identificadorUsuario)
+	if err != nil {
+		return false, nil, err
+	}
+	defer filas.Close()
+	var minas []string
+	for filas.Next() {
+		var mina string
+		if err := filas.Scan(&mina); err != nil {
+			return false, nil, err
+		}
+		minas = append(minas, mina)
+	}
+	return false, minas, filas.Err()
+}

@@ -141,3 +141,44 @@ func (LectorDeGobiernoPostgres) AsignacionesDe(ctx context.Context, identificado
 	}
 	return asignaciones, filas.Err()
 }
+
+func (LectorDeGobiernoPostgres) MinasAccesibles(ctx context.Context, identificadorUsuario string) (puertos.AccesoAMinas, error) {
+	consultas := persistencia.ConsultasDe(ctx)
+	var esGlobal bool
+	err := consultas.QueryRow(ctx,
+		`SELECT EXISTS (
+		   SELECT 1 FROM gobierno.usuario_rol ur
+		   JOIN gobierno.rol r ON r.id = ur.id_rol AND r.eliminado_en IS NULL AND r.estado = 'ACTIVO'
+		   WHERE ur.id_usuario = $1 AND ur.eliminado_en IS NULL AND ur.id_mina IS NULL)`,
+		identificadorUsuario).Scan(&esGlobal)
+	if err != nil {
+		return puertos.AccesoAMinas{}, err
+	}
+	var consulta string
+	var argumentos []any
+	if esGlobal {
+		consulta = `SELECT id, nombre FROM catalogos.mina
+		            WHERE eliminado_en IS NULL AND estado = 'ACTIVA' ORDER BY nombre`
+	} else {
+		consulta = `SELECT DISTINCT m.id, m.nombre FROM catalogos.mina m
+		            JOIN gobierno.usuario_rol ur ON ur.id_mina = m.id
+		            JOIN gobierno.rol r ON r.id = ur.id_rol AND r.eliminado_en IS NULL AND r.estado = 'ACTIVO'
+		            WHERE ur.id_usuario = $1 AND ur.eliminado_en IS NULL AND m.eliminado_en IS NULL AND m.estado = 'ACTIVA'
+		            ORDER BY m.nombre`
+		argumentos = append(argumentos, identificadorUsuario)
+	}
+	filas, err := consultas.Query(ctx, consulta, argumentos...)
+	if err != nil {
+		return puertos.AccesoAMinas{}, err
+	}
+	defer filas.Close()
+	acceso := puertos.AccesoAMinas{EsGlobal: esGlobal}
+	for filas.Next() {
+		var mina puertos.MinaConAcceso
+		if err := filas.Scan(&mina.Identificador, &mina.Nombre); err != nil {
+			return puertos.AccesoAMinas{}, err
+		}
+		acceso.Minas = append(acceso.Minas, mina)
+	}
+	return acceso, filas.Err()
+}

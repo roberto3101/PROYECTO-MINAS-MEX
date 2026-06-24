@@ -13,6 +13,7 @@ type Credencial struct {
 type LectorDeAcceso interface {
 	BuscarCredencial(ctx context.Context, codigoEmpresa, nombreCorto string) (Credencial, bool, error)
 	PermisosDe(ctx context.Context, identificadorUsuario string) ([]string, error)
+	AlcanceDeMinas(ctx context.Context, identificadorUsuario string) (esGlobal bool, minas []string, err error)
 }
 
 type UnidadDeTrabajoDePlataforma interface {

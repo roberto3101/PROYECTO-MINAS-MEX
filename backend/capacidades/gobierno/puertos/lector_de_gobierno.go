@@ -47,10 +47,21 @@ type ResumenAsignacion struct {
 	Vigente       bool
 }
 
+type MinaConAcceso struct {
+	Identificador string
+	Nombre        string
+}
+
+type AccesoAMinas struct {
+	EsGlobal bool
+	Minas    []MinaConAcceso
+}
+
 type LectorDeGobierno interface {
 	ListarUsuarios(ctx context.Context, filtro FiltroDeUsuarios) ([]ResumenUsuario, string, error)
 	DetalleDeUsuario(ctx context.Context, identificadorUsuario string) (DetalleUsuario, bool, error)
 	ListarRoles(ctx context.Context) ([]ResumenRol, error)
 	CatalogoDePermisos(ctx context.Context) ([]ResumenPermiso, error)
 	AsignacionesDe(ctx context.Context, identificadorUsuario string) ([]ResumenAsignacion, error)
+	MinasAccesibles(ctx context.Context, identificadorUsuario string) (AccesoAMinas, error)
 }

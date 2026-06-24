@@ -40,6 +40,7 @@ func NuevasRutas(dependencias Dependencias) *http.ServeMux {
 	rutas.Handle("PUT /gobierno/empresa", exigir("empresa.configurar", gobierno.ConfigurarEmpresa))
 	rutas.Handle("POST /gobierno/empresa/logo", exigir("empresa.configurar", gobierno.SubirLogo))
 	rutas.Handle("GET /gobierno/sesion/permisos", autenticada(gobierno.PermisosVigentes))
+	rutas.Handle("GET /gobierno/sesion/minas", autenticada(gobierno.MinasDeSesion))
 
 	rutas.Handle("GET /gobierno/usuarios", exigir("usuarios.ver", gobierno.ListarUsuarios))
 	rutas.Handle("POST /gobierno/usuarios", exigir("usuarios.crear", gobierno.RegistrarUsuario))

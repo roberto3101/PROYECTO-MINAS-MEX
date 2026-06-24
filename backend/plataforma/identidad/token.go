@@ -25,23 +25,27 @@ func NuevoEmisorDeToken(secreto string, duracion time.Duration) EmisorDeToken {
 }
 
 type cuerpoDeToken struct {
-	Sujeto   string   `json:"sub"`
-	Empresa  string   `json:"emp"`
-	Nombre   string   `json:"nom"`
-	Ambito   string   `json:"amb"`
-	Permisos []string `json:"per"`
-	Expira   int64    `json:"exp"`
+	Sujeto        string   `json:"sub"`
+	Empresa       string   `json:"emp"`
+	Nombre        string   `json:"nom"`
+	Ambito        string   `json:"amb"`
+	Permisos      []string `json:"per"`
+	AlcanceGlobal bool     `json:"alm"`
+	Minas         []string `json:"min"`
+	Expira        int64    `json:"exp"`
 }
 
 func (emisor EmisorDeToken) Emitir(sesion Sesion, emitidoEn time.Time) (string, error) {
 	cabecera := codificar([]byte(`{"alg":"HS256","typ":"JWT"}`))
 	cuerpo := cuerpoDeToken{
-		Sujeto:   sesion.IdentificadorUsuario,
-		Empresa:  sesion.IdentificadorEmpresa,
-		Nombre:   sesion.NombreCorto,
-		Ambito:   sesion.Ambito,
-		Permisos: sesion.Permisos,
-		Expira:   emitidoEn.Add(emisor.duracion).Unix(),
+		Sujeto:        sesion.IdentificadorUsuario,
+		Empresa:       sesion.IdentificadorEmpresa,
+		Nombre:        sesion.NombreCorto,
+		Ambito:        sesion.Ambito,
+		Permisos:      sesion.Permisos,
+		AlcanceGlobal: sesion.AlcanceGlobalDeMinas,
+		Minas:         sesion.MinasPermitidas,
+		Expira:        emitidoEn.Add(emisor.duracion).Unix(),
 	}
 	cuerpoSerializado, err := json.Marshal(cuerpo)
 	if err != nil {
@@ -77,6 +81,8 @@ func (emisor EmisorDeToken) Verificar(token string, ahora time.Time) (Sesion, er
 		NombreCorto:          cuerpo.Nombre,
 		Ambito:               cuerpo.Ambito,
 		Permisos:             cuerpo.Permisos,
+		AlcanceGlobalDeMinas: cuerpo.AlcanceGlobal,
+		MinasPermitidas:      cuerpo.Minas,
 	}, nil
 }
 

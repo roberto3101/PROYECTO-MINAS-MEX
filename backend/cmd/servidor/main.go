@@ -82,6 +82,7 @@ func main() {
 		aplicacionGobierno.NuevoAsignarRol(unidad, repositorioAsignacion),
 		aplicacionGobierno.NuevoRevocarRol(unidad, repositorioAsignacion),
 		aplicacionGobierno.NuevoListarAsignacionesDeUsuario(unidad, lectorDeGobierno),
+		aplicacionGobierno.NuevoMinasDeSesion(unidad, lectorDeGobierno),
 		aplicacionGobierno.NuevoConfigurarEmpresa(unidad, repositorioEmpresa),
 		aplicacionGobierno.NuevoDefinirLogoDeEmpresa(unidad, repositorioEmpresa, almacen),
 		servicioGobierno,

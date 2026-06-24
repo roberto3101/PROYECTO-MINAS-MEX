@@ -23,6 +23,8 @@ type SesionAutenticada struct {
 	IdentificadorEmpresa string
 	NombreCorto          string
 	Permisos             []string
+	AlcanceGlobalDeMinas bool
+	MinasPermitidas      []string
 }
 
 type IniciarSesion struct {
@@ -55,11 +57,17 @@ func (caso *IniciarSesion) Ejecutar(ctx context.Context, comando ComandoIniciarS
 		if err != nil {
 			return err
 		}
+		esGlobal, minas, err := caso.lector.AlcanceDeMinas(ctx, credencial.IdentificadorUsuario)
+		if err != nil {
+			return err
+		}
 		sesion = SesionAutenticada{
 			IdentificadorUsuario: credencial.IdentificadorUsuario,
 			IdentificadorEmpresa: credencial.IdentificadorEmpresa,
 			NombreCorto:          credencial.NombreCorto,
 			Permisos:             permisos,
+			AlcanceGlobalDeMinas: esGlobal,
+			MinasPermitidas:      minas,
 		}
 		return nil
 	})

@@ -11,4 +11,6 @@ type Sesion struct {
 	NombreCorto          string
 	Ambito               string
 	Permisos             []string
+	AlcanceGlobalDeMinas bool
+	MinasPermitidas      []string
 }

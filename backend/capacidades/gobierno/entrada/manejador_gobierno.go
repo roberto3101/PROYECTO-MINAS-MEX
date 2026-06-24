@@ -39,6 +39,7 @@ type ManejadorGobierno struct {
 	asignarRol              *aplicacion.AsignarRol
 	revocarRol              *aplicacion.RevocarRol
 	listarAsignaciones      *aplicacion.ListarAsignacionesDeUsuario
+	minasDeSesion           *aplicacion.MinasDeSesion
 	configurarEmpresa       *aplicacion.ConfigurarEmpresa
 	definirLogo             *aplicacion.DefinirLogoDeEmpresa
 	gobierno                contrato.Gobierno
@@ -65,6 +66,7 @@ func NuevoManejadorGobierno(
 	asignarRol *aplicacion.AsignarRol,
 	revocarRol *aplicacion.RevocarRol,
 	listarAsignaciones *aplicacion.ListarAsignacionesDeUsuario,
+	minasDeSesion *aplicacion.MinasDeSesion,
 	configurarEmpresa *aplicacion.ConfigurarEmpresa,
 	definirLogo *aplicacion.DefinirLogoDeEmpresa,
 	gobierno contrato.Gobierno,
@@ -90,6 +92,7 @@ func NuevoManejadorGobierno(
 		asignarRol:              asignarRol,
 		revocarRol:              revocarRol,
 		listarAsignaciones:      listarAsignaciones,
+		minasDeSesion:           minasDeSesion,
 		configurarEmpresa:       configurarEmpresa,
 		definirLogo:             definirLogo,
 		gobierno:                gobierno,
@@ -520,6 +523,16 @@ func (manejador *ManejadorGobierno) PermisosVigentes(escritor http.ResponseWrite
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, permisos)
+}
+
+func (manejador *ManejadorGobierno) MinasDeSesion(escritor http.ResponseWriter, peticion *http.Request) {
+	sesion, _ := web.SesionDe(peticion.Context())
+	acceso, err := manejador.minasDeSesion.Ejecutar(peticion.Context(), sesion.IdentificadorUsuario)
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, acceso)
 }
 
 func responderErrorDeSesion(escritor http.ResponseWriter, err error) {

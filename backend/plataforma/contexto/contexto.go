@@ -14,9 +14,11 @@ const (
 )
 
 type Tenant struct {
-	Empresa identificador.Identificador
-	Actor   identificador.Identificador
-	Rol     RolDeBaseDeDatos
+	Empresa              identificador.Identificador
+	Actor                identificador.Identificador
+	Rol                  RolDeBaseDeDatos
+	AlcanceGlobalDeMinas bool
+	MinasPermitidas      []string
 }
 
 type clave int

@@ -36,7 +36,13 @@ func (autenticador Autenticador) Requerir(siguiente http.Handler) http.Handler {
 			ResponderError(escritor, http.StatusUnauthorized, "no autorizado")
 			return
 		}
-		tenant := contexto.Tenant{Empresa: empresa, Actor: actor, Rol: contexto.RolAplicacion}
+		tenant := contexto.Tenant{
+			Empresa:              empresa,
+			Actor:                actor,
+			Rol:                  contexto.RolAplicacion,
+			AlcanceGlobalDeMinas: sesion.AlcanceGlobalDeMinas,
+			MinasPermitidas:      sesion.MinasPermitidas,
+		}
 		ctx := conSesion(contexto.ConTenant(peticion.Context(), tenant), sesion)
 		siguiente.ServeHTTP(escritor, peticion.WithContext(ctx))
 	})
