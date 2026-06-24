@@ -29,6 +29,15 @@ func ConTenant(ctx context.Context, tenant Tenant) context.Context {
 	return context.WithValue(ctx, claveTenant, tenant)
 }
 
+func ConEmpresaImpersonada(ctx context.Context, empresa identificador.Identificador) context.Context {
+	return ConTenant(ctx, Tenant{
+		Empresa:              empresa,
+		Actor:                empresa,
+		Rol:                  RolAplicacion,
+		AlcanceGlobalDeMinas: true,
+	})
+}
+
 func TenantDe(ctx context.Context) (Tenant, bool) {
 	tenant, presente := ctx.Value(claveTenant).(Tenant)
 	return tenant, presente

@@ -35,6 +35,12 @@ func NuevasRutas(dependencias Dependencias) *http.ServeMux {
 	rutas.Handle("POST /plataforma/empresas", plataforma(gobierno.AprovisionarEmpresa))
 	rutas.Handle("GET /plataforma/empresas/{id}", plataforma(gobierno.DetalleDeEmpresaDePlataforma))
 	rutas.Handle("PATCH /plataforma/empresas/{id}/estado", plataforma(gobierno.CambiarEstadoDeEmpresa))
+	rutas.Handle("GET /plataforma/empresas/{id}/usuarios", plataforma(gobierno.UsuariosDeEmpresa))
+	rutas.Handle("GET /plataforma/empresas/{id}/roles", plataforma(gobierno.RolesDeEmpresa))
+	rutas.Handle("GET /plataforma/empresas/{id}/minas", plataforma(catalogos.MinasDeEmpresa))
+	rutas.Handle("GET /plataforma/empresas/{id}/usuarios/{idUsuario}/asignaciones", plataforma(gobierno.AsignacionesDeUsuarioEnEmpresa))
+	rutas.Handle("POST /plataforma/empresas/{id}/asignaciones", plataforma(gobierno.AsignarRolEnEmpresa))
+	rutas.Handle("DELETE /plataforma/empresas/{id}/asignaciones/{idAsignacion}", plataforma(gobierno.RevocarRolEnEmpresa))
 
 	rutas.Handle("GET /gobierno/empresa", autenticada(gobierno.EmpresaActual))
 	rutas.Handle("PUT /gobierno/empresa", exigir("empresa.configurar", gobierno.ConfigurarEmpresa))

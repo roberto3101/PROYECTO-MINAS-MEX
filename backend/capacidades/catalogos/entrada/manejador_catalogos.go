@@ -341,14 +341,65 @@ func (manejador *ManejadorCatalogos) ListarActividades(escritor http.ResponseWri
 	web.ResponderJson(escritor, http.StatusOK, actividades)
 }
 
+func (manejador *ManejadorCatalogos) MinasDeEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
+	ctx, ok := web.ContextoDeEmpresaImpersonada(escritor, peticion)
+	if !ok {
+		return
+	}
+	consulta := peticion.URL.Query()
+	minas, cursor, err := manejador.listarMinas.Ejecutar(ctx, puertos.FiltroDeCatalogo{
+		Busqueda: consulta.Get("busqueda"),
+		Estado:   consulta.Get("estado"),
+		Cursor:   consulta.Get("cursor"),
+		Limite:   paginacion.LimiteSeguro(consulta.Get("limite")),
+	})
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": minas, "SiguienteCursor": cursor})
+}
+
 func filtroDe(peticion *http.Request) puertos.FiltroDeCatalogo {
 	consulta := peticion.URL.Query()
-	return puertos.FiltroDeCatalogo{
+	filtro := puertos.FiltroDeCatalogo{
 		Busqueda: consulta.Get("busqueda"),
 		Estado:   consulta.Get("estado"),
 		Cursor:   consulta.Get("cursor"),
 		Limite:   paginacion.LimiteSeguro(consulta.Get("limite")),
 	}
+	aplicarAlcanceDeMinas(&filtro, peticion, consulta.Get("mina"))
+	return filtro
+}
+
+func aplicarAlcanceDeMinas(filtro *puertos.FiltroDeCatalogo, peticion *http.Request, minaSolicitada string) {
+	tenant, _ := contexto.TenantDe(peticion.Context())
+	if tenant.AlcanceGlobalDeMinas {
+		if minaSolicitada != "" {
+			filtro.RestringirPorMina = true
+			filtro.MinasPermitidas = []string{minaSolicitada}
+		}
+		return
+	}
+	filtro.RestringirPorMina = true
+	if minaSolicitada == "" {
+		filtro.MinasPermitidas = tenant.MinasPermitidas
+		return
+	}
+	if contieneMina(tenant.MinasPermitidas, minaSolicitada) {
+		filtro.MinasPermitidas = []string{minaSolicitada}
+		return
+	}
+	filtro.MinasPermitidas = []string{}
+}
+
+func contieneMina(minas []string, objetivo string) bool {
+	for _, mina := range minas {
+		if mina == objetivo {
+			return true
+		}
+	}
+	return false
 }
 
 func empresaDe(peticion *http.Request) string {

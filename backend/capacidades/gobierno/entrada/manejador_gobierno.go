@@ -535,6 +535,92 @@ func (manejador *ManejadorGobierno) MinasDeSesion(escritor http.ResponseWriter, 
 	web.ResponderJson(escritor, http.StatusOK, acceso)
 }
 
+func (manejador *ManejadorGobierno) UsuariosDeEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
+	ctx, ok := web.ContextoDeEmpresaImpersonada(escritor, peticion)
+	if !ok {
+		return
+	}
+	parametros := peticion.URL.Query()
+	usuarios, siguiente, err := manejador.listarUsuarios.Ejecutar(ctx, puertos.FiltroDeUsuarios{
+		Busqueda: strings.TrimSpace(parametros.Get("busqueda")),
+		Estado:   strings.ToUpper(strings.TrimSpace(parametros.Get("estado"))),
+		Cursor:   parametros.Get("cursor"),
+		Limite:   paginacion.LimiteSeguro(parametros.Get("limite")),
+	})
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": usuarios, "SiguienteCursor": siguiente})
+}
+
+func (manejador *ManejadorGobierno) RolesDeEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
+	ctx, ok := web.ContextoDeEmpresaImpersonada(escritor, peticion)
+	if !ok {
+		return
+	}
+	roles, err := manejador.listarRoles.Ejecutar(ctx)
+	if err != nil {
+		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, roles)
+}
+
+func (manejador *ManejadorGobierno) AsignacionesDeUsuarioEnEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
+	ctx, ok := web.ContextoDeEmpresaImpersonada(escritor, peticion)
+	if !ok {
+		return
+	}
+	asignaciones, err := manejador.listarAsignaciones.Ejecutar(ctx, peticion.PathValue("idUsuario"))
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, asignaciones)
+}
+
+func (manejador *ManejadorGobierno) AsignarRolEnEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
+	ctx, ok := web.ContextoDeEmpresaImpersonada(escritor, peticion)
+	if !ok {
+		return
+	}
+	var cuerpo struct {
+		IdentificadorUsuario string `json:"id_usuario"`
+		IdentificadorRol     string `json:"id_rol"`
+		AlcanceMina          string `json:"id_mina"`
+	}
+	if !web.DecodificarCuerpo(escritor, peticion, &cuerpo) {
+		return
+	}
+	identificadorAsignacion, err := manejador.asignarRol.Ejecutar(ctx, aplicacion.ComandoAsignarRol{
+		IdentificadorEmpresa: peticion.PathValue("id"),
+		IdentificadorUsuario: cuerpo.IdentificadorUsuario,
+		IdentificadorRol:     cuerpo.IdentificadorRol,
+		AlcanceMina:          cuerpo.AlcanceMina,
+	})
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusCreated, map[string]string{"id": identificadorAsignacion})
+}
+
+func (manejador *ManejadorGobierno) RevocarRolEnEmpresa(escritor http.ResponseWriter, peticion *http.Request) {
+	ctx, ok := web.ContextoDeEmpresaImpersonada(escritor, peticion)
+	if !ok {
+		return
+	}
+	err := manejador.revocarRol.Ejecutar(ctx, aplicacion.ComandoRevocarRol{
+		IdentificadorAsignacion: peticion.PathValue("idAsignacion"),
+	})
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": "REVOCADA"})
+}
+
 func responderErrorDeSesion(escritor http.ResponseWriter, err error) {
 	var bloqueado *aplicacion.ErrDemasiadosIntentos
 	if errors.As(err, &bloqueado) {

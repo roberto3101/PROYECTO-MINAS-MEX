@@ -3,10 +3,12 @@ package puertos
 import "context"
 
 type FiltroDeCatalogo struct {
-	Busqueda string
-	Estado   string
-	Cursor   string
-	Limite   int
+	Busqueda          string
+	Estado            string
+	Cursor            string
+	Limite            int
+	RestringirPorMina bool
+	MinasPermitidas   []string
 }
 
 type ResumenMina struct {

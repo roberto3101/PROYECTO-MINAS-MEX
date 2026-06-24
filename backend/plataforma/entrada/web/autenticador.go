@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -68,6 +69,15 @@ func (autenticador Autenticador) RequerirPlataforma(manejador http.HandlerFunc) 
 		}
 		manejador(escritor, peticion.WithContext(conSesion(peticion.Context(), sesion)))
 	})
+}
+
+func ContextoDeEmpresaImpersonada(escritor http.ResponseWriter, peticion *http.Request) (context.Context, bool) {
+	empresa, err := identificador.Desde(peticion.PathValue("id"))
+	if err != nil {
+		ResponderError(escritor, http.StatusBadRequest, "empresa invalida")
+		return nil, false
+	}
+	return contexto.ConEmpresaImpersonada(peticion.Context(), empresa), true
 }
 
 func tokenPortador(peticion *http.Request) string {

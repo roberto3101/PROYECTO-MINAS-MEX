@@ -26,9 +26,11 @@ func (LectorDeCatalogosPostgres) ListarMinas(ctx context.Context, filtro puertos
 		 WHERE eliminado_en IS NULL
 		   AND ($1 = '' OR nombre ILIKE '%'||$1||'%' OR area ILIKE '%'||$1||'%')
 		   AND ($2 = '' OR $2 IN ('TODAS', 'TODOS') OR estado = $2)
+		   AND (NOT $6 OR id = ANY($7::uuid[]))
 		   AND ($3 = '' OR (nombre, id::text) > ($3, $4))
 		 ORDER BY nombre, id LIMIT $5`,
-		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1)
+		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1,
+		filtro.RestringirPorMina, filtro.MinasPermitidas)
 	if err != nil {
 		return nil, "", err
 	}
@@ -91,9 +93,11 @@ func (LectorDeCatalogosPostgres) ListarEmpleados(ctx context.Context, filtro pue
 		 WHERE e.eliminado_en IS NULL
 		   AND ($1 = '' OR e.numero_nomina ILIKE '%'||$1||'%' OR e.nombre_completo ILIKE '%'||$1||'%')
 		   AND ($2 = '' OR $2 IN ('TODAS', 'TODOS') OR e.estado = $2)
+		   AND (NOT $6 OR e.id_mina = ANY($7::uuid[]))
 		   AND ($3 = '' OR (e.nombre_completo, e.id::text) > ($3, $4))
 		 ORDER BY e.nombre_completo, e.id LIMIT $5`,
-		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1)
+		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1,
+		filtro.RestringirPorMina, filtro.MinasPermitidas)
 	if err != nil {
 		return nil, "", err
 	}
@@ -161,9 +165,11 @@ func (LectorDeCatalogosPostgres) ListarEquipos(ctx context.Context, filtro puert
 		 WHERE e.eliminado_en IS NULL
 		   AND ($1 = '' OR e.codigo ILIKE '%'||$1||'%' OR COALESCE(e.fabricante, '') ILIKE '%'||$1||'%' OR COALESCE(e.modelo, '') ILIKE '%'||$1||'%')
 		   AND ($2 = '' OR $2 IN ('TODAS', 'TODOS') OR e.estado = $2)
+		   AND (NOT $6 OR e.id_mina = ANY($7::uuid[]))
 		   AND ($3 = '' OR (e.codigo, e.id::text) > ($3, $4))
 		 ORDER BY e.codigo, e.id LIMIT $5`,
-		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1)
+		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1,
+		filtro.RestringirPorMina, filtro.MinasPermitidas)
 	if err != nil {
 		return nil, "", err
 	}
