@@ -1,12 +1,16 @@
 const CLAVE_SESION = "sesion.plataforma.minera";
 const CLAVE_GRUPOS = "minas.nav.grupos.cerrados";
 const CLAVE_RIEL = "minas.nav.riel";
+const CLAVE_MINA = "minas.alcance.seleccionada";
 
 const estado = {
   sesion: null,
   empresa: null,
   catalogoPermisos: [],
   vistaActual: "",
+  minasDeSesion: [],
+  esGlobalEnMinas: false,
+  minaSeleccionada: "",
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -276,6 +280,10 @@ function mostrarVista(clave) {
   document.querySelectorAll(".enlace-nav").forEach((enlace) =>
     enlace.classList.toggle("activo", enlace.dataset.vista === clave));
   $("#acciones-vista").innerHTML = "";
+  const usaAlcanceDeMina = clave === "empleados" || clave === "equipos";
+  const selectorDeMina = $("#selector-de-mina");
+  if (usaAlcanceDeMina && estado.minasDeSesion.length) pintarSelectorDeMina();
+  else selectorDeMina.hidden = true;
   cerrarPanel();
   vista.render();
 }
@@ -299,7 +307,7 @@ function insigniaDeEstado(valor) {
   return `<span class="insignia ${color}">${escapar(valor)}</span>`;
 }
 
-function listadoPaginado({ ruta, columnas, estados, placeholderBusqueda, alClicFila, vacio }) {
+function listadoPaginado({ ruta, columnas, estados, placeholderBusqueda, alClicFila, vacio, parametrosExtra }) {
   const vista = $("#vista");
   vista.innerHTML = "";
   const barra = elemento(`<div class="barra-herramientas">
@@ -320,7 +328,7 @@ function listadoPaginado({ ruta, columnas, estados, placeholderBusqueda, alClicF
       pintarEsqueleto(contenedor, columnas.length);
     }
     try {
-      const parametros = new URLSearchParams({ busqueda: filtro.busqueda, estado: filtro.estado, cursor: filtro.cursor, limite: "20" });
+      const parametros = new URLSearchParams({ busqueda: filtro.busqueda, estado: filtro.estado, cursor: filtro.cursor, limite: "20", ...(parametrosExtra?.() ?? {}) });
       const datos = await llamarApi(`${ruta}?${parametros}`);
       elementos = elementos.concat(datos.Elementos ?? []);
       filtro.cursor = datos.SiguienteCursor ?? "";
@@ -401,6 +409,57 @@ function aplicarMarca(empresa) {
   }
 }
 
+function parametroDeMina() {
+  return estado.minaSeleccionada ? { mina: estado.minaSeleccionada } : {};
+}
+
+function nombreDeMinaDeSesion(identificador) {
+  return estado.minasDeSesion.find((mina) => mina.Identificador === identificador)?.Nombre ?? "";
+}
+
+async function cargarMinasDeSesion() {
+  let alcance;
+  try { alcance = await llamarApi("/gobierno/sesion/minas"); }
+  catch { alcance = null; }
+  estado.minasDeSesion = alcance?.Minas ?? [];
+  estado.esGlobalEnMinas = alcance?.EsGlobal ?? false;
+  const guardada = localStorage.getItem(CLAVE_MINA) ?? "";
+  estado.minaSeleccionada =
+    guardada && estado.minasDeSesion.some((mina) => mina.Identificador === guardada) ? guardada : "";
+  if (!estado.esGlobalEnMinas && estado.minasDeSesion.length === 1) {
+    estado.minaSeleccionada = estado.minasDeSesion[0].Identificador;
+  }
+  pintarSelectorDeMina();
+}
+
+function pintarSelectorDeMina() {
+  const contenedor = $("#selector-de-mina");
+  contenedor.innerHTML = "";
+  const minas = estado.minasDeSesion;
+  if (!minas.length) { contenedor.hidden = true; return; }
+  if (!estado.esGlobalEnMinas && minas.length === 1) {
+    contenedor.hidden = false;
+    contenedor.appendChild(elemento(`<span class="etiqueta-mina">${ICONOS.minas}<span>${escapar(minas[0].Nombre)}</span></span>`));
+    return;
+  }
+  const opcionTodas = estado.esGlobalEnMinas ? "Todas las minas" : "Todas mis minas";
+  const selector = elemento(`<label class="campo-mina">
+    <select aria-label="Mina activa">
+      <option value="">${escapar(opcionTodas)}</option>
+      ${minas.map((mina) =>
+        `<option value="${escapar(mina.Identificador)}" ${mina.Identificador === estado.minaSeleccionada ? "selected" : ""}>${escapar(mina.Nombre)}</option>`).join("")}
+    </select>
+  </label>`);
+  selector.querySelector("select").addEventListener("change", (evento) => {
+    estado.minaSeleccionada = evento.target.value;
+    if (estado.minaSeleccionada) localStorage.setItem(CLAVE_MINA, estado.minaSeleccionada);
+    else localStorage.removeItem(CLAVE_MINA);
+    if (estado.vistaActual === "empleados" || estado.vistaActual === "equipos") mostrarVista(estado.vistaActual);
+  });
+  contenedor.hidden = false;
+  contenedor.appendChild(selector);
+}
+
 function vistaPanel() {
   const accesos = GRUPOS_EMPRESA.flatMap((grupo) => grupo.vistas)
     .filter((clave) => clave !== "panel")
@@ -457,6 +516,11 @@ async function abrirDetalleDeUsuario(identificador, recargar) {
   let ficha;
   try { ficha = await llamarApi(`/gobierno/usuarios/${identificador}`); }
   catch (excepcion) { return avisar(excepcion.message, "error"); }
+  const minas = tienePermiso("catalogos.ver")
+    ? await llamarApi("/catalogos/minas?limite=100").then((datos) => datos.Elementos ?? []).catch(() => [])
+    : [];
+  const nombreDeMina = (identificadorMina) =>
+    identificadorMina ? (minas.find((mina) => mina.Identificador === identificadorMina)?.Nombre ?? "Mina") : "Global";
   const usuario = ficha.Usuario;
   const activo = usuario.Estado === "ACTIVO";
   const contenido = elemento(`<div>
@@ -478,7 +542,7 @@ async function abrirDetalleDeUsuario(identificador, recargar) {
       ${ficha.Asignaciones?.length ? ficha.Asignaciones.map((asignacion) => `
         <div class="fila-asignacion ${asignacion.Vigente ? "" : "revocada"}">
           <div><strong>${escapar(asignacion.CodigoRol)}</strong>
-            <small>${escapar(asignacion.Rol)} · ${asignacion.AlcanceMina ? "alcance por mina" : "toda la empresa"}${asignacion.Vigente ? "" : " · revocada"}</small></div>
+            <small>${escapar(asignacion.Rol)} · <span class="insignia ${asignacion.AlcanceMina ? "dorado" : "gris"} insignia-alcance">${escapar(nombreDeMina(asignacion.AlcanceMina))}</span>${asignacion.Vigente ? "" : " · revocada"}</small></div>
           ${asignacion.Vigente && tienePermiso("roles.asignar")
             ? `<button class="boton-secundario compacto peligro" data-revocar="${asignacion.Identificador}">Revocar</button>` : ""}
         </div>`).join("")
@@ -793,6 +857,7 @@ async function vistaEmpleados() {
       { titulo: "Estado", celda: (empleado) => insigniaDeEstado(empleado.Estado) },
     ],
     vacio: { titulo: "Sin empleados", detalle: "Da de alta al personal operativo." },
+    parametrosExtra: parametroDeMina,
     alClicFila: async (empleado, recargar) => {
       let detalle;
       try { detalle = await llamarApi(`/catalogos/empleados/${empleado.Identificador}`); }
@@ -893,6 +958,7 @@ async function vistaEquipos() {
       { titulo: "Estado", celda: (equipo) => insigniaDeEstado(equipo.Estado) },
     ],
     vacio: { titulo: "Sin equipos", detalle: "Registra la flota de la operación." },
+    parametrosExtra: parametroDeMina,
     alClicFila: async (equipo, recargar) => {
       let detalle;
       try { detalle = await llamarApi(`/catalogos/equipos/${equipo.Identificador}`); }
@@ -1123,9 +1189,12 @@ function vistaEmpresas() {
           ["Alta en la plataforma", escapar(formatearFecha(detalle.CreadoEn))],
         ])}
         <div class="acciones-panel">
+          <button class="boton-secundario compacto" data-accesos>Accesos por mina</button>
           <button class="boton-secundario compacto ${activa ? "peligro" : ""}" data-estado>${activa ? "Suspender" : "Reactivar"}</button>
         </div>
       </div>`);
+      contenido.querySelector("[data-accesos]").addEventListener("click", () =>
+        abrirAccesosPorMinaDeEmpresa(detalle.Identificador, detalle.RazonSocial));
       contenido.querySelector("[data-estado]").addEventListener("click", async () => {
         const nuevo = activa ? "INACTIVA" : "ACTIVA";
         const seguro = await confirmar(
@@ -1145,11 +1214,122 @@ function vistaEmpresas() {
   });
 }
 
+async function abrirAccesosPorMinaDeEmpresa(idEmpresa, razonSocial) {
+  let roles = [], minas = [];
+  try {
+    [roles, minas] = await Promise.all([
+      llamarApi(`/plataforma/empresas/${idEmpresa}/roles`).catch(() => []),
+      llamarApi(`/plataforma/empresas/${idEmpresa}/minas?limite=100`).then((datos) => datos.Elementos ?? []).catch(() => []),
+    ]);
+  } catch (excepcion) { return avisar(excepcion.message, "error"); }
+  const nombreDeMina = (identificadorMina) =>
+    identificadorMina ? (minas.find((mina) => mina.Identificador === identificadorMina)?.Nombre ?? "Mina") : "Global";
+
+  const contenido = elemento(`<div>
+    <p class="nota-formulario">Concede roles con alcance de mina a los usuarios de ${escapar(razonSocial)}. Sin mina elegida, el rol aplica a toda la empresa.</p>
+    <div class="barra-herramientas">
+      <span class="caja-busqueda">${ICONOS.buscar}<input type="search" placeholder="Buscar usuario…" maxlength="80"></span>
+    </div>
+    <div class="lista-accesos" data-lista></div>
+  </div>`);
+  const lista = contenido.querySelector("[data-lista]");
+  const filtro = { busqueda: "" };
+  let temporizador = null;
+  contenido.querySelector("input").addEventListener("input", (evento) => {
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => { filtro.busqueda = evento.target.value.trim(); cargarUsuarios(); }, 350);
+  });
+
+  async function cargarUsuarios() {
+    lista.innerHTML = '<div class="esqueleto" style="height:54px;margin-bottom:8px"></div><div class="esqueleto" style="height:54px"></div>';
+    let usuarios = [];
+    try {
+      const parametros = new URLSearchParams({ busqueda: filtro.busqueda, estado: "ACTIVO", cursor: "", limite: "20" });
+      const datos = await llamarApi(`/plataforma/empresas/${idEmpresa}/usuarios?${parametros}`);
+      usuarios = datos.Elementos ?? [];
+    } catch (excepcion) { avisar(excepcion.message, "error"); lista.innerHTML = ""; return; }
+    if (!usuarios.length) {
+      lista.innerHTML = `<div class="estado-vacio"><strong>${escapar(filtro.busqueda ? "Sin resultados" : "Sin usuarios")}</strong>${escapar(filtro.busqueda ? "Prueba con otro término." : "Esta empresa aún no tiene usuarios.")}</div>`;
+      return;
+    }
+    lista.innerHTML = usuarios.map((usuario) => `
+      <button type="button" class="fila-acceso" data-usuario="${escapar(usuario.Identificador)}" data-nombre="${escapar(usuario.NombreCorto)}">
+        <span><strong>${escapar(usuario.NombreCorto)}</strong><small>${escapar(usuario.Nombre)}</small></span>
+        ${ICONOS.chevron}
+      </button>`).join("");
+    lista.querySelectorAll(".fila-acceso").forEach((boton) =>
+      boton.addEventListener("click", () => abrirAsignacionesDeUsuario(boton.dataset.usuario, boton.dataset.nombre)));
+  }
+
+  async function abrirAsignacionesDeUsuario(idUsuario, nombreCorto) {
+    let asignaciones = [];
+    try { asignaciones = await llamarApi(`/plataforma/empresas/${idEmpresa}/usuarios/${idUsuario}/asignaciones`); }
+    catch (excepcion) { return avisar(excepcion.message, "error"); }
+    const detalle = elemento(`<div>
+      <button type="button" class="boton-secundario compacto" data-volver>← Volver a usuarios</button>
+      <div class="acciones-panel">
+        <button class="boton-primario" data-asignar>＋ Asignar rol con alcance</button>
+      </div>
+      <div class="seccion-panel">
+        <h3>Roles asignados</h3>
+        ${asignaciones.length ? asignaciones.map((asignacion) => `
+          <div class="fila-asignacion ${asignacion.Vigente ? "" : "revocada"}">
+            <div><strong>${escapar(asignacion.CodigoRol)}</strong>
+              <small>${escapar(asignacion.Rol)} · <span class="insignia ${asignacion.AlcanceMina ? "dorado" : "gris"} insignia-alcance">${escapar(nombreDeMina(asignacion.AlcanceMina))}</span>${asignacion.Vigente ? "" : " · revocada"}</small></div>
+            ${asignacion.Vigente
+              ? `<button class="boton-secundario compacto peligro" data-revocar="${escapar(asignacion.Identificador)}">Revocar</button>` : ""}
+          </div>`).join("")
+          : '<small>Sin roles todavía: este usuario entra sin permisos.</small>'}
+      </div>
+    </div>`);
+    detalle.querySelector("[data-volver]").addEventListener("click", () => pintarSeccion());
+    detalle.querySelector("[data-asignar]").addEventListener("click", () =>
+      formularioModal({
+        titulo: `Asignar rol a ${nombreCorto}`,
+        nota: "Sin mina elegida, el rol aplica a toda la empresa.",
+        partes: [{ campos: [
+          { nombre: "id_rol", etiqueta: "Rol", tipo: "select",
+            opciones: roles.map((rol) => ({ valor: rol.Identificador, texto: `${rol.Codigo} — ${rol.Descripcion}` })) },
+          { nombre: "id_mina", etiqueta: "Alcance", tipo: "select", opcional: true, placeholder: "Toda la empresa",
+            opciones: minas.map((mina) => ({ valor: mina.Identificador, texto: mina.Nombre })) },
+        ] }],
+        textoEnviar: "Asignar rol",
+        alEnviar: async (datos) => {
+          await llamarApi(`/plataforma/empresas/${idEmpresa}/asignaciones`, { metodo: "POST", cuerpo: { id_usuario: idUsuario, ...datos } });
+          avisar(`Rol asignado a ${nombreCorto}.`);
+          abrirAsignacionesDeUsuario(idUsuario, nombreCorto);
+        },
+      }));
+    detalle.querySelectorAll("[data-revocar]").forEach((boton) =>
+      boton.addEventListener("click", async () => {
+        const seguro = await confirmar("¿Revocar este rol?", "El usuario perderá esos permisos al instante; la revocación queda registrada.", "Revocar");
+        if (!seguro) return;
+        try {
+          await llamarApi(`/plataforma/empresas/${idEmpresa}/asignaciones/${boton.dataset.revocar}`, { metodo: "DELETE" });
+          avisar("Rol revocado.");
+          abrirAsignacionesDeUsuario(idUsuario, nombreCorto);
+        } catch (excepcion) { avisar(excepcion.message, "error"); }
+      }));
+    abrirPanel(`${nombreCorto} · accesos`, detalle);
+  }
+
+  function pintarSeccion() {
+    abrirPanel(`Accesos · ${razonSocial}`, contenido);
+    cargarUsuarios();
+  }
+
+  pintarSeccion();
+}
+
 function guardarSesion() { localStorage.setItem(CLAVE_SESION, JSON.stringify(estado.sesion)); }
 function cerrarSesion() {
   localStorage.removeItem(CLAVE_SESION);
   estado.sesion = null;
   estado.empresa = null;
+  estado.minasDeSesion = [];
+  estado.esGlobalEnMinas = false;
+  estado.minaSeleccionada = "";
+  $("#selector-de-mina").hidden = true;
   document.documentElement.style.removeProperty("--acento");
   document.documentElement.style.removeProperty("--acento-tinta");
   $("#aplicacion").hidden = true;
@@ -1171,12 +1351,14 @@ async function arrancarAplicacion() {
     $("#detalle-identidad").textContent = "Administración de tenants";
     $("#logo-empresa").hidden = true;
     $("#logo-generico").hidden = false;
+    $("#selector-de-mina").hidden = true;
     mostrarVista("empresas");
     return;
   }
   $("#ambito-sesion").textContent = `${estado.sesion.permisos?.length ?? 0} permisos`;
   try { aplicarMarca(await llamarApi("/gobierno/empresa")); }
   catch (excepcion) { avisar(excepcion.message, "error"); }
+  await cargarMinasDeSesion();
   mostrarVista("panel");
 }
 

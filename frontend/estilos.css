@@ -574,6 +574,50 @@ svg { display: block; }
 .fila-color { display: flex; gap: 10px; align-items: center; }
 .fila-color input[type="color"] { width: 46px; height: 42px; padding: 4px; border: 1px solid var(--linea); border-radius: 10px; background: var(--fondo-2); cursor: pointer; flex: none; }
 
+.selector-de-mina { display: flex; align-items: center; flex: none; }
+.campo-mina { display: block; }
+.campo-mina select {
+  background: var(--panel);
+  border: 1px solid var(--linea-fuerte);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--texto);
+  outline: none;
+  max-width: 220px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.campo-mina select:focus {
+  border-color: color-mix(in srgb, var(--acento) 60%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--acento) 16%, transparent);
+}
+.etiqueta-mina {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: color-mix(in srgb, var(--acento) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acento) 40%, transparent);
+  border-radius: 999px;
+  padding: 7px 14px;
+  color: var(--acento-texto);
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap;
+}
+.etiqueta-mina svg { width: 16px; height: 16px; flex: none; }
+
+.insignia-alcance { padding: 2px 8px; font-size: 10.5px; vertical-align: middle; }
+
+.lista-accesos { display: flex; flex-direction: column; gap: 8px; }
+.fila-acceso {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: 100%; text-align: left;
+  border: 1px solid var(--linea); border-radius: 11px;
+  padding: 11px 13px;
+  background: var(--fondo-2);
+  transition: border-color .15s, background .12s;
+}
+.fila-acceso:hover { border-color: var(--acento); background: rgba(255,255,255,.035); }
+.fila-acceso strong { display: block; font-size: 13px; }
+.fila-acceso small { font-size: 11.5px; }
+.fila-acceso svg { width: 15px; height: 15px; flex: none; color: var(--texto-3); rotate: -90deg; }
+
 .toasts {
   position: fixed; top: 18px; right: 18px; z-index: 90;
   display: flex; flex-direction: column; gap: 10px;
