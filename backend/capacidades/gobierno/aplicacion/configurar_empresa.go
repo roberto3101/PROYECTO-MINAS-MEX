@@ -36,6 +36,19 @@ func (caso *ConfigurarEmpresa) Ejecutar(ctx context.Context, comando ComandoConf
 	if err := escudo.ValidarCorreo(comando.CorreoContacto); err != nil {
 		return err
 	}
+	if err := escudo.ValidarTextos(
+		escudo.Campo("identificacion fiscal", &comando.IdentificacionFiscal, 20),
+		escudo.Campo("telefono", &comando.Telefono, 20),
+		escudo.Campo("zona horaria", &comando.ZonaHoraria, 60),
+	); err != nil {
+		return err
+	}
+	if err := escudo.ValidarZonaHoraria(comando.ZonaHoraria); err != nil {
+		return err
+	}
+	if err := escudo.ValidarTelefono(comando.Telefono); err != nil {
+		return err
+	}
 	return caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
 		empresa, encontrada, err := caso.empresas.BuscarPorIdentificador(ctx, identificadorEmpresa)
 		if err != nil {

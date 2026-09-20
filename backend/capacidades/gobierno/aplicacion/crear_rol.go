@@ -6,6 +6,7 @@ import (
 	"minas/capacidades/gobierno/dominio"
 	"minas/capacidades/gobierno/puertos"
 	"minas/compartido/identificador"
+	"minas/plataforma/escudo"
 )
 
 type ComandoCrearRol struct {
@@ -26,6 +27,12 @@ func NuevoCrearRol(unidad puertos.UnidadDeTrabajo, roles puertos.RepositorioRol)
 func (caso *CrearRol) Ejecutar(ctx context.Context, comando ComandoCrearRol) (string, error) {
 	empresa, err := identificador.Desde(comando.IdentificadorEmpresa)
 	if err != nil {
+		return "", err
+	}
+	if err := escudo.ValidarTextos(
+		escudo.Campo("codigo", &comando.Codigo, 40),
+		escudo.Campo("descripcion", &comando.Descripcion, 160),
+	); err != nil {
 		return "", err
 	}
 	rol, err := dominio.CrearRolPropio(empresa, comando.Codigo, comando.Descripcion)

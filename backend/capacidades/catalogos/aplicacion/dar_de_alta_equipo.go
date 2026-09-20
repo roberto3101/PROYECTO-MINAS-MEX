@@ -7,6 +7,7 @@ import (
 	"minas/capacidades/catalogos/dominio"
 	"minas/capacidades/catalogos/puertos"
 	"minas/compartido/identificador"
+	"minas/plataforma/escudo"
 )
 
 type ComandoDarDeAltaEquipo struct {
@@ -39,6 +40,16 @@ func (caso *DarDeAltaEquipo) Ejecutar(ctx context.Context, comando ComandoDarDeA
 	if err != nil {
 		return "", err
 	}
+	if err := escudo.ValidarTextos(
+		escudo.Campo("codigo", &comando.Codigo, 40),
+		escudo.Campo("descripcion", &comando.Descripcion, 200),
+		escudo.Campo("fabricante", &comando.Fabricante, 80),
+		escudo.Campo("modelo", &comando.Modelo, 80),
+		escudo.Campo("numero de serie", &comando.NumeroSerie, 60),
+		escudo.Campo("modelo de perforadora", &comando.ModeloPerforadora, 80),
+	); err != nil {
+		return "", err
+	}
 	mina, err := identificador.Desde(comando.IdentificadorMina)
 	if err != nil {
 		return "", err
@@ -54,6 +65,9 @@ func (caso *DarDeAltaEquipo) Ejecutar(ctx context.Context, comando ComandoDarDeA
 	fechaIngreso, err := fechaOpcional(comando.FechaIngresoMina)
 	if err != nil {
 		return "", err
+	}
+	if fechaIngreso != nil && fechaIngreso.After(time.Now()) {
+		return "", dominio.ErrFechaDeIngresoEnElFuturo
 	}
 	equipo, err := dominio.DarDeAltaEquipo(empresa, mina, tipoEquipo, moduloTrabajo,
 		comando.Codigo, comando.Descripcion, comando.ModeloPerforadora, comando.Fabricante,

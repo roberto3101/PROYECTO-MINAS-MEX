@@ -39,6 +39,9 @@ func (caso *RegistrarUsuario) Ejecutar(ctx context.Context, comando ComandoRegis
 	if err := escudo.ValidarCorreo(comando.Correo); err != nil {
 		return "", err
 	}
+	if err := escudo.ValidarTextos(escudo.Campo("nombre", &comando.Nombre, 160)); err != nil {
+		return "", err
+	}
 	empresa, err := identificador.Desde(comando.IdentificadorEmpresa)
 	if err != nil {
 		return "", err

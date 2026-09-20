@@ -32,6 +32,9 @@ func (caso *EditarUsuario) Ejecutar(ctx context.Context, comando ComandoEditarUs
 	if err := escudo.ValidarCorreo(comando.Correo); err != nil {
 		return err
 	}
+	if err := escudo.ValidarTextos(escudo.Campo("nombre", &comando.Nombre, 160)); err != nil {
+		return err
+	}
 	return caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
 		usuario, encontrado, err := caso.usuarios.BuscarPorIdentificador(ctx, idUsuario)
 		if err != nil {

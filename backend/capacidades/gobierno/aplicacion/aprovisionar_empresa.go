@@ -80,6 +80,21 @@ func (caso *AprovisionarEmpresa) Ejecutar(ctx context.Context, comando ComandoAp
 	if err := escudo.ValidarCorreo(comando.CorreoContacto); err != nil {
 		return EmpresaAprovisionada{}, err
 	}
+	if err := escudo.ValidarTextos(
+		escudo.Campo("razon social", &comando.RazonSocial, 200),
+		escudo.Campo("identificacion fiscal", &comando.IdentificacionFiscal, 20),
+		escudo.Campo("telefono", &comando.Telefono, 20),
+		escudo.Campo("zona horaria", &comando.ZonaHoraria, 60),
+		escudo.Campo("nombre del administrador", &comando.AdminNombre, 160),
+	); err != nil {
+		return EmpresaAprovisionada{}, err
+	}
+	if err := escudo.ValidarZonaHoraria(comando.ZonaHoraria); err != nil {
+		return EmpresaAprovisionada{}, err
+	}
+	if err := escudo.ValidarTelefono(comando.Telefono); err != nil {
+		return EmpresaAprovisionada{}, err
+	}
 	branding, err := dominio.ConfigurarBranding("", comando.ColorPrimario, comando.ZonaHoraria, comando.Moneda)
 	if err != nil {
 		return EmpresaAprovisionada{}, err

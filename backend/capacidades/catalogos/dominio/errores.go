@@ -23,3 +23,5 @@ func EsEstadoValido(estado string, validos []string) bool {
 	}
 	return false
 }
+
+var ErrFechaDeIngresoEnElFuturo = errors.New("la fecha de ingreso a la mina no puede ser futura")

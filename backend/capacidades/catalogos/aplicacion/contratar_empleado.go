@@ -6,6 +6,7 @@ import (
 	"minas/capacidades/catalogos/dominio"
 	"minas/capacidades/catalogos/puertos"
 	"minas/compartido/identificador"
+	"minas/plataforma/escudo"
 )
 
 type ComandoContratarEmpleado struct {
@@ -33,6 +34,15 @@ func NuevoContratarEmpleado(unidad puertos.UnidadDeTrabajo, empleados puertos.Re
 func (caso *ContratarEmpleado) Ejecutar(ctx context.Context, comando ComandoContratarEmpleado) (string, error) {
 	empresa, err := identificador.Desde(comando.IdentificadorEmpresa)
 	if err != nil {
+		return "", err
+	}
+	if err := escudo.ValidarTextos(
+		escudo.Campo("numero de nomina", &comando.NumeroNomina, 30),
+		escudo.Campo("nombre completo", &comando.NombreCompleto, 160),
+		escudo.Campo("centro de costo", &comando.CentroCosto, 60),
+		escudo.Campo("gerente a cargo", &comando.GerenteACargo, 160),
+		escudo.Campo("grupo", &comando.Grupo, 30),
+	); err != nil {
 		return "", err
 	}
 	mina, err := identificador.Desde(comando.IdentificadorMina)

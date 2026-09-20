@@ -6,6 +6,7 @@ import (
 	"minas/capacidades/catalogos/dominio"
 	"minas/capacidades/catalogos/puertos"
 	"minas/compartido/identificador"
+	"minas/plataforma/escudo"
 )
 
 type ComandoCrearMina struct {
@@ -32,6 +33,13 @@ func NuevoCrearMina(unidad puertos.UnidadDeTrabajo, minas puertos.RepositorioMin
 func (caso *CrearMina) Ejecutar(ctx context.Context, comando ComandoCrearMina) (string, error) {
 	empresa, err := identificador.Desde(comando.IdentificadorEmpresa)
 	if err != nil {
+		return "", err
+	}
+	if err := escudo.ValidarTextos(
+		escudo.Campo("nombre", &comando.Nombre, 120),
+		escudo.Campo("area", &comando.Area, 80),
+		escudo.Campo("niveles", &comando.Niveles, 60),
+	); err != nil {
 		return "", err
 	}
 	mina, err := dominio.CrearMina(empresa, comando.Nombre, comando.Area, comando.Niveles,
