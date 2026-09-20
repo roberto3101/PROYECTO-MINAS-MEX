@@ -68,7 +68,7 @@ func main() {
 		aplicacionGobierno.NuevoAprovisionarEmpresa(unidadDePlataforma, unidad, lectorDePlataforma, repositorioEmpresa,
 			repositorioUsuario, repositorioAsignacion, aprovisionadorDeAccesos, cifrador, servicioCatalogos),
 		aplicacionGobierno.NuevoListarEmpresas(unidadDePlataforma, lectorDePlataforma),
-		aplicacionGobierno.NuevoDetalleDeEmpresa(unidadDePlataforma, lectorDePlataforma),
+		aplicacionGobierno.NuevoDetalleDeEmpresa(unidadDePlataforma, lectorDePlataforma, servicioCatalogos),
 		aplicacionGobierno.NuevoCambiarEstadoDeEmpresa(unidadDePlataforma, repositorioEmpresa),
 		aplicacionGobierno.NuevoRegistrarUsuario(unidad, repositorioUsuario, cifrador),
 		aplicacionGobierno.NuevoListarUsuarios(unidad, lectorDeGobierno),

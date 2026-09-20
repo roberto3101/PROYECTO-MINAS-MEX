@@ -68,9 +68,35 @@ hay SPs: la logica vive en Go y la base aporta el blindaje (RLS por empresa, lla
 foraneas compuestas y vistas). Por eso estas pruebas validan la costura completa
 **API -> Go -> PostgreSQL**, que es el equivalente exacto.
 
+## Que produce cada corrida
+
+En `reporte/` quedan tres versiones del mismo informe:
+
+| Archivo | Para que sirve |
+|---|---|
+| `informe.html` | Leerlo en pantalla, con colores y explicaciones en lenguaje llano |
+| `informe.pdf` | Enviarlo al cliente tal cual |
+| `informe.xlsx` | Filtrarlo en Excel: una hoja por area mas el resumen |
+
 ## Hallazgos que ya encontro
 
-- **El alcance por mina no viajaba en el token de sesion.** El login calculaba a que minas
-  podia entrar cada usuario, pero al emitir el token no se copiaban esos datos. Resultado:
-  las pantallas de Minas, Empleados y Equipos salian **vacias para todo el mundo**.
-  Corregido en `manejador_gobierno.go`.
+1. **El alcance por mina no viajaba en el token de sesion.** El login calculaba a que minas
+   podia entrar cada usuario, pero al emitir el token no se copiaban esos datos. Resultado:
+   las pantallas de Minas, Empleados y Equipos salian **vacias para todo el mundo**.
+   Corregido en `manejador_gobierno.go`.
+2. **El superadmin no podia abrir ninguna empresa.** El detalle contaba las minas desde el
+   esquema `catalogos` usando el rol `plataforma`, que por diseño no tiene acceso ahi, y la
+   respuesta era siempre un error 500. Como el boton "Accesos por mina" vive dentro de ese
+   panel, **toda la gestion de accesos era inalcanzable**. Corregido contando las minas
+   mediante impersonacion del tenant, sin ampliar privilegios.
+3. **Los errores internos de la base se enviaban al cliente** (incluido el texto y el
+   SQLSTATE de PostgreSQL). Ahora se registran en el servidor y al cliente le llega un
+   mensaje neutro.
+4. **Una empresa inexistente respondia 500 en vez de 404.**
+
+## Carencias detectadas (no son fallos, es funcionalidad que no existe)
+
+- El catalogo de **Minas no abre ficha de detalle** al pulsar una fila, aunque el backend
+  ya expone `GET /catalogos/minas/{id}`. Usuarios y Empresas si lo hacen.
+- Un usuario con alcance limitado **puede dar de alta** un empleado o equipo en una mina
+  fuera de su alcance: el filtro de lectura existe, el de escritura no.

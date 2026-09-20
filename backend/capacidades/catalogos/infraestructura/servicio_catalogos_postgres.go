@@ -39,6 +39,15 @@ func (servicio ServicioCatalogosPostgres) MinasActivas(ctx context.Context) ([]c
 	return minas, err
 }
 
+func (servicio ServicioCatalogosPostgres) TotalDeMinas(ctx context.Context) (int, error) {
+	var total int
+	err := servicio.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
+		return persistencia.ConsultasDe(ctx).QueryRow(ctx,
+			`SELECT count(*) FROM catalogos.mina WHERE eliminado_en IS NULL`).Scan(&total)
+	})
+	return total, err
+}
+
 func (ServicioCatalogosPostgres) SembrarCatalogosBasicos(ctx context.Context, identificadorEmpresa string) error {
 	consultas := persistencia.ConsultasDe(ctx)
 	var sembrado bool

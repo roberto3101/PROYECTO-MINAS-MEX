@@ -9,5 +9,6 @@ type MinaPublicada struct {
 
 type Catalogos interface {
 	MinasActivas(ctx context.Context) ([]MinaPublicada, error)
+	TotalDeMinas(ctx context.Context) (int, error)
 	SembrarCatalogosBasicos(ctx context.Context, identificadorEmpresa string) error
 }

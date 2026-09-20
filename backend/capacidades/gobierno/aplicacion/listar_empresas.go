@@ -3,7 +3,10 @@ package aplicacion
 import (
 	"context"
 
+	contratoCatalogos "minas/capacidades/catalogos/contrato"
 	"minas/capacidades/gobierno/puertos"
+	"minas/compartido/identificador"
+	"minas/plataforma/contexto"
 )
 
 type ListarEmpresas struct {
@@ -27,21 +30,34 @@ func (caso *ListarEmpresas) Ejecutar(ctx context.Context, filtro puertos.FiltroD
 }
 
 type DetalleDeEmpresa struct {
-	unidad puertos.UnidadDeTrabajoDePlataforma
-	lector puertos.LectorDePlataforma
+	unidad    puertos.UnidadDeTrabajoDePlataforma
+	lector    puertos.LectorDePlataforma
+	catalogos contratoCatalogos.Catalogos
 }
 
-func NuevoDetalleDeEmpresa(unidad puertos.UnidadDeTrabajoDePlataforma, lector puertos.LectorDePlataforma) *DetalleDeEmpresa {
-	return &DetalleDeEmpresa{unidad: unidad, lector: lector}
+func NuevoDetalleDeEmpresa(unidad puertos.UnidadDeTrabajoDePlataforma, lector puertos.LectorDePlataforma, catalogos contratoCatalogos.Catalogos) *DetalleDeEmpresa {
+	return &DetalleDeEmpresa{unidad: unidad, lector: lector, catalogos: catalogos}
 }
 
-func (caso *DetalleDeEmpresa) Ejecutar(ctx context.Context, identificador string) (puertos.DetalleEmpresaDePlataforma, bool, error) {
+func (caso *DetalleDeEmpresa) Ejecutar(ctx context.Context, identificadorEmpresa string) (puertos.DetalleEmpresaDePlataforma, bool, error) {
 	var detalle puertos.DetalleEmpresaDePlataforma
 	var encontrada bool
 	err := caso.unidad.EnTransaccion(ctx, func(ctx context.Context) error {
-		resultado, existe, err := caso.lector.DetalleDeEmpresa(ctx, identificador)
+		resultado, existe, err := caso.lector.DetalleDeEmpresa(ctx, identificadorEmpresa)
 		detalle, encontrada = resultado, existe
 		return err
 	})
-	return detalle, encontrada, err
+	if err != nil || !encontrada {
+		return detalle, encontrada, err
+	}
+	empresa, err := identificador.Desde(detalle.Identificador)
+	if err != nil {
+		return detalle, true, err
+	}
+	total, err := caso.catalogos.TotalDeMinas(contexto.ConEmpresaImpersonada(ctx, empresa))
+	if err != nil {
+		return detalle, true, err
+	}
+	detalle.TotalMinas = total
+	return detalle, true, nil
 }

@@ -83,7 +83,7 @@ func (LectorDePlataformaPostgres) DetalleDeEmpresa(ctx context.Context, identifi
 		        to_char(e.creado_en, 'YYYY-MM-DD"T"HH24:MI:SSZ'),
 		        COALESCE(e.identificacion_fiscal,''), COALESCE(e.correo_contacto,''), COALESCE(e.telefono,''),
 		        (SELECT count(*) FROM gobierno.usuario u WHERE u.id_empresa = e.id AND u.eliminado_en IS NULL),
-		        (SELECT count(*) FROM catalogos.mina m WHERE m.id_empresa = e.id AND m.eliminado_en IS NULL)
+		        0
 		 FROM gobierno.empresa e WHERE e.id = $1 AND e.eliminado_en IS NULL`, identificador)
 	err := fila.Scan(&detalle.Identificador, &detalle.Codigo, &detalle.RazonSocial, &detalle.Estado,
 		&detalle.LogoUrl, &detalle.ColorPrimario, &detalle.Moneda, &detalle.ZonaHoraria, &detalle.CreadoEn,

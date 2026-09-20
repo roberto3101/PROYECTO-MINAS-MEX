@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import { chromium } from "@playwright/test";
+import ExcelJS from "exceljs";
 import type {
   FullConfig,
   FullResult,
@@ -18,25 +20,36 @@ type Prueba = {
   motivo: string;
 };
 
-const AREAS: Record<string, { titulo: string; explicacion: string }> = {
+type Datos = {
+  corrida: string;
+  duracionSegundos: number;
+  pruebas: Prueba[];
+};
+
+const AREAS: Record<string, { titulo: string; pregunta: string; explicacion: string }> = {
   seguridad: {
-    titulo: "Seguridad",
+    titulo: "Candados",
+    pregunta: "¿Puede alguien ver o tocar lo que no es suyo?",
     explicacion:
-      "Comprueba que nadie vea ni toque lo que no es suyo: datos de otra empresa, permisos que no le dieron, o entrar adivinando contrasenas."
+      "Como las llaves de una casa: cada empresa tiene la suya y no abre la puerta del vecino. Aqui probamos a forzar esas puertas."
   },
   validacion: {
-    titulo: "Validacion de datos",
+    titulo: "Datos bien escritos",
+    pregunta: "¿Deja el sistema guardar datos mal hechos?",
     explicacion:
-      "Comprueba que el sistema no acepte datos mal escritos: nombres imposibles, contrasenas debiles, correos falsos."
+      "Si alguien escribe un correo que no existe o una contrasena facil de adivinar, el sistema tiene que decir que no."
   },
   contrato: {
-    titulo: "Reglas del negocio",
+    titulo: "Promesas cumplidas",
+    pregunta: "Cuando el sistema dice que guardo algo, ¿de verdad lo guardo?",
     explicacion:
-      "Comprueba que cada accion deje realmente el dato correcto en la base: si dice que guardo, guardo; si dice que rechazo, no guardo nada."
+      "Despues de cada accion vamos a la base de datos a mirar con nuestros propios ojos que el dato quedo bien."
   },
   "casos-uso": {
-    titulo: "Uso real en pantalla",
-    explicacion: "Recorre el sistema como lo haria una persona, con el navegador, de principio a fin."
+    titulo: "Uso de verdad",
+    pregunta: "¿Funciona cuando una persona lo usa con el raton?",
+    explicacion:
+      "Abrimos el programa en un navegador de verdad, entramos, damos clics y comprobamos lo que aparece en pantalla."
   }
 };
 
@@ -65,21 +78,25 @@ export default class InformeDeCalidad implements Reporter {
     });
   }
 
-  async onEnd(resultado: FullResult): Promise<void> {
-    const datos = {
+  async onEnd(_resultado: FullResult): Promise<void> {
+    const datos: Datos = {
       corrida: new Date().toISOString(),
       duracionSegundos: Math.round((Date.now() - this.inicio) / 100) / 10,
-      veredicto: resultado.status,
       pruebas: this.pruebas
     };
     fs.mkdirSync(this.carpeta, { recursive: true });
-    fs.writeFileSync(
-      path.join(this.carpeta, "resultado.json"),
-      JSON.stringify(datos, null, 2),
-      "utf8"
-    );
-    fs.writeFileSync(path.join(this.carpeta, "informe.html"), this.html(datos), "utf8");
-    console.log(`\nInforme: ${path.join(this.carpeta, "informe.html")}`);
+
+    const html = this.html(datos);
+    const rutaHtml = path.join(this.carpeta, "informe.html");
+    fs.writeFileSync(rutaHtml, html, "utf8");
+    fs.writeFileSync(path.join(this.carpeta, "resultado.json"), JSON.stringify(datos, null, 2), "utf8");
+
+    await this.excel(datos);
+    await this.pdf(html);
+
+    console.log(`\nInforme para leer:   ${rutaHtml}`);
+    console.log(`Informe para enviar: ${path.join(this.carpeta, "informe.pdf")}`);
+    console.log(`Informe para Excel:  ${path.join(this.carpeta, "informe.xlsx")}`);
   }
 
   private motivoDe(resultado: TestResult): string {
@@ -90,99 +107,190 @@ export default class InformeDeCalidad implements Reporter {
     return linea.trim().slice(0, 300);
   }
 
-  private html(datos: {
-    corrida: string;
-    duracionSegundos: number;
-    veredicto: string;
-    pruebas: Prueba[];
-  }): string {
+  private agrupar(datos: Datos): Map<string, Prueba[]> {
     const porArea = new Map<string, Prueba[]>();
     for (const prueba of datos.pruebas) {
       const lista = porArea.get(prueba.area) ?? [];
       lista.push(prueba);
       porArea.set(prueba.area, lista);
     }
+    return porArea;
+  }
+
+  private async excel(datos: Datos): Promise<void> {
+    const libro = new ExcelJS.Workbook();
+    libro.creator = "Plataforma Minera";
+    libro.created = new Date();
+
+    const pasaron = datos.pruebas.filter((p) => p.estado === "paso").length;
+    const fallaron = datos.pruebas.filter((p) => p.estado === "fallo").length;
+
+    const resumen = libro.addWorksheet("Resumen");
+    resumen.columns = [
+      { header: "Concepto", key: "concepto", width: 46 },
+      { header: "Valor", key: "valor", width: 22 }
+    ];
+    resumen.addRows([
+      { concepto: "Fecha de la revision", valor: new Date(datos.corrida).toLocaleString("es-MX") },
+      { concepto: "Pruebas realizadas", valor: datos.pruebas.length },
+      { concepto: "Pruebas que pasaron", valor: pasaron },
+      { concepto: "Pruebas que fallaron", valor: fallaron },
+      { concepto: "Duracion (segundos)", valor: datos.duracionSegundos },
+      { concepto: "Veredicto", valor: fallaron === 0 ? "TODO EN ORDEN" : "REQUIERE ATENCION" }
+    ]);
+    resumen.getRow(1).font = { bold: true };
+
+    for (const [area, lista] of this.agrupar(datos)) {
+      const meta = AREAS[area] ?? { titulo: area, pregunta: "", explicacion: "" };
+      const hoja = libro.addWorksheet(meta.titulo.slice(0, 28));
+      hoja.columns = [
+        { header: "Resultado", key: "estado", width: 12 },
+        { header: "Que se comprobo", key: "titulo", width: 82 },
+        { header: "Si fallo, por que", key: "motivo", width: 60 },
+        { header: "Segundos", key: "segundos", width: 10 }
+      ];
+      hoja.getRow(1).font = { bold: true };
+      for (const prueba of lista) {
+        const fila = hoja.addRow({
+          estado: prueba.estado === "paso" ? "OK" : prueba.estado === "fallo" ? "FALLA" : "omitida",
+          titulo: prueba.titulo,
+          motivo: prueba.motivo,
+          segundos: Math.round(prueba.milisegundos / 100) / 10
+        });
+        fila.getCell("estado").font = {
+          bold: true,
+          color: { argb: prueba.estado === "paso" ? "FF1E7F44" : "FFC62828" }
+        };
+      }
+    }
+
+    await libro.xlsx.writeFile(path.join(this.carpeta, "informe.xlsx"));
+  }
+
+  private async pdf(html: string): Promise<void> {
+    try {
+      const navegador = await chromium.launch();
+      const pagina = await navegador.newPage();
+      await pagina.setContent(html, { waitUntil: "load" });
+      await pagina.pdf({
+        path: path.join(this.carpeta, "informe.pdf"),
+        format: "A4",
+        printBackground: true,
+        margin: { top: "14mm", bottom: "14mm", left: "12mm", right: "12mm" }
+      });
+      await navegador.close();
+    } catch (error) {
+      console.log(`No se pudo generar el PDF: ${(error as Error).message}`);
+    }
+  }
+
+  private html(datos: Datos): string {
+    const porArea = this.agrupar(datos);
     const total = datos.pruebas.length;
     const pasaron = datos.pruebas.filter((p) => p.estado === "paso").length;
     const fallaron = datos.pruebas.filter((p) => p.estado === "fallo").length;
     const omitidas = datos.pruebas.filter((p) => p.estado === "omitido").length;
     const evaluadas = pasaron + fallaron;
     const porcentaje = evaluadas === 0 ? 0 : Math.round((pasaron / evaluadas) * 100);
+    const todoBien = fallaron === 0;
 
     const secciones = [...porArea.entries()]
       .map(([area, lista]) => {
-        const meta = AREAS[area] ?? { titulo: area, explicacion: "" };
+        const meta = AREAS[area] ?? { titulo: area, pregunta: "", explicacion: "" };
         const malas = lista.filter((p) => p.estado === "fallo").length;
         const filas = lista
           .map(
             (p) => `<tr class="${p.estado}">
-              <td class="marca">${p.estado === "paso" ? "OK" : p.estado === "fallo" ? "FALLA" : "—"}</td>
+              <td class="marca">${p.estado === "paso" ? "✓" : p.estado === "fallo" ? "✕" : "–"}</td>
               <td>${escapar(p.titulo)}${p.motivo ? `<div class="motivo">${escapar(p.motivo)}</div>` : ""}</td>
-              <td class="tiempo">${(p.milisegundos / 1000).toFixed(1)}s</td>
             </tr>`
           )
           .join("");
         return `<section>
-          <h2>${escapar(meta.titulo)} <span class="cuenta ${malas ? "mal" : "bien"}">${lista.length - malas}/${lista.length}</span></h2>
+          <div class="cabecera-area">
+            <h2>${escapar(meta.titulo)}</h2>
+            <span class="cuenta ${malas ? "mal" : "bien"}">${lista.length - malas} de ${lista.length}</span>
+          </div>
+          <p class="pregunta">${escapar(meta.pregunta)}</p>
           <p class="explicacion">${escapar(meta.explicacion)}</p>
           <table>${filas}</table>
         </section>`;
       })
       .join("");
 
-    const resumen =
-      fallaron === 0
-        ? "Todo lo que se probo funciono como debe."
-        : `Hay ${fallaron} ${fallaron === 1 ? "prueba que falla" : "pruebas que fallan"}. Cada una dice abajo que se esperaba.`;
-
     return `<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Calidad · Plataforma Minera</title>
+<title>Revision de calidad · Plataforma Minera</title>
 <style>
-:root{--fondo:#0e1116;--panel:#171c24;--borde:#252c37;--texto:#e8eaed;--tenue:#9aa4b2;--oro:#d9a440;--bien:#4ec97f;--mal:#ef5f5f}
+:root{--fondo:#0d1017;--panel:#161b23;--borde:#242b36;--texto:#e9ecf1;--tenue:#98a2b3;--oro:#d9a440;--bien:#4ec97f;--mal:#ef5f5f}
 *{box-sizing:border-box}
-body{margin:0;background:var(--fondo);color:var(--texto);font:15px/1.55 "Segoe UI",system-ui,sans-serif;padding:32px 16px}
-.hoja{max-width:940px;margin:0 auto}
-h1{font-size:26px;margin:0 0 4px}
-.fecha{color:var(--tenue);font-size:13px;margin-bottom:24px}
-.tarjetas{display:grep;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px}
-.tarjeta{background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:16px}
-.tarjeta .num{font-size:30px;font-weight:600}
-.tarjeta .rot{color:var(--tenue);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
-.barra{height:10px;border-radius:99px;background:#222835;overflow:hidden;margin:18px 0 6px}
-.barra span{display:block;height:100%;background:linear-gradient(90deg,var(--bien),#2f9e5f);width:${porcentaje}%}
-.resumen{background:var(--panel);border:1px solid var(--borde);border-left:3px solid var(--oro);border-radius:10px;padding:14px 16px;margin:20px 0 28px}
-section{margin-bottom:28px}
-h2{font-size:17px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
-.cuenta{font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid var(--borde);color:var(--tenue)}
-.cuenta.bien{color:var(--bien);border-color:#24503a}
+body{margin:0;background:var(--fondo);color:var(--texto);font:15px/1.6 "Segoe UI",system-ui,sans-serif;padding:34px 16px}
+.hoja{max-width:900px;margin:0 auto}
+.marca-agua{display:flex;align-items:center;gap:9px;color:var(--oro);font-weight:600;letter-spacing:.14em;font-size:11px;text-transform:uppercase;margin-bottom:22px}
+.marca-agua i{width:22px;height:2px;background:var(--oro);display:block}
+h1{font-size:30px;margin:0 0 6px;letter-spacing:-.4px}
+.fecha{color:var(--tenue);font-size:13px;margin-bottom:26px}
+.veredicto{display:flex;align-items:center;gap:18px;background:var(--panel);border:1px solid var(--borde);border-left:4px solid ${todoBien ? "var(--bien)" : "var(--mal)"};border-radius:14px;padding:22px 24px;margin-bottom:26px}
+.veredicto .icono{font-size:38px;line-height:1}
+.veredicto h2{margin:0 0 3px;font-size:21px}
+.veredicto p{margin:0;color:var(--tenue);font-size:14px}
+.tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px}
+.tarjeta{background:var(--panel);border:1px solid var(--borde);border-radius:12px;padding:15px 16px}
+.tarjeta .num{font-size:28px;font-weight:650;line-height:1.15}
+.tarjeta .rot{color:var(--tenue);font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+.barra{height:9px;border-radius:99px;background:#1e242e;overflow:hidden;margin:16px 0 30px}
+.barra span{display:block;height:100%;background:linear-gradient(90deg,var(--oro),var(--bien));width:${porcentaje}%}
+section{margin-bottom:30px;break-inside:avoid}
+.cabecera-area{display:flex;align-items:center;gap:12px;margin-bottom:2px}
+h2{font-size:18px;margin:0}
+.cuenta{font-size:11.5px;padding:3px 10px;border-radius:99px;border:1px solid var(--borde);color:var(--tenue);white-space:nowrap}
+.cuenta.bien{color:var(--bien);border-color:#22503a}
 .cuenta.mal{color:var(--mal);border-color:#57282b}
-.explicacion{color:var(--tenue);font-size:13px;margin:0 0 10px}
-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--borde);border-radius:10px;overflow:hidden}
-td{padding:9px 12px;border-top:1px solid var(--borde);vertical-align:top}
+.pregunta{margin:0 0 4px;font-size:15px;color:var(--oro)}
+.explicacion{color:var(--tenue);font-size:13.5px;margin:0 0 12px;max-width:70ch}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--borde);border-radius:12px;overflow:hidden}
+td{padding:10px 13px;border-top:1px solid var(--borde);vertical-align:top}
 tr:first-child td{border-top:0}
-.marca{width:62px;font-size:11px;font-weight:700;letter-spacing:.04em}
+.marca{width:34px;font-size:15px;font-weight:700;text-align:center}
 tr.paso .marca{color:var(--bien)}
 tr.fallo .marca{color:var(--mal)}
 tr.omitido .marca{color:var(--tenue)}
-tr.fallo{background:rgba(239,95,95,.06)}
-.motivo{color:var(--mal);font-size:12.5px;margin-top:5px;font-family:Consolas,monospace}
-.tiempo{width:64px;color:var(--tenue);font-size:12px;text-align:right}
-footer{color:var(--tenue);font-size:12px;border-top:1px solid var(--borde);padding-top:14px;margin-top:8px}
+tr.fallo{background:rgba(239,95,95,.07)}
+.motivo{color:var(--mal);font-size:12.5px;margin-top:6px;font-family:Consolas,monospace}
+footer{color:var(--tenue);font-size:12.5px;border-top:1px solid var(--borde);padding-top:16px;margin-top:10px;max-width:70ch}
 </style></head><body><div class="hoja">
-<h1>Informe de calidad</h1>
-<div class="fecha">Plataforma Minera · ${new Date(datos.corrida).toLocaleString("es-MX")} · ${datos.duracionSegundos}s</div>
+<div class="marca-agua"><i></i> Plataforma Minera · Revision de calidad</div>
+<h1>${todoBien ? "Todo funciona como debe" : `Hay ${fallaron} ${fallaron === 1 ? "cosa" : "cosas"} por arreglar`}</h1>
+<div class="fecha">${new Date(datos.corrida).toLocaleString("es-MX")} · la revision tardo ${datos.duracionSegundos} segundos</div>
+
+<div class="veredicto">
+  <div class="icono">${todoBien ? "✓" : "!"}</div>
+  <div>
+    <h2>${pasaron} de ${evaluadas} comprobaciones salieron bien</h2>
+    <p>${
+      todoBien
+        ? "Probamos a romper el sistema de todas las formas que se nos ocurrieron y aguanto."
+        : "Abajo se explica, en la seccion correspondiente, que fallo y por que."
+    }</p>
+  </div>
+</div>
+
 <div class="tarjetas">
-  <div class="tarjeta"><div class="num">${total}</div><div class="rot">pruebas</div></div>
-  <div class="tarjeta"><div class="num" style="color:var(--bien)">${pasaron}</div><div class="rot">pasaron</div></div>
-  <div class="tarjeta"><div class="num" style="color:${fallaron ? "var(--mal)" : "var(--tenue)"}">${fallaron}</div><div class="rot">fallaron</div></div>
-  <div class="tarjeta"><div class="num" style="color:var(--tenue)">${omitidas}</div><div class="rot">omitidas</div></div>
+  <div class="tarjeta"><div class="num">${total}</div><div class="rot">comprobaciones</div></div>
+  <div class="tarjeta"><div class="num" style="color:var(--bien)">${pasaron}</div><div class="rot">bien</div></div>
+  <div class="tarjeta"><div class="num" style="color:${fallaron ? "var(--mal)" : "var(--tenue)"}">${fallaron}</div><div class="rot">mal</div></div>
+  <div class="tarjeta"><div class="num" style="color:var(--tenue)">${omitidas}</div><div class="rot">sin datos</div></div>
 </div>
 <div class="barra"><span></span></div>
-<div class="resumen"><strong>${porcentaje}% en verde.</strong> ${escapar(resumen)}</div>
+
 ${secciones}
-<footer>Cada linea es una promesa que el sistema le hace al cliente. Si dice OK, esa promesa se cumplio contra la base de datos real.</footer>
+
+<footer>
+Como leer esto: cada linea con <strong>✓</strong> es una promesa que el sistema le hace a quien lo compra, y que
+comprobamos de verdad — no preguntandole al programa si hizo su trabajo, sino yendo a la base de datos a mirarlo.
+Cuando el sistema rechaza algo, ademas verificamos que no haya guardado nada a escondidas.
+</footer>
 </div></body></html>`;
   }
 }

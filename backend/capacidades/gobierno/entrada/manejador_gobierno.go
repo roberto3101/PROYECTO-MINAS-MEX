@@ -230,7 +230,7 @@ func (manejador *ManejadorGobierno) ListarEmpresas(escritor http.ResponseWriter,
 func (manejador *ManejadorGobierno) DetalleDeEmpresaDePlataforma(escritor http.ResponseWriter, peticion *http.Request) {
 	detalle, encontrada, err := manejador.detalleEmpresa.Ejecutar(peticion.Context(), peticion.PathValue("id"))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	if !encontrada {
@@ -373,7 +373,7 @@ func (manejador *ManejadorGobierno) CrearRol(escritor http.ResponseWriter, petic
 func (manejador *ManejadorGobierno) ListarRoles(escritor http.ResponseWriter, peticion *http.Request) {
 	roles, err := manejador.listarRoles.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, roles)
@@ -382,7 +382,7 @@ func (manejador *ManejadorGobierno) ListarRoles(escritor http.ResponseWriter, pe
 func (manejador *ManejadorGobierno) ListarPermisos(escritor http.ResponseWriter, peticion *http.Request) {
 	permisos, err := manejador.listarPermisos.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, permisos)
@@ -507,7 +507,7 @@ func (manejador *ManejadorGobierno) SubirLogo(escritor http.ResponseWriter, peti
 func (manejador *ManejadorGobierno) EmpresaActual(escritor http.ResponseWriter, peticion *http.Request) {
 	empresa, encontrada, err := manejador.gobierno.EmpresaActual(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	if !encontrada {
@@ -521,7 +521,7 @@ func (manejador *ManejadorGobierno) PermisosVigentes(escritor http.ResponseWrite
 	sesion, _ := web.SesionDe(peticion.Context())
 	permisos, err := manejador.gobierno.PermisosVigentesDe(peticion.Context(), sesion.IdentificadorUsuario)
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, permisos)
@@ -531,7 +531,7 @@ func (manejador *ManejadorGobierno) MinasDeSesion(escritor http.ResponseWriter, 
 	sesion, _ := web.SesionDe(peticion.Context())
 	acceso, err := manejador.minasDeSesion.Ejecutar(peticion.Context(), sesion.IdentificadorUsuario)
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, acceso)
@@ -563,7 +563,7 @@ func (manejador *ManejadorGobierno) RolesDeEmpresa(escritor http.ResponseWriter,
 	}
 	roles, err := manejador.listarRoles.Ejecutar(ctx)
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, roles)
@@ -654,4 +654,9 @@ func direccionRemota(peticion *http.Request) string {
 func empresaDe(peticion *http.Request) string {
 	tenant, _ := contexto.TenantDe(peticion.Context())
 	return tenant.Empresa.Texto()
+}
+
+func responderErrorInterno(escritor http.ResponseWriter, err error) {
+	log.Printf("error interno: %v", err)
+	web.ResponderError(escritor, http.StatusInternalServerError, "no se pudo completar la operacion")
 }

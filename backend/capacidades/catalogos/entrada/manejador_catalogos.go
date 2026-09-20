@@ -1,6 +1,7 @@
 package entrada
 
 import (
+	"log"
 	"net/http"
 
 	"minas/capacidades/catalogos/aplicacion"
@@ -105,7 +106,7 @@ func (manejador *ManejadorCatalogos) CrearMina(escritor http.ResponseWriter, pet
 func (manejador *ManejadorCatalogos) ListarMinas(escritor http.ResponseWriter, peticion *http.Request) {
 	minas, cursor, err := manejador.listarMinas.Ejecutar(peticion.Context(), filtroDe(peticion))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": minas, "SiguienteCursor": cursor})
@@ -114,7 +115,7 @@ func (manejador *ManejadorCatalogos) ListarMinas(escritor http.ResponseWriter, p
 func (manejador *ManejadorCatalogos) DetalleDeMina(escritor http.ResponseWriter, peticion *http.Request) {
 	detalle, encontrada, err := manejador.detalleMina.Ejecutar(peticion.Context(), peticion.PathValue("id"))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	if !encontrada {
@@ -179,7 +180,7 @@ func (manejador *ManejadorCatalogos) ContratarEmpleado(escritor http.ResponseWri
 func (manejador *ManejadorCatalogos) ListarEmpleados(escritor http.ResponseWriter, peticion *http.Request) {
 	empleados, cursor, err := manejador.listarEmpleados.Ejecutar(peticion.Context(), filtroDe(peticion))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": empleados, "SiguienteCursor": cursor})
@@ -188,7 +189,7 @@ func (manejador *ManejadorCatalogos) ListarEmpleados(escritor http.ResponseWrite
 func (manejador *ManejadorCatalogos) DetalleDeEmpleado(escritor http.ResponseWriter, peticion *http.Request) {
 	detalle, encontrado, err := manejador.detalleEmpleado.Ejecutar(peticion.Context(), peticion.PathValue("id"))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	if !encontrado {
@@ -259,7 +260,7 @@ func (manejador *ManejadorCatalogos) DarDeAltaEquipo(escritor http.ResponseWrite
 func (manejador *ManejadorCatalogos) ListarEquipos(escritor http.ResponseWriter, peticion *http.Request) {
 	equipos, cursor, err := manejador.listarEquipos.Ejecutar(peticion.Context(), filtroDe(peticion))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": equipos, "SiguienteCursor": cursor})
@@ -268,7 +269,7 @@ func (manejador *ManejadorCatalogos) ListarEquipos(escritor http.ResponseWriter,
 func (manejador *ManejadorCatalogos) DetalleDeEquipo(escritor http.ResponseWriter, peticion *http.Request) {
 	detalle, encontrado, err := manejador.detalleEquipo.Ejecutar(peticion.Context(), peticion.PathValue("id"))
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	if !encontrado {
@@ -299,7 +300,7 @@ func (manejador *ManejadorCatalogos) CambiarEstadoDeEquipo(escritor http.Respons
 func (manejador *ManejadorCatalogos) ListarTiposDeEquipo(escritor http.ResponseWriter, peticion *http.Request) {
 	tipos, err := manejador.listarTipos.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, tipos)
@@ -308,7 +309,7 @@ func (manejador *ManejadorCatalogos) ListarTiposDeEquipo(escritor http.ResponseW
 func (manejador *ManejadorCatalogos) ListarModulosDeTrabajo(escritor http.ResponseWriter, peticion *http.Request) {
 	modulos, err := manejador.listarModulos.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, modulos)
@@ -317,7 +318,7 @@ func (manejador *ManejadorCatalogos) ListarModulosDeTrabajo(escritor http.Respon
 func (manejador *ManejadorCatalogos) ListarDepartamentos(escritor http.ResponseWriter, peticion *http.Request) {
 	departamentos, err := manejador.listarDepartamentos.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, departamentos)
@@ -326,7 +327,7 @@ func (manejador *ManejadorCatalogos) ListarDepartamentos(escritor http.ResponseW
 func (manejador *ManejadorCatalogos) ListarPuestos(escritor http.ResponseWriter, peticion *http.Request) {
 	puestos, err := manejador.listarPuestos.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, puestos)
@@ -335,7 +336,7 @@ func (manejador *ManejadorCatalogos) ListarPuestos(escritor http.ResponseWriter,
 func (manejador *ManejadorCatalogos) ListarActividades(escritor http.ResponseWriter, peticion *http.Request) {
 	actividades, err := manejador.listarActividades.Ejecutar(peticion.Context())
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, actividades)
@@ -354,7 +355,7 @@ func (manejador *ManejadorCatalogos) MinasDeEmpresa(escritor http.ResponseWriter
 		Limite:   paginacion.LimiteSeguro(consulta.Get("limite")),
 	})
 	if err != nil {
-		web.ResponderError(escritor, http.StatusInternalServerError, err.Error())
+		responderErrorInterno(escritor, err)
 		return
 	}
 	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": minas, "SiguienteCursor": cursor})
@@ -405,4 +406,9 @@ func contieneMina(minas []string, objetivo string) bool {
 func empresaDe(peticion *http.Request) string {
 	tenant, _ := contexto.TenantDe(peticion.Context())
 	return tenant.Empresa.Texto()
+}
+
+func responderErrorInterno(escritor http.ResponseWriter, err error) {
+	log.Printf("error interno: %v", err)
+	web.ResponderError(escritor, http.StatusInternalServerError, "no se pudo completar la operacion")
 }
