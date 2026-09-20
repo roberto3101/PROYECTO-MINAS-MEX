@@ -17,6 +17,11 @@ type RepositorioEmpleado interface {
 	CambiarEstado(ctx context.Context, id identificador.Identificador, estado string) error
 }
 
+type RepositorioObra interface {
+	Guardar(ctx context.Context, obra dominio.Obra) error
+	CambiarEstado(ctx context.Context, id identificador.Identificador, estado string) error
+}
+
 type RepositorioEquipo interface {
 	Guardar(ctx context.Context, equipo dominio.Equipo) error
 	CambiarEstado(ctx context.Context, id identificador.Identificador, estado string) error

@@ -12,6 +12,9 @@ import (
 	aplicacionGobierno "minas/capacidades/gobierno/aplicacion"
 	entradaGobierno "minas/capacidades/gobierno/entrada"
 	infraGobierno "minas/capacidades/gobierno/infraestructura"
+	aplicacionProduccion "minas/capacidades/produccion/aplicacion"
+	entradaProduccion "minas/capacidades/produccion/entrada"
+	infraProduccion "minas/capacidades/produccion/infraestructura"
 	"minas/compartido/reloj"
 	"minas/pasarela"
 	"minas/plataforma/archivos"
@@ -59,6 +62,7 @@ func main() {
 	repositorioMina := infraCatalogos.NuevoRepositorioMina()
 	repositorioEmpleado := infraCatalogos.NuevoRepositorioEmpleado()
 	repositorioEquipo := infraCatalogos.NuevoRepositorioEquipo()
+	repositorioObra := infraCatalogos.NuevoRepositorioObra()
 	lectorDeCatalogos := infraCatalogos.NuevoLectorDeCatalogos()
 	servicioCatalogos := infraCatalogos.NuevoServicioCatalogos(unidad)
 
@@ -108,12 +112,32 @@ func main() {
 		aplicacionCatalogos.NuevoListarDepartamentos(unidad, lectorDeCatalogos),
 		aplicacionCatalogos.NuevoListarPuestos(unidad, lectorDeCatalogos),
 		aplicacionCatalogos.NuevoListarActividades(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoCrearObra(unidad, repositorioObra),
+		aplicacionCatalogos.NuevoListarObras(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoDetalleDeObra(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoCambiarEstadoDeObra(unidad, repositorioObra),
+		aplicacionCatalogos.NuevoListarTiposDeObra(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoListarTiposDeMineral(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoListarTiposDeBarreno(unidad, lectorDeCatalogos),
+		aplicacionCatalogos.NuevoListarTiposDeDemora(unidad, lectorDeCatalogos),
+	)
+
+	repositorioDeCarga := infraProduccion.NuevoRepositorioDeCarga()
+	repositorioDeBarrenacion := infraProduccion.NuevoRepositorioDeBarrenacion()
+	repositorioDeDemora := infraProduccion.NuevoRepositorioDeDemora()
+	lectorDeProduccion := infraProduccion.NuevoLectorDeProduccion()
+	manejadorProduccion := entradaProduccion.NuevoManejadorProduccion(
+		aplicacionProduccion.NuevoRegistrarParteDeCarga(unidad, repositorioDeCarga),
+		aplicacionProduccion.NuevoRegistrarParteDeBarrenacion(unidad, repositorioDeBarrenacion),
+		aplicacionProduccion.NuevoRegistrarDemora(unidad, repositorioDeDemora),
+		aplicacionProduccion.NuevasConsultasDeProduccion(unidad, lectorDeProduccion),
 	)
 
 	rutas := pasarela.NuevasRutas(pasarela.Dependencias{
 		Autenticador:       web.NuevoAutenticador(emisor, relojDelSistema),
 		Gobierno:           manejadorGobierno,
 		Catalogos:          manejadorCatalogos,
+		Produccion:         manejadorProduccion,
 		Frontend:           web.NuevoServidorDeFrontend(directorioFrontend),
 		DirectorioArchivos: directorioArchivos,
 	})

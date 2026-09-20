@@ -262,3 +262,85 @@ func listarOpciones(ctx context.Context, tabla string) ([]puertos.OpcionDeCatalo
 	}
 	return opciones, filas.Err()
 }
+
+func (LectorDeCatalogosPostgres) ListarObras(ctx context.Context, filtro puertos.FiltroDeCatalogo) ([]puertos.ResumenObra, string, error) {
+	consultas := persistencia.ConsultasDe(ctx)
+	orden, identificadorCursor, err := paginacion.DecodificarCursor(filtro.Cursor)
+	if err != nil {
+		return nil, "", err
+	}
+	filas, err := consultas.Query(ctx,
+		`SELECT o.id, o.codigo, COALESCE(o.nombre, ''), m.nombre, COALESCE(t.descripcion, ''),
+		        COALESCE(o.ubicacion, ''), o.es_prioritaria, o.estado
+		 FROM catalogos.obra o
+		 JOIN catalogos.mina m ON m.id = o.id_mina
+		 LEFT JOIN catalogos.tipo_obra t ON t.id = o.id_tipo_obra
+		 WHERE o.eliminado_en IS NULL
+		   AND ($1 = '' OR o.codigo ILIKE '%'||$1||'%' OR COALESCE(o.nombre, '') ILIKE '%'||$1||'%')
+		   AND ($2 = '' OR $2 IN ('TODAS', 'TODOS') OR o.estado = $2)
+		   AND (NOT $6 OR o.id_mina = ANY($7::uuid[]))
+		   AND ($3 = '' OR (o.codigo, o.id::text) > ($3, $4))
+		 ORDER BY o.codigo, o.id LIMIT $5`,
+		filtro.Busqueda, filtro.Estado, orden, identificadorCursor, filtro.Limite+1,
+		filtro.RestringirPorMina, filtro.MinasPermitidas)
+	if err != nil {
+		return nil, "", err
+	}
+	defer filas.Close()
+	var obras []puertos.ResumenObra
+	for filas.Next() {
+		var obra puertos.ResumenObra
+		if err := filas.Scan(&obra.Identificador, &obra.Codigo, &obra.Nombre, &obra.Mina,
+			&obra.TipoDeObra, &obra.Ubicacion, &obra.EsPrioritaria, &obra.Estado); err != nil {
+			return nil, "", err
+		}
+		obras = append(obras, obra)
+	}
+	if err := filas.Err(); err != nil {
+		return nil, "", err
+	}
+	siguiente := ""
+	if len(obras) > filtro.Limite {
+		obras = obras[:filtro.Limite]
+		ultima := obras[len(obras)-1]
+		siguiente = paginacion.CodificarCursor(ultima.Codigo, ultima.Identificador)
+	}
+	return obras, siguiente, nil
+}
+
+func (LectorDeCatalogosPostgres) DetalleDeObra(ctx context.Context, identificadorObra string) (puertos.ResumenObra, bool, error) {
+	consultas := persistencia.ConsultasDe(ctx)
+	var obra puertos.ResumenObra
+	fila := consultas.QueryRow(ctx,
+		`SELECT o.id, o.codigo, COALESCE(o.nombre, ''), m.nombre, COALESCE(t.descripcion, ''),
+		        COALESCE(o.ubicacion, ''), o.es_prioritaria, o.estado
+		 FROM catalogos.obra o
+		 JOIN catalogos.mina m ON m.id = o.id_mina
+		 LEFT JOIN catalogos.tipo_obra t ON t.id = o.id_tipo_obra
+		 WHERE o.id = $1 AND o.eliminado_en IS NULL`, identificadorObra)
+	err := fila.Scan(&obra.Identificador, &obra.Codigo, &obra.Nombre, &obra.Mina,
+		&obra.TipoDeObra, &obra.Ubicacion, &obra.EsPrioritaria, &obra.Estado)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			return puertos.ResumenObra{}, false, nil
+		}
+		return puertos.ResumenObra{}, false, err
+	}
+	return obra, true, nil
+}
+
+func (LectorDeCatalogosPostgres) ListarTiposDeObra(ctx context.Context) ([]puertos.OpcionDeCatalogo, error) {
+	return listarOpciones(ctx, "catalogos.tipo_obra")
+}
+
+func (LectorDeCatalogosPostgres) ListarTiposDeMineral(ctx context.Context) ([]puertos.OpcionDeCatalogo, error) {
+	return listarOpciones(ctx, "catalogos.tipo_mineral")
+}
+
+func (LectorDeCatalogosPostgres) ListarTiposDeBarreno(ctx context.Context) ([]puertos.OpcionDeCatalogo, error) {
+	return listarOpciones(ctx, "catalogos.tipo_barreno")
+}
+
+func (LectorDeCatalogosPostgres) ListarTiposDeDemora(ctx context.Context) ([]puertos.OpcionDeCatalogo, error) {
+	return listarOpciones(ctx, "catalogos.tipo_demora")
+}

@@ -5,6 +5,7 @@ import (
 
 	entradaCatalogos "minas/capacidades/catalogos/entrada"
 	entradaGobierno "minas/capacidades/gobierno/entrada"
+	entradaProduccion "minas/capacidades/produccion/entrada"
 	"minas/plataforma/entrada/web"
 )
 
@@ -12,6 +13,7 @@ type Dependencias struct {
 	Autenticador       web.Autenticador
 	Gobierno           *entradaGobierno.ManejadorGobierno
 	Catalogos          *entradaCatalogos.ManejadorCatalogos
+	Produccion         *entradaProduccion.ManejadorProduccion
 	Frontend           http.Handler
 	DirectorioArchivos string
 }
@@ -24,6 +26,7 @@ func NuevasRutas(dependencias Dependencias) *http.ServeMux {
 	plataforma := dependencias.Autenticador.RequerirPlataforma
 	gobierno := dependencias.Gobierno
 	catalogos := dependencias.Catalogos
+	produccion := dependencias.Produccion
 
 	rutas := http.NewServeMux()
 
@@ -77,6 +80,33 @@ func NuevasRutas(dependencias Dependencias) *http.ServeMux {
 	rutas.Handle("POST /catalogos/equipos", exigir("catalogos.editar", catalogos.DarDeAltaEquipo))
 	rutas.Handle("GET /catalogos/equipos/{id}", exigir("catalogos.ver", catalogos.DetalleDeEquipo))
 	rutas.Handle("PATCH /catalogos/equipos/{id}/estado", exigir("catalogos.editar", catalogos.CambiarEstadoDeEquipo))
+
+	rutas.Handle("GET /catalogos/obras", exigir("catalogos.ver", catalogos.ListarObras))
+	rutas.Handle("POST /catalogos/obras", exigir("catalogos.editar", catalogos.CrearObra))
+	rutas.Handle("GET /catalogos/obras/{id}", exigir("catalogos.ver", catalogos.DetalleDeObra))
+	rutas.Handle("PATCH /catalogos/obras/{id}/estado", exigir("catalogos.editar", catalogos.CambiarEstadoDeObra))
+
+	rutas.Handle("GET /catalogos/tipos-de-obra", exigir("catalogos.ver", catalogos.ListarTiposDeObra))
+	rutas.Handle("GET /catalogos/tipos-de-mineral", exigir("catalogos.ver", catalogos.ListarTiposDeMineral))
+	rutas.Handle("GET /catalogos/tipos-de-barreno", exigir("catalogos.ver", catalogos.ListarTiposDeBarreno))
+	rutas.Handle("GET /catalogos/tipos-de-demora", exigir("catalogos.ver", catalogos.ListarTiposDeDemora))
+
+	rutas.Handle("GET /produccion/indicadores", exigir("produccion.ver", produccion.Indicadores))
+
+	rutas.Handle("GET /produccion/partes-de-acarreo", exigir("produccion.ver", produccion.ListarPartesDeAcarreo))
+	rutas.Handle("POST /produccion/partes-de-acarreo", exigir("produccion.capturar", produccion.RegistrarParteDeAcarreo))
+	rutas.Handle("GET /produccion/partes-de-acarreo/{id}", exigir("produccion.ver", produccion.DetalleDeParteDeAcarreo))
+
+	rutas.Handle("GET /produccion/partes-de-rezagado", exigir("produccion.ver", produccion.ListarPartesDeRezagado))
+	rutas.Handle("POST /produccion/partes-de-rezagado", exigir("produccion.capturar", produccion.RegistrarParteDeRezagado))
+	rutas.Handle("GET /produccion/partes-de-rezagado/{id}", exigir("produccion.ver", produccion.DetalleDeParteDeRezagado))
+
+	rutas.Handle("GET /produccion/partes-de-barrenacion", exigir("produccion.ver", produccion.ListarPartesDeBarrenacion))
+	rutas.Handle("POST /produccion/partes-de-barrenacion", exigir("produccion.capturar", produccion.RegistrarParteDeBarrenacion))
+	rutas.Handle("GET /produccion/partes-de-barrenacion/{id}", exigir("produccion.ver", produccion.DetalleDeParteDeBarrenacion))
+
+	rutas.Handle("GET /produccion/demoras", exigir("produccion.ver", produccion.ListarDemoras))
+	rutas.Handle("POST /produccion/demoras", exigir("produccion.capturar", produccion.RegistrarDemora))
 
 	rutas.Handle("GET /catalogos/tipos-de-equipo", exigir("catalogos.ver", catalogos.ListarTiposDeEquipo))
 	rutas.Handle("GET /catalogos/modulos-de-trabajo", exigir("catalogos.ver", catalogos.ListarModulosDeTrabajo))

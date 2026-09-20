@@ -70,6 +70,17 @@ type DetalleEquipo struct {
 	AnioFabricacion   int
 }
 
+type ResumenObra struct {
+	Identificador string
+	Codigo        string
+	Nombre        string
+	Mina          string
+	TipoDeObra    string
+	Ubicacion     string
+	EsPrioritaria bool
+	Estado        string
+}
+
 type OpcionDeCatalogo struct {
 	Identificador string
 	Codigo        string
@@ -83,6 +94,12 @@ type LectorDeCatalogos interface {
 	DetalleDeEmpleado(ctx context.Context, identificadorEmpleado string) (DetalleEmpleado, bool, error)
 	ListarEquipos(ctx context.Context, filtro FiltroDeCatalogo) ([]ResumenEquipo, string, error)
 	DetalleDeEquipo(ctx context.Context, identificadorEquipo string) (DetalleEquipo, bool, error)
+	ListarObras(ctx context.Context, filtro FiltroDeCatalogo) ([]ResumenObra, string, error)
+	DetalleDeObra(ctx context.Context, identificadorObra string) (ResumenObra, bool, error)
+	ListarTiposDeObra(ctx context.Context) ([]OpcionDeCatalogo, error)
+	ListarTiposDeMineral(ctx context.Context) ([]OpcionDeCatalogo, error)
+	ListarTiposDeBarreno(ctx context.Context) ([]OpcionDeCatalogo, error)
+	ListarTiposDeDemora(ctx context.Context) ([]OpcionDeCatalogo, error)
 	ListarTiposDeEquipo(ctx context.Context) ([]OpcionDeCatalogo, error)
 	ListarModulosDeTrabajo(ctx context.Context) ([]OpcionDeCatalogo, error)
 	ListarDepartamentos(ctx context.Context) ([]OpcionDeCatalogo, error)

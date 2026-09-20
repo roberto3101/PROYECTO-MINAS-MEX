@@ -1,6 +1,7 @@
 package entrada
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -29,6 +30,14 @@ type ManejadorCatalogos struct {
 	listarDepartamentos   *aplicacion.ListarDepartamentos
 	listarPuestos         *aplicacion.ListarPuestos
 	listarActividades     *aplicacion.ListarActividades
+	crearObra             *aplicacion.CrearObra
+	listarObras           *aplicacion.ListarObras
+	detalleObra           *aplicacion.DetalleDeObra
+	cambiarEstadoObra     *aplicacion.CambiarEstadoDeObra
+	listarTiposDeObra     *aplicacion.ListarTiposDeObra
+	listarTiposDeMineral  *aplicacion.ListarTiposDeMineral
+	listarTiposDeBarreno  *aplicacion.ListarTiposDeBarreno
+	listarTiposDeDemora   *aplicacion.ListarTiposDeDemora
 }
 
 func NuevoManejadorCatalogos(
@@ -49,6 +58,14 @@ func NuevoManejadorCatalogos(
 	listarDepartamentos *aplicacion.ListarDepartamentos,
 	listarPuestos *aplicacion.ListarPuestos,
 	listarActividades *aplicacion.ListarActividades,
+	crearObra *aplicacion.CrearObra,
+	listarObras *aplicacion.ListarObras,
+	detalleObra *aplicacion.DetalleDeObra,
+	cambiarEstadoObra *aplicacion.CambiarEstadoDeObra,
+	listarTiposDeObra *aplicacion.ListarTiposDeObra,
+	listarTiposDeMineral *aplicacion.ListarTiposDeMineral,
+	listarTiposDeBarreno *aplicacion.ListarTiposDeBarreno,
+	listarTiposDeDemora *aplicacion.ListarTiposDeDemora,
 ) *ManejadorCatalogos {
 	return &ManejadorCatalogos{
 		crearMina:             crearMina,
@@ -68,6 +85,14 @@ func NuevoManejadorCatalogos(
 		listarDepartamentos:   listarDepartamentos,
 		listarPuestos:         listarPuestos,
 		listarActividades:     listarActividades,
+		crearObra:             crearObra,
+		listarObras:           listarObras,
+		detalleObra:           detalleObra,
+		cambiarEstadoObra:     cambiarEstadoObra,
+		listarTiposDeObra:     listarTiposDeObra,
+		listarTiposDeMineral:  listarTiposDeMineral,
+		listarTiposDeBarreno:  listarTiposDeBarreno,
+		listarTiposDeDemora:   listarTiposDeDemora,
 	}
 }
 
@@ -411,4 +436,97 @@ func empresaDe(peticion *http.Request) string {
 func responderErrorInterno(escritor http.ResponseWriter, err error) {
 	log.Printf("error interno: %v", err)
 	web.ResponderError(escritor, http.StatusInternalServerError, "no se pudo completar la operacion")
+}
+
+func (manejador *ManejadorCatalogos) CrearObra(escritor http.ResponseWriter, peticion *http.Request) {
+	var cuerpo struct {
+		IdentificadorMina     string `json:"id_mina"`
+		IdentificadorTipoObra string `json:"id_tipo_obra"`
+		Codigo                string `json:"codigo"`
+		Nombre                string `json:"nombre"`
+		Ubicacion             string `json:"ubicacion"`
+		EsPrioritaria         bool   `json:"es_prioritaria"`
+	}
+	if !web.DecodificarCuerpo(escritor, peticion, &cuerpo) {
+		return
+	}
+	identificadorObra, err := manejador.crearObra.Ejecutar(peticion.Context(), aplicacion.ComandoCrearObra{
+		IdentificadorEmpresa:  empresaDe(peticion),
+		IdentificadorMina:     cuerpo.IdentificadorMina,
+		IdentificadorTipoObra: cuerpo.IdentificadorTipoObra,
+		Codigo:                cuerpo.Codigo,
+		Nombre:                cuerpo.Nombre,
+		Ubicacion:             cuerpo.Ubicacion,
+		EsPrioritaria:         cuerpo.EsPrioritaria,
+	})
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusCreated, map[string]string{"id": identificadorObra})
+}
+
+func (manejador *ManejadorCatalogos) ListarObras(escritor http.ResponseWriter, peticion *http.Request) {
+	obras, cursor, err := manejador.listarObras.Ejecutar(peticion.Context(), filtroDe(peticion))
+	if err != nil {
+		responderErrorInterno(escritor, err)
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, map[string]any{"Elementos": obras, "SiguienteCursor": cursor})
+}
+
+func (manejador *ManejadorCatalogos) DetalleDeObra(escritor http.ResponseWriter, peticion *http.Request) {
+	detalle, encontrada, err := manejador.detalleObra.Ejecutar(peticion.Context(), peticion.PathValue("id"))
+	if err != nil {
+		responderErrorInterno(escritor, err)
+		return
+	}
+	if !encontrada {
+		web.ResponderError(escritor, http.StatusNotFound, "no encontrado")
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, detalle)
+}
+
+func (manejador *ManejadorCatalogos) CambiarEstadoDeObra(escritor http.ResponseWriter, peticion *http.Request) {
+	var cuerpo struct {
+		Estado string `json:"estado"`
+	}
+	if !web.DecodificarCuerpo(escritor, peticion, &cuerpo) {
+		return
+	}
+	err := manejador.cambiarEstadoObra.Ejecutar(peticion.Context(), aplicacion.ComandoCambiarEstadoDeObra{
+		IdentificadorObra: peticion.PathValue("id"),
+		Estado:            cuerpo.Estado,
+	})
+	if err != nil {
+		web.ResponderError(escritor, codigoHttp(err), err.Error())
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, map[string]string{"estado": cuerpo.Estado})
+}
+
+func (manejador *ManejadorCatalogos) ListarTiposDeObra(escritor http.ResponseWriter, peticion *http.Request) {
+	responderOpciones(escritor, peticion, manejador.listarTiposDeObra.Ejecutar)
+}
+
+func (manejador *ManejadorCatalogos) ListarTiposDeMineral(escritor http.ResponseWriter, peticion *http.Request) {
+	responderOpciones(escritor, peticion, manejador.listarTiposDeMineral.Ejecutar)
+}
+
+func (manejador *ManejadorCatalogos) ListarTiposDeBarreno(escritor http.ResponseWriter, peticion *http.Request) {
+	responderOpciones(escritor, peticion, manejador.listarTiposDeBarreno.Ejecutar)
+}
+
+func (manejador *ManejadorCatalogos) ListarTiposDeDemora(escritor http.ResponseWriter, peticion *http.Request) {
+	responderOpciones(escritor, peticion, manejador.listarTiposDeDemora.Ejecutar)
+}
+
+func responderOpciones(escritor http.ResponseWriter, peticion *http.Request, ejecutar func(context.Context) ([]puertos.OpcionDeCatalogo, error)) {
+	opciones, err := ejecutar(peticion.Context())
+	if err != nil {
+		responderErrorInterno(escritor, err)
+		return
+	}
+	web.ResponderJson(escritor, http.StatusOK, opciones)
 }
