@@ -1,0 +1,18 @@
+{
+  "name": "qa-minas",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "probar": "playwright test",
+    "probar:contrato": "playwright test tests/contrato",
+    "probar:seguridad": "playwright test tests/seguridad",
+    "probar:validacion": "playwright test tests/validacion",
+    "probar:casos-uso": "playwright test tests/casos-uso",
+    "ver-informe": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "pg": "^8.13.1"
+  }
+}

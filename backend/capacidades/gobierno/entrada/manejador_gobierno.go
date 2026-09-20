@@ -126,6 +126,8 @@ func (manejador *ManejadorGobierno) IniciarSesion(escritor http.ResponseWriter, 
 		NombreCorto:          sesion.NombreCorto,
 		Ambito:               identidad.AmbitoEmpresa,
 		Permisos:             sesion.Permisos,
+		AlcanceGlobalDeMinas: sesion.AlcanceGlobalDeMinas,
+		MinasPermitidas:      sesion.MinasPermitidas,
 	}, manejador.reloj.Ahora())
 	if err != nil {
 		web.ResponderError(escritor, http.StatusInternalServerError, "no se pudo emitir el token")

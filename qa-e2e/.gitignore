@@ -1,0 +1,7 @@
+node_modules/
+playwright-report/
+test-results/
+resultados.json
+reporte/informe.html
+reporte/resultado.json
+evidencia/
