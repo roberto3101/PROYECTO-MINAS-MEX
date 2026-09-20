@@ -148,7 +148,9 @@ INSERT INTO gobierno.permiso (codigo, descripcion, modulo) VALUES
  ('inversiones.ver','Ver inversiones, activos y acero','inversiones'),
  ('inversiones.editar','Capturar inversiones, activos y acero','inversiones'),
  ('reportes.ver','Consultar tableros y reportes','reportes'),
- ('reportes.exportar','Exportar reportes','reportes');
+ ('reportes.exportar','Exportar reportes','reportes'),
+ ('seguridad.ver','Ver incidentes de seguridad','seguridad'),
+ ('seguridad.capturar','Reportar incidentes de seguridad','seguridad');
 
 -- ---- Matriz de permisos del rol Administrador (todos los permisos del catalogo) ----
 -- Los demas roles los crea cada empresa eligiendo permisos del catalogo global.

@@ -387,13 +387,13 @@ SELECT set_config('app.empresa_actual', :'emp_a', false);
 SET ROLE aplicacion;
 DO $$ DECLARE v int; BEGIN
   SELECT count(*) INTO v FROM gobierno.permiso WHERE eliminado_en IS NULL;
-  IF v <> 29 THEN RAISE EXCEPTION 'T33 FALLO: catalogo esperado 29 permisos, hay %', v; END IF;
+  IF v <> 31 THEN RAISE EXCEPTION 'T33 FALLO: catalogo esperado 31 permisos, hay %', v; END IF;
   BEGIN
     INSERT INTO gobierno.permiso (codigo, descripcion, modulo) VALUES ('hack.crear','x','gobierno');
     RAISE EXCEPTION 'T33 FALLO: un tenant pudo crear permisos';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
-  RAISE NOTICE 'OK  T33: catalogo global de 29 permisos, solo-lectura para los tenants';
+  RAISE NOTICE 'OK  T33: catalogo global de 31 permisos, solo-lectura para los tenants';
 END $$;
 RESET ROLE;
 
@@ -403,10 +403,10 @@ DO $$ DECLARE v int; v_emp int; BEGIN
   SELECT count(*) INTO v FROM gobierno.rol_permiso rp
     JOIN gobierno.rol r ON r.id = rp.id_rol
     WHERE r.codigo='ADMIN_EMPRESA' AND rp.eliminado_en IS NULL;
-  IF v <> 29 THEN RAISE EXCEPTION 'T34 FALLO: ADMIN_EMPRESA debe tener 29 permisos, tiene %', v; END IF;
+  IF v <> 31 THEN RAISE EXCEPTION 'T34 FALLO: ADMIN_EMPRESA debe tener 31 permisos, tiene %', v; END IF;
   SELECT count(DISTINCT id_empresa) INTO v_emp FROM gobierno.rol_permiso;
   IF v_emp <> 1 THEN RAISE EXCEPTION 'T34 FALLO: la matriz muestra % empresas (RLS roto)', v_emp; END IF;
-  RAISE NOTICE 'OK  T34: ADMIN_EMPRESA con los 29 permisos; matriz aislada por tenant';
+  RAISE NOTICE 'OK  T34: ADMIN_EMPRESA con los 31 permisos; matriz aislada por tenant';
 END $$;
 RESET ROLE;
 
@@ -478,7 +478,7 @@ RESET ROLE;
 SET ROLE aplicacion;
 DO $$ DECLARE v int; BEGIN
   SELECT count(*) INTO v FROM gobierno.v_permisos_usuario WHERE usuario='admin.mina';
-  IF v < 29 THEN RAISE EXCEPTION 'T38 FALLO: admin.mina debe tener >=29 permisos efectivos, tiene %', v; END IF;
+  IF v < 29 THEN RAISE EXCEPTION 'T38 FALLO: admin.mina debe tener >=31 permisos efectivos, tiene %', v; END IF;
   IF NOT EXISTS (SELECT 1 FROM gobierno.v_permisos_usuario WHERE usuario='admin.mina' AND permiso='usuarios.crear') THEN
     RAISE EXCEPTION 'T38 FALLO: admin.mina sin usuarios.crear';
   END IF;

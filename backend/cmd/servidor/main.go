@@ -15,6 +15,9 @@ import (
 	aplicacionProduccion "minas/capacidades/produccion/aplicacion"
 	entradaProduccion "minas/capacidades/produccion/entrada"
 	infraProduccion "minas/capacidades/produccion/infraestructura"
+	aplicacionSeguridad "minas/capacidades/seguridad/aplicacion"
+	entradaSeguridad "minas/capacidades/seguridad/entrada"
+	infraSeguridad "minas/capacidades/seguridad/infraestructura"
 	"minas/compartido/reloj"
 	"minas/pasarela"
 	"minas/plataforma/archivos"
@@ -133,11 +136,17 @@ func main() {
 		aplicacionProduccion.NuevasConsultasDeProduccion(unidad, lectorDeProduccion),
 	)
 
+	manejadorSeguridad := entradaSeguridad.NuevoManejadorSeguridad(
+		aplicacionSeguridad.NuevoReportarIncidente(unidad, infraSeguridad.NuevoRepositorioDeIncidentes()),
+		aplicacionSeguridad.NuevasConsultasDeSeguridad(unidad, infraSeguridad.NuevoLectorDeSeguridad()),
+	)
+
 	rutas := pasarela.NuevasRutas(pasarela.Dependencias{
 		Autenticador:       web.NuevoAutenticador(emisor, relojDelSistema),
 		Gobierno:           manejadorGobierno,
 		Catalogos:          manejadorCatalogos,
 		Produccion:         manejadorProduccion,
+		Seguridad:          manejadorSeguridad,
 		Frontend:           web.NuevoServidorDeFrontend(directorioFrontend),
 		DirectorioArchivos: directorioArchivos,
 	})

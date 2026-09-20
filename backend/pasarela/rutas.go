@@ -6,6 +6,7 @@ import (
 	entradaCatalogos "minas/capacidades/catalogos/entrada"
 	entradaGobierno "minas/capacidades/gobierno/entrada"
 	entradaProduccion "minas/capacidades/produccion/entrada"
+	entradaSeguridad "minas/capacidades/seguridad/entrada"
 	"minas/plataforma/entrada/web"
 )
 
@@ -14,6 +15,7 @@ type Dependencias struct {
 	Gobierno           *entradaGobierno.ManejadorGobierno
 	Catalogos          *entradaCatalogos.ManejadorCatalogos
 	Produccion         *entradaProduccion.ManejadorProduccion
+	Seguridad          *entradaSeguridad.ManejadorSeguridad
 	Frontend           http.Handler
 	DirectorioArchivos string
 }
@@ -27,6 +29,7 @@ func NuevasRutas(dependencias Dependencias) *http.ServeMux {
 	gobierno := dependencias.Gobierno
 	catalogos := dependencias.Catalogos
 	produccion := dependencias.Produccion
+	seguridad := dependencias.Seguridad
 
 	rutas := http.NewServeMux()
 
@@ -107,6 +110,11 @@ func NuevasRutas(dependencias Dependencias) *http.ServeMux {
 
 	rutas.Handle("GET /produccion/demoras", exigir("produccion.ver", produccion.ListarDemoras))
 	rutas.Handle("POST /produccion/demoras", exigir("produccion.capturar", produccion.RegistrarDemora))
+
+	rutas.Handle("GET /seguridad/tipos-de-incidente", exigir("seguridad.ver", seguridad.ListarTiposDeIncidente))
+	rutas.Handle("GET /seguridad/incidentes", exigir("seguridad.ver", seguridad.ListarIncidentes))
+	rutas.Handle("POST /seguridad/incidentes", exigir("seguridad.capturar", seguridad.ReportarIncidente))
+	rutas.Handle("GET /seguridad/indicadores", exigir("seguridad.ver", seguridad.Indicadores))
 
 	rutas.Handle("GET /catalogos/tipos-de-equipo", exigir("catalogos.ver", catalogos.ListarTiposDeEquipo))
 	rutas.Handle("GET /catalogos/modulos-de-trabajo", exigir("catalogos.ver", catalogos.ListarModulosDeTrabajo))
