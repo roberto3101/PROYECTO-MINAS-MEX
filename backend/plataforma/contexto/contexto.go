@@ -32,7 +32,6 @@ func ConTenant(ctx context.Context, tenant Tenant) context.Context {
 func ConEmpresaImpersonada(ctx context.Context, empresa identificador.Identificador) context.Context {
 	return ConTenant(ctx, Tenant{
 		Empresa:              empresa,
-		Actor:                empresa,
 		Rol:                  RolAplicacion,
 		AlcanceGlobalDeMinas: true,
 	})

@@ -17,3 +17,6 @@ dist/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Archivos subidos en tiempo de ejecucion (logos de empresa)
+/datos/

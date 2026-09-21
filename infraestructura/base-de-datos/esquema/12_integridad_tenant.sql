@@ -100,3 +100,61 @@ BEGIN
   END IF;
   RAISE NOTICE 'Verificado: 0 FKs simples de negocio restantes (todas compuestas con id_empresa)';
 END $$;
+
+-- ============================================================
+-- Auditoria automatica: quien creo y quien actualizo cada fila
+-- ------------------------------------------------------------
+-- La aplicacion fija app.usuario_actual al abrir la transaccion.
+-- El DEFAULT lo copia en cada INSERT y el trigger en cada UPDATE,
+-- para que ningun modulo pueda olvidarse de registrar al autor.
+-- ============================================================
+CREATE OR REPLACE FUNCTION gobierno.usuario_actual() RETURNS uuid
+LANGUAGE sql STABLE AS $$
+  SELECT nullif(current_setting('app.usuario_actual', true), '')::uuid
+$$;
+
+CREATE OR REPLACE FUNCTION gobierno.marcar_actualizacion() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.actualizado_por_usuario_id := gobierno.usuario_actual();
+  NEW.actualizado_en := now();
+  RETURN NEW;
+END $$;
+
+DO $$
+DECLARE
+  tabla record;
+  columnas int := 0;
+  disparadores int := 0;
+BEGIN
+  FOR tabla IN
+    SELECT c.table_schema AS esquema, c.table_name AS nombre
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_schema = c.table_schema AND t.table_name = c.table_name AND t.table_type = 'BASE TABLE'
+    WHERE c.column_name = 'creado_por_usuario_id'
+      AND c.table_schema IN ('gobierno','catalogos','produccion','planeacion','reconciliacion',
+                             'costos','beneficio','estandares','inversiones','seguridad')
+  LOOP
+    EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN creado_por_usuario_id SET DEFAULT gobierno.usuario_actual()',
+                   tabla.esquema, tabla.nombre);
+    columnas := columnas + 1;
+  END LOOP;
+
+  FOR tabla IN
+    SELECT c.table_schema AS esquema, c.table_name AS nombre
+    FROM information_schema.columns c
+    JOIN information_schema.tables t
+      ON t.table_schema = c.table_schema AND t.table_name = c.table_name AND t.table_type = 'BASE TABLE'
+    WHERE c.column_name = 'actualizado_por_usuario_id'
+      AND c.table_schema IN ('gobierno','catalogos','produccion','planeacion','reconciliacion',
+                             'costos','beneficio','estandares','inversiones','seguridad')
+  LOOP
+    EXECUTE format('DROP TRIGGER IF EXISTS tg_marcar_actualizacion ON %I.%I', tabla.esquema, tabla.nombre);
+    EXECUTE format('CREATE TRIGGER tg_marcar_actualizacion BEFORE UPDATE ON %I.%I
+                    FOR EACH ROW EXECUTE FUNCTION gobierno.marcar_actualizacion()', tabla.esquema, tabla.nombre);
+    disparadores := disparadores + 1;
+  END LOOP;
+
+  RAISE NOTICE 'Auditoria: % tablas registran al autor en el alta y % al actualizar', columnas, disparadores;
+END $$;

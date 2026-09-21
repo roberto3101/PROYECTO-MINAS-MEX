@@ -32,6 +32,10 @@ func (unidad *UnidadDeTrabajoPostgres) EnTransaccion(ctx context.Context, operac
 		_ = transaccion.Rollback(ctx)
 		return err
 	}
+	if _, err := transaccion.Exec(ctx, "SELECT set_config('app.usuario_actual', $1, true)", textoDeActor(tenant)); err != nil {
+		_ = transaccion.Rollback(ctx)
+		return err
+	}
 	if _, err := transaccion.Exec(ctx, "SET LOCAL ROLE "+nombreDeRolSeguro(tenant.Rol)); err != nil {
 		_ = transaccion.Rollback(ctx)
 		return err
@@ -41,6 +45,13 @@ func (unidad *UnidadDeTrabajoPostgres) EnTransaccion(ctx context.Context, operac
 		return err
 	}
 	return transaccion.Commit(ctx)
+}
+
+func textoDeActor(tenant contexto.Tenant) string {
+	if tenant.Actor.EsVacio() {
+		return ""
+	}
+	return tenant.Actor.Texto()
 }
 
 func nombreDeRolSeguro(rol contexto.RolDeBaseDeDatos) string {
